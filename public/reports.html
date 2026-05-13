@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHAD Portal | Reports</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin">
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/SHAD Website/public/css/reports.css">
+
+<script src= "/SHAD Website/public/js/reports.js"></script>
+
+</head>
+<body>
+
+<header class="topbar">
+
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+        <nav>
+            <a href="/SHAD Website/public/html/index.html">Home</a>
+        </nav>
+    </div>
+
+    <nav>
+        <a href="/SHAD Website/public/html/dashboard.html">Dashboard</a>
+        <a href="/SHAD Website/pubic/html/students.html">Students</a>
+        <a href="/SHAD Website/public/html/contact.html">Contact Staff</a>
+        <a href="/SHAD Website/public/html/issues.html">Report An Issue</a>
+    </nav>
+
+</header>
+
+
+<section class="reports-page">
+
+    <div class="page-header">
+
+        <div>
+            <p class="mini-title">STUDENT INCIDENT LOG</p>
+            <h2>Reports & Concerns</h2>
+            <p class="subtext">
+                Track attendance issues, behavioral concerns, wellness incidents,
+                and follow-up notes.
+            </p>
+        </div>
+
+    </div>
+
+
+    <div class="report-layout">
+
+        <!-- LEFT FORM -->
+        <div class="report-card">
+
+            <h3>Create New Report</h3>
+
+            <label>Select Student</label>
+            <select>
+                <option>Select from database</option>
+                <option>Sarah Johnson</option>
+                <option>Michael Chen</option>
+                <option>Emily Patel</option>
+                <option>Alex Brown</option>
+            </select>
+
+
+            <label>Issue Type</label>
+
+            <div class="checkbox-grid">
+
+                <label class="check-item">
+                    <input type="checkbox">
+                    Attendance
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox">
+                    Late Arrival
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox">
+                    Missing Student
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox">
+                    Behavior
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox">
+                    Wellness
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox">
+                    Medical
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox">
+                    Conflict
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox">
+                    Other
+                </label>
+
+            </div>
+
+
+            <label>Detailed Notes</label>
+
+            <textarea placeholder="Explain the issue, timeline, staff involved, actions taken, and follow-up needed..."></textarea>
+
+            <button class="submit-btn">Submit Report</button>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+        <div class="recent-card">
+
+            <h3>Recent Reports</h3>
+
+            <div class="report-item">
+                <h4>Sarah Johnson</h4>
+                <p>Late Arrival • Breakfast Check-In</p>
+                <span>Today • 8:14 AM</span>
+            </div>
+
+            <div class="report-item">
+                <h4>Alex Brown</h4>
+                <p>Attendance Concern • Missing From Lecture</p>
+                <span>Today • 10:22 AM</span>
+            </div>
+
+            <div class="report-item">
+                <h4>Emily Patel</h4>
+                <p>Wellness • Requested Support</p>
+                <span>Yesterday • 9:05 PM</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+</body>
+</html>
