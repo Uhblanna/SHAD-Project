@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHAD Portal | Shopping</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/SHAD Website/public/css/shopping.css">
+
+<script src= "/SHAD Website/public/js/shopping.js"></script>
+
+</head>
+<body>
+
+<header class="topbar">
+
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+        <nav>
+            <a href="/SHAD Website/public/html/index.html">Home</a>
+        </nav>
+    </div>
+
+    <nav>
+        <a href="/SHAD Website/public/html/dashboard.html">Dashboard</a>
+        <a href="/SHAD Website/public/html/students.html">Students</a>
+        <a href="/SHAD Website/public/html/contact.html">Contact Staff</a>
+        <a href="/SHAD Website/public/html/issues.html">Report An Issue</a>
+    </nav>
+
+</header>
+
+
+<section class="shopping-page">
+
+    <div class="page-header">
+
+        <div>
+            <p class="mini-title">SUPPLY MANAGEMENT</p>
+            <h2>Shopping Requests</h2>
+            <p class="subtext">
+                Keep a live running list of items needed for students, staff,
+                events, and daily operations.
+            </p>
+        </div>
+
+    </div>
+
+
+    <div class="shopping-layout">
+
+        <!-- LEFT SIDE -->
+        <div class="list-card">
+
+            <div class="card-head">
+                <h3>Current Purchase List</h3>
+                <span>8 Items Pending</span>
+            </div>
+
+            <div class="item-row">
+                <label class="check-wrap">
+                    <input type="checkbox">
+                    <span class="custom-box"></span>
+                </label>
+
+                <div class="item-info">
+                    <h4>Bandages</h4>
+                    <p>Restock first aid kits</p>
+                </div>
+
+                <small>Costco</small>
+            </div>
+
+
+            <div class="item-row">
+                <label class="check-wrap">
+                    <input type="checkbox">
+                    <span class="custom-box"></span>
+                </label>
+
+                <div class="item-info">
+                    <h4>Markers</h4>
+                    <p>Activity supplies for workshop</p>
+                </div>
+
+                <small>Dollar Store</small>
+            </div>
+
+
+            <div class="item-row">
+                <label class="check-wrap">
+                    <input type="checkbox">
+                    <span class="custom-box"></span>
+                </label>
+
+                <div class="item-info">
+                    <h4>Electrolyte Drinks</h4>
+                    <p>Wellness support</p>
+                </div>
+
+                <small>Grocery</small>
+            </div>
+
+
+            <div class="item-row">
+                <label class="check-wrap">
+                    <input type="checkbox">
+                    <span class="custom-box"></span>
+                </label>
+
+                <div class="item-info">
+                    <h4>Printer Paper</h4>
+                    <p>Office supplies</p>
+                </div>
+
+                <small>Staples</small>
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+        <div class="form-card">
+
+            <h3>Add New Item</h3>
+
+            <label>Item Name</label>
+            <input type="text" placeholder="Ex: Batteries">
+
+            <label>Store Type</label>
+            <select>
+                <option>Select Store</option>
+                <option>Costco</option>
+                <option>Dollar Store</option>
+                <option>Grocery</option>
+                <option>Walmart</option>
+                <option>Other</option>
+            </select>
+
+            <label>Description</label>
+            <textarea placeholder="Explain what is needed and why..."></textarea>
+
+            <label>Upload Picture</label>
+            <input type="file" class="file-upload">
+
+            <label class="priority-check">
+                <input type="checkbox">
+                Mark As Priority Item
+            </label>
+
+            <button>Add To List</button>
+
+        </div>
+
+    </div>
+
+</section>
+
+</body>
+</html>
