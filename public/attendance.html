@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHAD Portal | Attendance</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/SHAD Website/public/css/attendance.css">
+
+<script src= "/SHAD Website/public/js/attendance.js"></script>
+
+</head>
+<body>
+
+<header class="topbar">
+
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+        <nav>
+            <a href="/SHAD Website/public/html/index.html">Home</a>
+        </nav>
+    </div>
+
+    <nav>
+        <a href="/SHAD Website/public/html/dashboard.html">Dashboard</a>
+        <a href="/SHAD Website/public/html/students.html">Students</a>
+        <a href="/SHAD Website/public/html/contact.html">Contact Staff</a>
+        <a href="/SHAD Website/public/html/issues.html">Report An Issue</a>
+    </nav>
+
+</header>
+
+
+<section class="attendance-page">
+
+    <div class="page-header">
+        <div>
+            <p class="mini-title">LIVE ATTENDANCE</p>
+            <h2>Attendance Check-In</h2>
+            <p class="subtext">
+                Scan student QR codes, confirm attendance, and identify missing students.
+            </p>
+        </div>
+
+        <a href="#" class="submit-btn">Submit Attendance</a>
+    </div>
+
+
+    <div class="attendance-grid">
+
+        <!-- LEFT SIDE -->
+        <div class="scanner-card">
+
+            <h3>QR Scanner</h3>
+
+            <div class="scanner-box">
+                <p>Camera / QR Scanner Area</p>
+                <span>Scan Student Lanyard</span>
+            </div>
+
+            <div class="manual-entry">
+                <input type="text" placeholder="Enter student ID manually">
+                <button>Add Student</button>
+            </div>
+
+            <div class="recent-scans">
+                <h4>Recently Checked In</h4>
+
+                <div class="scan-row">
+                    <span>Sarah Johnson</span>
+                    <small>10:03 AM</small>
+                </div>
+
+                <div class="scan-row">
+                    <span>Michael Chen</span>
+                    <small>10:04 AM</small>
+                </div>
+
+                <div class="scan-row">
+                    <span>Emily Patel</span>
+                    <small>10:05 AM</small>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+        <div class="missing-card">
+
+            <div class="missing-head">
+                <h3>Students Not Checked In</h3>
+                <span>3 Missing</span>
+            </div>
+
+            <div class="student-missing">
+
+                <div class="avatar">A</div>
+
+                <div class="student-info">
+                    <h4>Alex Brown</h4>
+                    <p>Age 16 • Group Blue</p>
+                </div>
+
+                <a href="#">View Profile</a>
+
+            </div>
+
+
+            <div class="student-missing">
+
+                <div class="avatar">L</div>
+
+                <div class="student-info">
+                    <h4>Lucy Green</h4>
+                    <p>Age 17 • Group Red</p>
+                </div>
+
+                <a href="#">View Profile</a>
+
+            </div>
+
+
+            <div class="student-missing">
+
+                <div class="avatar">J</div>
+
+                <div class="student-info">
+                    <h4>Jason Kim</h4>
+                    <p>Age 16 • Group Yellow</p>
+                </div>
+
+                <a href="#">View Profile</a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+</body>
+</html>
