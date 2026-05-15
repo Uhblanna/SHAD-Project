@@ -1,291 +1,541 @@
-// ============================================================
-//  SHAD Portal — Students
-//  Handles: search/filter, add student form, notes
-// ============================================================
-
-
-// ── STUDENT DATA ──────────────────────────────────────────
-// Full student roster with profiles.
-// When you connect Firebase this will come from the database.
-
-let students = [
+const students = [
     {
-        id: 1,
-        name: 'Sarah Johnson',
-        age: 17,
-        birthday: 'March 12',
-        allergies: 'Peanuts',
-        medical: 'Asthma Inhaler',
-        goodNotes: 'Strong leadership in team activities.',
-        badNotes: 'Late to breakfast twice this week.'
-    },
-    {
-        id: 2,
-        name: 'Michael Chen',
+        name: "Maya Chen",
+        group: "Group 1",
         age: 16,
-        birthday: 'July 8',
-        allergies: 'None',
-        medical: 'None',
-        goodNotes: 'Excellent attendance and punctuality.',
-        badNotes: 'No concerns reported.'
+        status: "Present",
+        note: "Strong leadership during morning group activity."
     },
     {
-        id: 3,
-        name: 'Emily Patel',
+        name: "Ethan Brooks",
+        group: "Group 2",
         age: 17,
-        birthday: 'November 3',
-        allergies: 'Gluten',
-        medical: 'Dietary monitoring',
-        goodNotes: 'Helpful with peers and positive attitude.',
-        badNotes: 'Reported homesick yesterday evening.'
+        status: "Missing",
+        note: "Arrived late to breakfast. Follow up needed."
     },
     {
-        id: 4,
-        name: 'Alex Brown',
+        name: "Caleb Kim",
+        group: "Group 1",
         age: 16,
-        birthday: 'May 21',
-        allergies: 'None',
-        medical: 'None',
-        goodNotes: 'Creative thinker in workshop sessions.',
-        badNotes: 'Missed morning lecture on Tuesday.'
+        status: "Present",
+        note: "Positive attitude during archery."
     },
     {
-        id: 5,
-        name: 'Lucy Green',
+        name: "Oliver Singh",
+        group: "Group 3",
         age: 17,
-        birthday: 'August 14',
-        allergies: 'Tree nuts',
-        medical: 'EpiPen on person',
-        goodNotes: 'Enthusiastic participant in all activities.',
-        badNotes: 'No concerns reported.'
+        status: "Missing",
+        note: "Has not checked in yet."
     },
+    {
+        name: "Ava Sinclair",
+        group: "Group 2",
+        age: 16,
+        status: "Present",
+        note: "Helped another student find their schedule."
+    }
 ];
 
-let nextId = 6;
+const observations = [
+    {
+        student: "Ethan Brooks",
+        type: "Attendance Concern",
+        mood: "negative",
+        details: "Not checked in this morning."
+    },
+    {
+        student: "Oliver Singh",
+        type: "Attendance Concern",
+        mood: "neutral",
+        details: "Room key not yet collected."
+    },
+    {
+        student: "Maya Chen",
+        type: "Positive Observation",
+        mood: "positive",
+        details: "Stepped up as a natural leader."
+    }
+];
 
+document.addEventListener("DOMContentLoaded", () => {
+    setupHubNavigation();
+    setupHamburgerMenu();
 
-// ── ON PAGE LOAD ──────────────────────────────────────────
+    loadStats();
+    displayStudents(students);
+    displayAttendanceList();
+    displayAttendanceAlerts();
+    displayObservations();
+    loadObservationStudentDropdown();
+    setupObservationToggle();
+    setupObservationForm();
 
-document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById("studentSearch");
 
-    renderStudents(students);
-    setupSearch();
-    setupAddStudent();
+    if (searchInput) {
+        searchInput.addEventListener("input", () => {
+            const searchText = searchInput.value.toLowerCase();
 
+            const filteredStudents = students.filter(student =>
+                student.name.toLowerCase().includes(searchText)
+            );
+
+            displayStudents(filteredStudents);
+        });
+    }
 });
 
+function setupHubNavigation() {
+    const navButtons = document.querySelectorAll(".hub-nav");
+    const screens = document.querySelectorAll(".hub-screen");
 
-// ── RENDER STUDENT CARDS ──────────────────────────────────
+    navButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const targetScreen = button.dataset.screen;
 
-function renderStudents(list) {
+            navButtons.forEach(btn => btn.classList.remove("active"));
+            screens.forEach(screen => screen.classList.remove("active"));
 
-    const grid = document.querySelector('.student-grid');
-    grid.innerHTML = '';
+            button.classList.add("active");
+            document.getElementById(targetScreen).classList.add("active");
+        });
+    });
+}
 
-    if (list.length === 0) {
+function setupHamburgerMenu() {
+    const menuBtn = document.getElementById("hubMenuBtn");
+    const sidebar = document.getElementById("hubSidebar");
 
-        grid.innerHTML =
-            '<p style="color:#666; font-size:18px; padding:20px 0;">No students found.</p>';
-        return;
+    if (!menuBtn || !sidebar) return;
 
+    menuBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("collapsed");
+    });
+}
+
+function loadStats() {
+    const present = students.filter(student => student.status === "Present").length;
+    const missing = students.filter(student => student.status === "Missing").length;
+
+    document.getElementById("presentCount").textContent = present;
+    document.getElementById("missingCount").textContent = missing;
+    document.getElementById("studentCount").textContent = students.length;
+    document.getElementById("observationCount").textContent = observations.length;
+}
+
+function displayStudents(studentArray) {
+    const studentList = document.getElementById("studentList");
+    if (!studentList) return;
+
+    studentList.innerHTML = "";
+
+    studentArray.forEach(student => {
+        const row = document.createElement("div");
+        row.classList.add("student-row");
+
+        const statusClass = student.status === "Present" ? "present" : "missing";
+
+        row.innerHTML = `
+            <div>
+                <p class="student-name">${student.name}</p>
+                <p class="student-info">${student.group} • Age ${student.age}</p>
+                <p class="student-info">${student.note}</p>
+            </div>
+
+            <span class="status ${statusClass}">
+                ${student.status}
+            </span>
+        `;
+
+        studentList.appendChild(row);
+    });
+}
+
+function displayAttendanceList() {
+    const attendanceList = document.getElementById("attendanceList");
+    if (!attendanceList) return;
+
+    attendanceList.innerHTML = "";
+
+    students.forEach(student => {
+        const row = document.createElement("div");
+        row.classList.add("attendance-row");
+
+        row.innerHTML = `
+            <div>
+                <p class="student-name">${student.name}</p>
+                <p class="student-info">${student.group} • Age ${student.age}</p>
+            </div>
+
+            <label>
+                <input type="checkbox" ${student.status === "Present" ? "checked" : ""}>
+                Present
+            </label>
+        `;
+
+        attendanceList.appendChild(row);
+    });
+}
+
+function displayAttendanceAlerts() {
+    const alertBox = document.getElementById("attendanceAlerts");
+    if (!alertBox) return;
+
+    const missingStudents = students.filter(student => student.status === "Missing");
+
+    alertBox.innerHTML = "";
+
+    missingStudents.forEach(student => {
+        const row = document.createElement("div");
+        row.classList.add("alert-row");
+
+        row.innerHTML = `
+            <div>
+                <p class="student-name">${student.name} — not yet checked in</p>
+                <p class="alert-info">${student.group}</p>
+            </div>
+
+            <span class="status missing">Alert</span>
+        `;
+
+        alertBox.appendChild(row);
+    });
+}
+
+function displayObservations() {
+    const recentObservations = document.getElementById("recentObservations");
+    const observationList = document.getElementById("observationList");
+
+    if (recentObservations) {
+        recentObservations.innerHTML = "";
+
+        observations.forEach(observation => {
+            const row = createObservationRow(observation);
+            recentObservations.appendChild(row);
+        });
     }
 
-    list.forEach(function(student) {
+    if (observationList) {
+        observationList.innerHTML = "";
 
-        const card = document.createElement('div');
-        card.className = 'student-card';
-
-        card.innerHTML =
-            '<div class="card-top">' +
-                '<h3>' + student.name + '</h3>' +
-                '<span>Age ' + student.age + '</span>' +
-            '</div>' +
-            '<div class="info">' +
-                '<p><strong>Birthday:</strong> ' + student.birthday + '</p>' +
-                '<p><strong>Allergies:</strong> ' + student.allergies + '</p>' +
-                '<p><strong>Medical:</strong> ' + student.medical + '</p>' +
-            '</div>' +
-            '<div class="notes good">' +
-                '<h4>Good Notes</h4>' +
-                '<p>' + student.goodNotes + '</p>' +
-            '</div>' +
-            '<div class="notes bad">' +
-                '<h4>Needs Attention</h4>' +
-                '<p>' + student.badNotes + '</p>' +
-            '</div>';
-
-        grid.appendChild(card);
-
-    });
-
+        observations.forEach(observation => {
+            const row = createObservationRow(observation);
+            observationList.appendChild(row);
+        });
+    }
 }
 
+function createObservationRow(observation) {
+    const row = document.createElement("div");
+    row.classList.add("observation-row");
+    row.classList.add(observation.mood);
 
-// ── SEARCH ────────────────────────────────────────────────
+    row.innerHTML = `
+        <div>
+            <p class="student-name">${observation.student}</p>
+            <p class="student-info">${observation.type} — ${observation.details}</p>
+        </div>
 
-function setupSearch() {
+        <span class="status ${observation.mood}">
+            ${observation.mood.charAt(0).toUpperCase() + observation.mood.slice(1)}
+        </span>
+    `;
 
-    const searchInput = document.querySelector('.search-bar input');
-    if (!searchInput) return;
+    return row;
+}
 
-    searchInput.addEventListener('input', function() {
+function loadObservationStudentDropdown() {
+    const observationStudent = document.getElementById("observationStudent");
+    if (!observationStudent) return;
 
-        const query = searchInput.value.toLowerCase().trim();
+    observationStudent.innerHTML = "";
 
-        if (query === '') {
-            renderStudents(students);
+    students.forEach(student => {
+        observationStudent.innerHTML += `
+            <option value="${student.name}">${student.name}</option>
+        `;
+    });
+}
+
+function setupObservationToggle() {
+    const newObservationBtn = document.getElementById("newObservationBtn");
+    const observationFormCard = document.getElementById("observationFormCard");
+    const cancelObservationBtn = document.getElementById("cancelObservationBtn");
+
+    if (!newObservationBtn || !observationFormCard || !cancelObservationBtn) return;
+
+    newObservationBtn.addEventListener("click", () => {
+        observationFormCard.classList.remove("hidden");
+        newObservationBtn.style.display = "none";
+    });
+
+    cancelObservationBtn.addEventListener("click", () => {
+        observationFormCard.classList.add("hidden");
+        newObservationBtn.style.display = "inline-block";
+    });
+}
+
+function setupObservationForm() {
+    const saveObservationBtn = document.getElementById("saveObservationBtn");
+    const observationStudent = document.getElementById("observationStudent");
+    const observationDetails = document.getElementById("observationDetails");
+    const observationFormCard = document.getElementById("observationFormCard");
+    const newObservationBtn = document.getElementById("newObservationBtn");
+
+    if (!saveObservationBtn || !observationStudent || !observationDetails) return;
+
+    saveObservationBtn.addEventListener("click", () => {
+        const selectedStudent = observationStudent.value;
+        const details = observationDetails.value;
+
+        const checkedObservations = document.querySelectorAll(".checkbox-grid input:checked");
+        const observationTypes = Array.from(checkedObservations).map(observation => observation.value);
+
+        const selectedMood = document.querySelector('input[name="observationMood"]:checked');
+
+        if (!selectedMood) {
+            alert("Please choose positive, neutral, or negative.");
             return;
         }
 
-        const filtered = students.filter(function(s) {
-            return (
-                s.name.toLowerCase().includes(query) ||
-                s.allergies.toLowerCase().includes(query) ||
-                s.medical.toLowerCase().includes(query)
-            );
+        if (observationTypes.length === 0 || details.trim() === "") {
+            alert("Please choose an observation type and enter details.");
+            return;
+        }
+
+        observations.unshift({
+            student: selectedStudent,
+            type: observationTypes.join(", "),
+            mood: selectedMood.value,
+            details: details
         });
 
-        renderStudents(filtered);
+        displayObservations();
+        loadStats();
 
+        observationDetails.value = "";
+        selectedMood.checked = false;
+        checkedObservations.forEach(observation => observation.checked = false);
+
+        observationFormCard.classList.add("hidden");
+        newObservationBtn.style.display = "inline-block";
     });
+}
+// ── ATTENDANCE HUB SECTION ───────────────────────────────
 
+let attendanceStudents = [
+    { id: 1,  name: "Sarah Johnson",  group: "Blue",   checkedIn: false },
+    { id: 2,  name: "Michael Chen",   group: "Blue",   checkedIn: false },
+    { id: 3,  name: "Emily Patel",    group: "Red",    checkedIn: false },
+    { id: 4,  name: "Alex Brown",     group: "Red",    checkedIn: false },
+    { id: 5,  name: "Lucy Green",     group: "Yellow", checkedIn: false },
+    { id: 6,  name: "Jason Kim",      group: "Yellow", checkedIn: false }
+];
+
+let recentScans = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderMissingStudents();
+    updateAttendanceCounter();
+    setupManualAttendanceEntry();
+    setupAttendanceSubmitButton();
+});
+
+function renderMissingStudents() {
+    const missingList = document.getElementById("missingStudentsList");
+    const missingBadge = document.getElementById("missingBadge");
+
+    if (!missingList || !missingBadge) return;
+
+    const missing = attendanceStudents.filter(student => !student.checkedIn);
+
+    missingBadge.textContent = missing.length + " Missing";
+    missingList.innerHTML = "";
+
+    if (missing.length === 0) {
+        missingList.innerHTML = `
+            <p style="color:#8bc53f; font-weight:700; padding:20px 0;">
+                All students checked in!
+            </p>
+        `;
+        return;
+    }
+
+    missing.forEach(student => {
+        const row = document.createElement("div");
+        row.classList.add("student-missing");
+
+        row.innerHTML = `
+            <div class="avatar">${student.name.charAt(0)}</div>
+
+            <div class="student-info">
+                <h4>${student.name}</h4>
+                <p>Group ${student.group}</p>
+            </div>
+
+            <a href="#" class="view-profile">View Profile</a>
+        `;
+
+        missingList.appendChild(row);
+    });
 }
 
+function updateAttendanceCounter() {
+    const submitBtn = document.querySelector(".submit-btn");
+    if (!submitBtn) return;
 
-// ── ADD STUDENT ───────────────────────────────────────────
-// The + Add Student button opens a simple form
+    const checkedInCount = attendanceStudents.filter(student => student.checkedIn).length;
+    const total = attendanceStudents.length;
 
-function setupAddStudent() {
-
-    const addBtn = document.querySelector('.add-btn');
-    if (!addBtn) return;
-
-    addBtn.addEventListener('click', function(e) {
-
-        e.preventDefault();
-        showAddForm();
-
-    });
-
+    submitBtn.textContent = checkedInCount + " / " + total + " Checked In";
 }
 
-function showAddForm() {
+function setupManualAttendanceEntry() {
+    const input = document.getElementById("manualStudentInput");
+    const button = document.getElementById("manualStudentBtn");
 
-    // Don't open a second form if one is already open
-    if (document.querySelector('.add-student-form')) return;
+    if (!input || !button) return;
 
-    const form = document.createElement('div');
-    form.className = 'add-student-form';
+    button.addEventListener("click", () => {
+        const name = input.value.trim();
 
-    form.style.cssText =
-        'position:fixed; top:0; left:0; width:100%; height:100%;' +
-        'background:rgba(0,0,0,0.5); z-index:999;' +
-        'display:flex; justify-content:center; align-items:center;';
-
-    form.innerHTML =
-        '<div style="background:white; padding:40px; border-radius:24px;' +
-        'width:500px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">' +
-
-            '<h3 style="font-size:28px; margin-bottom:24px;">Add New Student</h3>' +
-
-            '<label style="display:block; font-weight:700; margin-bottom:8px;">Full Name</label>' +
-            '<input id="new-name" type="text" placeholder="Student name"' +
-            'style="width:100%; padding:14px; border:none; background:#f4f5f7;' +
-            'border-radius:14px; font-size:15px; margin-bottom:16px; outline:none;">' +
-
-            '<label style="display:block; font-weight:700; margin-bottom:8px;">Age</label>' +
-            '<input id="new-age" type="number" placeholder="16"' +
-            'style="width:100%; padding:14px; border:none; background:#f4f5f7;' +
-            'border-radius:14px; font-size:15px; margin-bottom:16px; outline:none;">' +
-
-            '<label style="display:block; font-weight:700; margin-bottom:8px;">Allergies</label>' +
-            '<input id="new-allergies" type="text" placeholder="None"' +
-            'style="width:100%; padding:14px; border:none; background:#f4f5f7;' +
-            'border-radius:14px; font-size:15px; margin-bottom:16px; outline:none;">' +
-
-            '<label style="display:block; font-weight:700; margin-bottom:8px;">Medical Notes</label>' +
-            '<input id="new-medical" type="text" placeholder="None"' +
-            'style="width:100%; padding:14px; border:none; background:#f4f5f7;' +
-            'border-radius:14px; font-size:15px; margin-bottom:24px; outline:none;">' +
-
-            '<div style="display:flex; gap:12px;">' +
-                '<button id="save-student-btn"' +
-                'style="flex:1; padding:16px; border:none; background:#6f2da8;' +
-                'color:white; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer;">' +
-                'Save Student</button>' +
-                '<button id="cancel-student-btn"' +
-                'style="flex:1; padding:16px; border:none; background:#f4f5f7;' +
-                'color:#333; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer;">' +
-                'Cancel</button>' +
-            '</div>' +
-
-        '</div>';
-
-    document.body.appendChild(form);
-
-    // Cancel button
-    document.getElementById('cancel-student-btn').addEventListener('click', function() {
-        form.remove();
-    });
-
-    // Save button
-    document.getElementById('save-student-btn').addEventListener('click', function() {
-
-        const name     = document.getElementById('new-name').value.trim();
-        const age      = document.getElementById('new-age').value.trim();
-        const allergies = document.getElementById('new-allergies').value.trim() || 'None';
-        const medical  = document.getElementById('new-medical').value.trim() || 'None';
-
-        if (!name || !age) {
-            alert('Please fill in at least a name and age.');
+        if (name === "") {
+            showAttendanceMessage("Please enter a student name.", "error");
             return;
         }
 
-        const newStudent = {
-            id: nextId++,
-            name: name,
-            age: parseInt(age),
-            birthday: 'N/A',
-            allergies: allergies,
-            medical: medical,
-            goodNotes: 'No notes yet.',
-            badNotes: 'No concerns yet.'
-        };
-
-        students.push(newStudent);
-        renderStudents(students);
-        form.remove();
-        showMessage(name + ' added successfully!', 'success');
-
+        checkInAttendanceStudent(name);
+        input.value = "";
     });
 
+    input.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            button.click();
+        }
+    });
 }
 
+function checkInAttendanceStudent(name) {
+    const student = attendanceStudents.find(student =>
+        student.name.toLowerCase() === name.toLowerCase().trim()
+    );
 
-// ── HELPERS ───────────────────────────────────────────────
+    if (!student) {
+        showAttendanceMessage('Student "' + name + '" not found in roster.', "error");
+        return;
+    }
 
-function showMessage(text, type) {
+    if (student.checkedIn) {
+        showAttendanceMessage(student.name + " is already checked in.", "error");
+        return;
+    }
 
-    const existing = document.querySelector('.js-message');
-    if (existing) existing.remove();
+    student.checkedIn = true;
 
-    const msg = document.createElement('div');
-    msg.className = 'js-message';
+    addRecentScan(student.name);
+    renderMissingStudents();
+    updateAttendanceCounter();
+
+    showAttendanceMessage(student.name + " checked in successfully!", "success");
+}
+
+function addRecentScan(name) {
+    const time = getCurrentTime();
+
+    recentScans.unshift({
+        name: name,
+        time: time
+    });
+
+    if (recentScans.length > 5) {
+        recentScans = recentScans.slice(0, 5);
+    }
+
+    const recentScansList = document.getElementById("recentScansList");
+    if (!recentScansList) return;
+
+    recentScansList.innerHTML = "";
+
+    recentScans.forEach(scan => {
+        const row = document.createElement("div");
+        row.classList.add("scan-row");
+
+        row.innerHTML = `
+            <span>${scan.name}</span>
+            <small>${scan.time}</small>
+        `;
+
+        recentScansList.appendChild(row);
+    });
+}
+
+function setupAttendanceSubmitButton() {
+    const submitBtn = document.querySelector(".submit-btn");
+    if (!submitBtn) return;
+
+    submitBtn.addEventListener("click", event => {
+        event.preventDefault();
+
+        const checkedIn = attendanceStudents.filter(student => student.checkedIn).length;
+        const missing = attendanceStudents.filter(student => !student.checkedIn).length;
+
+        const confirmed = confirm(
+            "Submit attendance?\n\n" +
+            "Checked In: " + checkedIn + "\n" +
+            "Missing: " + missing + "\n\n" +
+            "This will save the current attendance record."
+        );
+
+        if (confirmed) {
+            showAttendanceMessage(
+                "Attendance submitted! " + checkedIn + " present, " + missing + " absent.",
+                "success"
+            );
+        }
+    });
+}
+
+function getCurrentTime() {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+
+    hours = hours % 12;
+
+    if (hours === 0) {
+        hours = 12;
+    }
+
+    return hours + ":" + minutes + " " + ampm;
+}
+
+function showAttendanceMessage(text, type) {
+    const existing = document.querySelector(".js-message");
+
+    if (existing) {
+        existing.remove();
+    }
+
+    const msg = document.createElement("div");
+    msg.className = "js-message";
     msg.textContent = text;
 
     msg.style.cssText =
-        'position:fixed; bottom:30px; left:50%; transform:translateX(-50%);' +
-        'padding:14px 28px; border-radius:14px; font-weight:700; font-size:15px;' +
-        'font-family:Montserrat,sans-serif; z-index:9999; transition:opacity 0.4s;' +
-        (type === 'success'
-            ? 'background:#8bc53f; color:white;'
-            : 'background:#d12c2c; color:white;');
+        "position:fixed; bottom:30px; left:50%; transform:translateX(-50%);" +
+        "padding:14px 28px; border-radius:14px; font-weight:700; font-size:15px;" +
+        "font-family:Montserrat,sans-serif; z-index:9999; transition:opacity 0.4s;" +
+        (type === "success"
+            ? "background:#8bc53f; color:white;"
+            : "background:#d12c2c; color:white;");
 
     document.body.appendChild(msg);
 
-    setTimeout(function() {
-        msg.style.opacity = '0';
-        setTimeout(function() { msg.remove(); }, 400);
-    }, 2500);
+    setTimeout(() => {
+        msg.style.opacity = "0";
 
+        setTimeout(() => {
+            msg.remove();
+        }, 400);
+    }, 2500);
 }
