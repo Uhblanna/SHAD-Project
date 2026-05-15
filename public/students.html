@@ -1,27 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SHAD Portal | Students</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHAD Staff Portal | Students</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="/public/css/students.css">
-
-<script src= "/public/js/students.js"></script>
-
+    <link rel="stylesheet" href="/public/css/students.css">
+    <script src="/public/js/students.js" defer></script>
 </head>
+
 <body>
 
-<header class="topbar">
-
+<header>
     <div class="logo-wrap">
         <div class="logo-box"></div>
         <h1>SHAD Portal</h1>
+
         <nav>
             <a href="/public/index.html">Home</a>
         </nav>
@@ -31,113 +29,226 @@
         <a href="/public/dashboard.html">Dashboard</a>
         <a href="/public/students.html">Students</a>
         <a href="/public/contact.html">Contact Staff</a>
-        <a href="/public/issues.html">Report An Issue</a>
+        <a href="/public/observations.html">Observations</a>
     </nav>
-
 </header>
 
+<section class="hub-shell">
 
-<section class="students-page">
+    <aside class="hub-sidebar" id="hubSidebar">
+        <button class="hub-menu-btn" id="hubMenuBtn">☰</button>
 
+        <div class="hub-title">
+            <h2>SHAD 2025</h2>
+            <p>Student Portal</p>
+        </div>
+
+        <button class="hub-nav active" data-screen="hubHome">
+            <span>🏠</span>
+            <span class="nav-text">Student Hub</span>
+        </button>
+
+        <button class="hub-nav" data-screen="studentsScreen">
+            <span>👥</span>
+            <span class="nav-text">Students</span>
+        </button>
+
+        <button class="hub-nav" data-screen="attendanceScreen">
+            <span>✓</span>
+            <span class="nav-text">Attendance</span>
+        </button>
+
+        <button class="hub-nav" data-screen="observationsScreen">
+            <span>📝</span>
+            <span class="nav-text">Observations</span>
+        </button>
+    </aside>
+
+    <main class="hub-main">
+
+        <section id="hubHome" class="hub-screen active">
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">STUDENT OPERATIONS</p>
+                    <h2>Student Hub</h2>
+                    <p class="subtext">Switch between student profiles, attendance, and observations without leaving this page.</p>
+                </div>
+            </div>
+
+            <div class="hub-stats">
+                <div class="hub-card">
+                    <h3 id="studentCount">0</h3>
+                    <p>Total Students</p>
+                </div>
+
+                <div class="hub-card">
+                    <h3 id="presentCount">0</h3>
+                    <p>Checked In</p>
+                </div>
+
+                <div class="hub-card">
+                    <h3 id="missingCount">0</h3>
+                    <p>Needs Follow Up</p>
+                </div>
+
+                <div class="hub-card">
+                    <h3 id="observationCount">0</h3>
+                    <p>Observations</p>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="student-panel">
+                    <div class="card-header">
+                        <h3>Attendance Alerts</h3>
+                    </div>
+
+                    <div id="attendanceAlerts"></div>
+                </div>
+
+                <div class="student-panel">
+                    <div class="card-header">
+                        <h3>Recent Observations</h3>
+                    </div>
+
+                    <div id="recentObservations"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="studentsScreen" class="hub-screen">
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">STUDENT DIRECTORY</p>
+                    <h2>Students</h2>
+                    <p class="subtext">Quickly access key details, health notes, and behavior logs.</p>
+                </div>
+
+                <a href="#" class="add-btn">+ Add Student</a>
+            </div>
+
+            <div class="student-panel">
+                <div class="card-header">
+                    <h3>Student List</h3>
+                    <input id="studentSearch" type="text" placeholder="Search student name...">
+                </div>
+
+                <div id="studentList"></div>
+            </div>
+        </section>
+
+        <section id="attendanceScreen" class="hub-screen">
     <div class="page-header">
         <div>
-            <p class="mini-title">STUDENT DIRECTORY</p>
-            <h2>Student Information</h2>
+            <p class="mini-title">LIVE ATTENDANCE</p>
+            <h2>Attendance Check-In</h2>
             <p class="subtext">
-                Quickly access key details, health notes, and behavior logs.
+                Scan student QR codes, confirm attendance, and identify missing students.
             </p>
         </div>
 
-        <a href="#" class="add-btn">+ Add Student</a>
+        <a href="#" class="submit-btn">Submit Attendance</a>
     </div>
 
+    <div class="attendance-grid">
 
-    <div class="search-bar">
-        <input type="text" placeholder="Search student name...">
-    </div>
+        <div class="scanner-card">
+            <h3>QR Scanner</h3>
 
-
-    <div class="student-grid">
-
-        <!-- STUDENT CARD -->
-        <div class="student-card">
-
-            <div class="card-top">
-                <h3>Sarah Johnson</h3>
-                <span>Age 17</span>
+            <div class="scanner-box">
+                <p>Camera / QR Scanner Area</p>
+                <span>Scan Student Lanyard</span>
             </div>
 
-            <div class="info">
-                <p><strong>Birthday:</strong> March 12</p>
-                <p><strong>Allergies:</strong> Peanuts</p>
-                <p><strong>Medical:</strong> Asthma Inhaler</p>
+            <div class="manual-entry">
+                <input type="text" id="manualStudentInput" placeholder="Enter student name manually">
+                <button id="manualStudentBtn">Add Student</button>
             </div>
 
-            <div class="notes good">
-                <h4>Good Notes</h4>
-                <p>Strong leadership in team activities.</p>
+            <div class="recent-scans">
+                <h4>Recently Checked In</h4>
+                <div id="recentScansList"></div>
             </div>
-
-            <div class="notes bad">
-                <h4>Needs Attention</h4>
-                <p>Late to breakfast twice this week.</p>
-            </div>
-
         </div>
 
-
-        <div class="student-card">
-
-            <div class="card-top">
-                <h3>Michael Chen</h3>
-                <span>Age 16</span>
+        <div class="missing-card">
+            <div class="missing-head">
+                <h3>Students Not Checked In</h3>
+                <span id="missingBadge">0 Missing</span>
             </div>
 
-            <div class="info">
-                <p><strong>Birthday:</strong> July 8</p>
-                <p><strong>Allergies:</strong> None</p>
-                <p><strong>Medical:</strong> None</p>
-            </div>
-
-            <div class="notes good">
-                <h4>Good Notes</h4>
-                <p>Excellent attendance and punctuality.</p>
-            </div>
-
-            <div class="notes bad">
-                <h4>Needs Attention</h4>
-                <p>No concerns reported.</p>
-            </div>
-
-        </div>
-
-
-        <div class="student-card">
-
-            <div class="card-top">
-                <h3>Emily Patel</h3>
-                <span>Age 17</span>
-            </div>
-
-            <div class="info">
-                <p><strong>Birthday:</strong> November 3</p>
-                <p><strong>Allergies:</strong> Gluten</p>
-                <p><strong>Medical:</strong> Dietary monitoring</p>
-            </div>
-
-            <div class="notes good">
-                <h4>Good Notes</h4>
-                <p>Helpful with peers and positive attitude.</p>
-            </div>
-
-            <div class="notes bad">
-                <h4>Needs Attention</h4>
-                <p>Reported homesick yesterday evening.</p>
-            </div>
-
+            <div id="missingStudentsList"></div>
         </div>
 
     </div>
+</section>
+
+       <section id="observationsScreen" class="hub-screen">
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">OBSERVATIONS</p>
+                    <h2>Observations</h2>
+                    <p class="subtext">Review positive, neutral, and negative student observations at a glance.</p>
+                </div>
+
+                <button id="newObservationBtn" class="add-btn">+ New Observation</button>
+            </div>
+
+            <div class="observation-layout single-column">
+
+                <div class="observation-card hidden" id="observationFormCard">
+                    <h3>Create New Observation</h3>
+
+                    <label for="observationStudent">Select Student</label>
+                    <select id="observationStudent"></select>
+
+                    <label>Observation Mood</label>
+                    <div class="mood-options">
+                        <label class="mood-choice positive-choice">
+                            <input type="radio" name="observationMood" value="positive">
+                            Positive
+                        </label>
+
+                        <label class="mood-choice neutral-choice">
+                            <input type="radio" name="observationMood" value="neutral">
+                            Neutral
+                        </label>
+
+                        <label class="mood-choice negative-choice">
+                            <input type="radio" name="observationMood" value="negative">
+                            Negative
+                        </label>
+                    </div>
+
+                    <label>Observation Type</label>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" value="Attendance"> Attendance</label>
+                        <label><input type="checkbox" value="Behavior"> Behavior</label>
+                        <label><input type="checkbox" value="Wellness"> Wellness</label>
+                        <label><input type="checkbox" value="Medical"> Medical</label>
+                    </div>
+
+                    <label for="observationDetails">Details</label>
+                    <textarea id="observationDetails" placeholder="Describe the observation..."></textarea>
+
+                    <div class="form-actions">
+                        <button id="saveObservationBtn">Save Observation</button>
+                        <button id="cancelObservationBtn" class="cancel-btn">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="observation-card">
+                    <div class="card-header">
+                        <h3>Recent Observations</h3>
+                    </div>
+
+                    <div id="observationList"></div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
 
 </section>
 
