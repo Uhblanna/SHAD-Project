@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="/public/css/index.css">
 
 <script src= "/public/js/index.js"></script>
+<script src="/public/js/db.js" defer></script>
 
 <!-- TEST COMMENT-->
 
@@ -55,9 +56,8 @@
         <div class="main-buttons">
 
             <a href="/public/students.html" class="btn green">Student Hub</a>
-            <a href="/public/students.html" class="btn blue">Observations</a>
             <a href="/public/Scheduling.html" class="btn orange">Schedule</a>
-            <a href="/public/shopping.html" class="btn gray">Shopping</a>
+            <a href="/public/shopping.html" class="btn purple">Shopping</a>
             <a href="/public/medkits.html" class="btn teal">Med Kits</a>
 
         </div>
@@ -69,23 +69,23 @@
 <section class="quick-panel">
 
     <div class="card">
-        <h3>76 / 80</h3>
+        <h3 id="checkedInStat">0 / 0</h3>
         <p>Students Checked In</p>
     </div>
 
     <div class="card">
-        <h3>12</h3>
-        <p>Staff Active</p>
+        <h3 id="missingStat">0</h3>
+        <p>Students Needing Follow Up</p>
     </div>
 
     <div class="card">
-        <h3>2</h3>
-        <p>Open Alerts</p>
+        <h3 id="alertsStat">0</h3>
+        <p>Unacknowledged Observations</p>
     </div>
 
     <div class="card">
-        <h3>5</h3>
-        <p>Pending Tasks</p>
+        <h3 id="medicationStat">0</h3>
+        <p>Medication Alerts</p>
     </div>
 
 </section>
