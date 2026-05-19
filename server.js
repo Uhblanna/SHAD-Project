@@ -1,37 +1,236 @@
 const express = require("express");
 const path = require("path");
+const cors = require("cors");
+const db = require("./database");
 
 const app = express();
 const PORT = 3000;
 
-// Lets the server understand form data and JSON
+app.use(cors());
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use("/public", express.static(path.join(__dirname, "public")));
 
-// Serves your HTML, CSS, JS, and images
-app.use(express.static(path.join(__dirname, "public")));
+function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
 
-// Homepage
+function rowToStudent(row) {
+    return {
+        id: row.id,
+        name: row.name,
+        pronouns: row.pronouns || "",
+        group: row.group_name || "Group 1",
+        age: row.age || "",
+        instrument: row.instrument || "",
+        medication: row.medication || "None",
+        medicationTaken: row.medication_taken === 1,
+        dietary: row.dietary || "None",
+        note: row.note || ""
+    };
+}
+
+function rowToObservation(row) {
+    return {
+        id: row.id,
+        student: row.student,
+        type: row.type,
+        mood: row.mood,
+        details: row.details,
+        acknowledged: row.acknowledged === 1,
+        acknowledgementNote: row.acknowledgement_note || "",
+        createdAt: row.created_at
+    };
+}
+
+function rowToReport(row) {
+    return {
+        id: row.id,
+        student: row.student,
+        types: row.types ? row.types.split("|").filter(Boolean) : [],
+        notes: row.notes,
+        time: row.time,
+        createdAt: row.created_at
+    };
+}
+
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public","html", "index.html"));
+    res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Example API route for med kits
-app.get("/api/med-kits", (req, res) => {
-    res.json([
-        {
-            name: "Main Med Kit",
-            staff: "Sarah Kim",
-            location: "Lecture Hall",
-            status: "Checked"
-        }
-    ]);
+// STUDENTS
+app.get("/api/students", (req, res) => {
+    db.all("SELECT * FROM students ORDER BY name ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(rowToStudent));
+    });
 });
 
-// Example POST route
-app.post("/api/med-kits", (req, res) => {
-    console.log(req.body);
-    res.json({ message: "Med kit saved successfully" });
+app.post("/api/students", (req, res) => {
+    const s = req.body;
+    db.run(`
+        INSERT INTO students (name, pronouns, group_name, age, instrument, medication, medication_taken, dietary, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [s.name, s.pronouns || "", s.group || "Group 1", s.age || null, s.instrument || "", s.medication || "None", s.medicationTaken ? 1 : 0, s.dietary || "None", s.note || ""], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get("SELECT * FROM students WHERE id = ?", [this.lastID], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json(rowToStudent(row));
+        });
+    });
+});
+
+app.put("/api/students/:id", (req, res) => {
+    const s = req.body;
+    db.run(`
+        UPDATE students
+        SET name = COALESCE(?, name),
+            pronouns = COALESCE(?, pronouns),
+            group_name = COALESCE(?, group_name),
+            age = COALESCE(?, age),
+            instrument = COALESCE(?, instrument),
+            medication = COALESCE(?, medication),
+            medication_taken = COALESCE(?, medication_taken),
+            dietary = COALESCE(?, dietary),
+            note = COALESCE(?, note)
+        WHERE id = ?
+    `, [s.name, s.pronouns, s.group, s.age, s.instrument, s.medication, typeof s.medicationTaken === "boolean" ? (s.medicationTaken ? 1 : 0) : null, s.dietary, s.note, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ updated: this.changes });
+    });
+});
+
+app.delete("/api/students/:id", (req, res) => {
+    db.run("DELETE FROM students WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+app.post("/api/students/replace", (req, res) => {
+    const students = Array.isArray(req.body.students) ? req.body.students : [];
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        db.run("DELETE FROM students");
+        const stmt = db.prepare(`
+            INSERT INTO students (name, pronouns, group_name, age, instrument, medication, medication_taken, dietary, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        students.forEach(s => {
+            stmt.run([s.name, s.pronouns || "", s.group || "Group 1", s.age || null, s.instrument || "", s.medication || "None", s.medicationTaken ? 1 : 0, s.dietary || "None", s.note || ""]);
+        });
+        stmt.finalize(err => {
+            if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
+            db.run("COMMIT", err2 => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ inserted: students.length });
+            });
+        });
+    });
+});
+
+// OBSERVATIONS
+app.get("/api/observations", (req, res) => {
+    db.all("SELECT * FROM observations ORDER BY datetime(created_at) DESC, id DESC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(rowToObservation));
+    });
+});
+
+app.post("/api/observations", (req, res) => {
+    const o = req.body;
+    db.run(`
+        INSERT INTO observations (student, type, mood, details, acknowledged, acknowledgement_note)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `, [o.student, o.type, o.mood, o.details, o.acknowledged ? 1 : 0, o.acknowledgementNote || ""], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get("SELECT * FROM observations WHERE id = ?", [this.lastID], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json(rowToObservation(row));
+        });
+    });
+});
+
+app.put("/api/observations/:id", (req, res) => {
+    const o = req.body;
+    db.run(`
+        UPDATE observations
+        SET student = COALESCE(?, student),
+            type = COALESCE(?, type),
+            mood = COALESCE(?, mood),
+            details = COALESCE(?, details),
+            acknowledged = COALESCE(?, acknowledged),
+            acknowledgement_note = COALESCE(?, acknowledgement_note)
+        WHERE id = ?
+    `, [o.student, o.type, o.mood, o.details, typeof o.acknowledged === "boolean" ? (o.acknowledged ? 1 : 0) : null, o.acknowledgementNote, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ updated: this.changes });
+    });
+});
+
+app.delete("/api/observations/:id", (req, res) => {
+    db.run("DELETE FROM observations WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+// ATTENDANCE
+app.get("/api/attendance/today", (req, res) => {
+    db.all("SELECT * FROM attendance WHERE attendance_date = ?", [todayKey()], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const record = {};
+        rows.forEach(row => {
+            record[row.student_id] = { checkedIn: row.checked_in === 1, time: row.check_in_time };
+        });
+        res.json(record);
+    });
+});
+
+app.post("/api/attendance/today", (req, res) => {
+    const record = req.body.record || {};
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        db.run("DELETE FROM attendance WHERE attendance_date = ?", [todayKey()]);
+        const stmt = db.prepare(`
+            INSERT INTO attendance (student_id, attendance_date, checked_in, check_in_time)
+            VALUES (?, ?, ?, ?)
+        `);
+        Object.keys(record).forEach(studentId => {
+            stmt.run([studentId, todayKey(), record[studentId].checkedIn ? 1 : 0, record[studentId].time || null]);
+        });
+        stmt.finalize(err => {
+            if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
+            db.run("COMMIT", err2 => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ saved: Object.keys(record).length });
+            });
+        });
+    });
+});
+
+// REPORTS
+app.get("/api/reports", (req, res) => {
+    db.all("SELECT * FROM reports ORDER BY datetime(created_at) ASC, id ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(rowToReport));
+    });
+});
+
+app.post("/api/reports", (req, res) => {
+    const r = req.body;
+    const types = Array.isArray(r.types) ? r.types.join("|") : (r.types || "");
+    db.run(`
+        INSERT INTO reports (student, types, notes, time)
+        VALUES (?, ?, ?, ?)
+    `, [r.student, types, r.notes, r.time || ""], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get("SELECT * FROM reports WHERE id = ?", [this.lastID], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json(rowToReport(row));
+        });
+    });
 });
 
 app.listen(PORT, () => {
