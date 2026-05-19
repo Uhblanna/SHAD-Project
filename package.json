@@ -1,5 +1,13 @@
 {
+  "name": "shad-portal",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
-    "express": "^5.2.1"
+    "cors": "latest",
+    "express": "latest",
+    "sqlite3": "latest"
   }
 }
