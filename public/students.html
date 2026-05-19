@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="/public/css/students.css">
+    <script src="/public/js/db.js"></script>
     <script src="/public/js/students.js" defer></script>
 </head>
 
@@ -53,6 +54,11 @@
             <span class="nav-text">Students</span>
         </button>
 
+        <button class="hub-nav" data-screen="medicationsScreen">
+            <span>💊</span>
+            <span class="nav-text">Medications</span>
+        </button>
+
         <button class="hub-nav" data-screen="attendanceScreen">
             <span>✓</span>
             <span class="nav-text">Attendance</span>
@@ -62,16 +68,22 @@
             <span>📝</span>
             <span class="nav-text">Observations</span>
         </button>
+
+        <button class="hub-nav" data-screen="dietaryScreen">
+            <span>🥗</span>
+            <span class="nav-text">Dietary Restrictions</span>
+        </button>
     </aside>
 
     <main class="hub-main">
 
+        <!-- STUDENT HUB HOME -->
         <section id="hubHome" class="hub-screen active">
             <div class="page-header">
                 <div>
                     <p class="mini-title">STUDENT OPERATIONS</p>
                     <h2>Student Hub</h2>
-                    <p class="subtext">Switch between student profiles, attendance, and observations without leaving this page.</p>
+                    <p class="subtext">Switch between student profiles, attendance, medications, and observations without leaving this page.</p>
                 </div>
             </div>
 
@@ -102,88 +114,160 @@
                     <div class="card-header">
                         <h3>Attendance Alerts</h3>
                     </div>
-
                     <div id="attendanceAlerts"></div>
+                </div>
+
+                <div class="student-panel">
+                    <div class="card-header">
+                        <h3>Medication Alerts</h3>
+                    </div>
+                    <div id="medicationAlerts"></div>
                 </div>
 
                 <div class="student-panel">
                     <div class="card-header">
                         <h3>Recent Observations</h3>
                     </div>
-
                     <div id="recentObservations"></div>
                 </div>
             </div>
         </section>
 
+        <!-- STUDENTS SECTION -->
         <section id="studentsScreen" class="hub-screen">
             <div class="page-header">
                 <div>
                     <p class="mini-title">STUDENT DIRECTORY</p>
                     <h2>Students</h2>
-                    <p class="subtext">Quickly access key details, health notes, and behavior logs.</p>
+                    <p class="subtext">Quickly access key details, health notes, medications, and behavior logs.</p>
                 </div>
 
                 <a href="#" class="add-btn">+ Add Student</a>
             </div>
 
+            <div class="student-panel hidden" id="studentFormCard">
+                <h3>Edit Student</h3>
+
+                <label for="editStudentName">Student Name</label>
+                <input id="editStudentName" type="text">
+
+                <label for="editStudentPronouns">Pronouns</label>
+                <input id="editStudentPronouns" type="text" placeholder="Example: she/her, he/him, they/them">
+
+                <label for="editStudentGroup">Group</label>
+                <select id="editStudentGroup">
+                    <option value="Group 1">Group 1</option>
+                    <option value="Group 2">Group 2</option>
+                    <option value="Group 3">Group 3</option>
+                    <option value="Group 4">Group 4</option>
+                </select>
+
+                <label for="editStudentAge">Age</label>
+                <input id="editStudentAge" type="number">
+
+                <label for="editStudentInstrument">Instrument</label>
+                <input id="editStudentInstrument" type="text">
+
+                <label for="editStudentMedication">Medication</label>
+                <textarea id="editStudentMedication" placeholder="List medications, dosage notes, or write None"></textarea>
+
+                <label for="editStudentDietary">Dietary Restrictions</label>
+                <textarea id="editStudentDietary" placeholder="List allergies, dietary restrictions, or write None"></textarea>
+
+                <label for="editStudentNote">Student Notes</label>
+                <textarea id="editStudentNote"></textarea>
+
+                <div class="form-actions">
+                    <button id="saveStudentEditBtn">Save Student</button>
+                    <button id="cancelStudentEditBtn" class="cancel-btn">Cancel</button>
+                </div>
+            </div>
+
             <div class="student-panel">
-                <div class="card-header">
+                <div class="card-header student-list-header">
                     <h3>Student List</h3>
-                    <input id="studentSearch" type="text" placeholder="Search student name...">
+
+                    <div class="student-controls">
+                        <input id="studentSearch" type="text" placeholder="Search student name...">
+
+                        <select id="studentGroupFilter">
+                            <option value="all">All Groups</option>
+                            <option value="Group 1">Group 1</option>
+                            <option value="Group 2">Group 2</option>
+                            <option value="Group 3">Group 3</option>
+                            <option value="Group 4">Group 4</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div id="studentList"></div>
             </div>
         </section>
 
+        <!-- MEDICATIONS SECTION -->
+        <section id="medicationsScreen" class="hub-screen">
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">MEDICATION TRACKING</p>
+                    <h2>Medications</h2>
+                    <p class="subtext">Track which students still need to take their medication.</p>
+                </div>
+            </div>
+
+            <div class="student-panel">
+                <div class="card-header">
+                    <h3>Medication Checklist</h3>
+                </div>
+
+                <div id="medicationList"></div>
+            </div>
+        </section>
+
+        <!-- ATTENDANCE SECTION -->
         <section id="attendanceScreen" class="hub-screen">
-    <div class="page-header">
-        <div>
-            <p class="mini-title">LIVE ATTENDANCE</p>
-            <h2>Attendance Check-In</h2>
-            <p class="subtext">
-                Scan student QR codes, confirm attendance, and identify missing students.
-            </p>
-        </div>
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">LIVE ATTENDANCE</p>
+                    <h2>Attendance Check-In</h2>
+                    <p class="subtext">Scan student QR codes, confirm attendance, and identify missing students.</p>
+                </div>
 
-        <a href="#" class="submit-btn">Submit Attendance</a>
-    </div>
-
-    <div class="attendance-grid">
-
-        <div class="scanner-card">
-            <h3>QR Scanner</h3>
-
-            <div class="scanner-box">
-                <p>Camera / QR Scanner Area</p>
-                <span>Scan Student Lanyard</span>
+                <a href="#" class="submit-btn">Submit Attendance</a>
             </div>
 
-            <div class="manual-entry">
-                <input type="text" id="manualStudentInput" placeholder="Enter student name manually">
-                <button id="manualStudentBtn">Add Student</button>
+            <div class="attendance-grid">
+                <div class="scanner-card">
+                    <h3>QR Scanner</h3>
+
+                    <div class="scanner-box">
+                        <p>Camera / QR Scanner Area</p>
+                        <span>Scan Student Lanyard</span>
+                    </div>
+
+                    <div class="manual-entry">
+                        <input type="text" id="manualStudentInput" placeholder="Enter student name manually">
+                        <button id="manualStudentBtn">Add Student</button>
+                    </div>
+
+                    <div class="recent-scans">
+                        <h4>Recently Checked In</h4>
+                        <div id="recentScansList"></div>
+                    </div>
+                </div>
+
+                <div class="missing-card">
+                    <div class="missing-head">
+                        <h3>Students Not Checked In</h3>
+                        <span id="missingBadge">0 Missing</span>
+                    </div>
+
+                    <div id="missingStudentsList"></div>
+                </div>
             </div>
+        </section>
 
-            <div class="recent-scans">
-                <h4>Recently Checked In</h4>
-                <div id="recentScansList"></div>
-            </div>
-        </div>
-
-        <div class="missing-card">
-            <div class="missing-head">
-                <h3>Students Not Checked In</h3>
-                <span id="missingBadge">0 Missing</span>
-            </div>
-
-            <div id="missingStudentsList"></div>
-        </div>
-
-    </div>
-</section>
-
-       <section id="observationsScreen" class="hub-screen">
+        <!-- OBSERVATIONS SECTION -->
+        <section id="observationsScreen" class="hub-screen">
             <div class="page-header">
                 <div>
                     <p class="mini-title">OBSERVATIONS</p>
@@ -191,7 +275,10 @@
                     <p class="subtext">Review positive, neutral, and negative student observations at a glance.</p>
                 </div>
 
-                <button id="newObservationBtn" class="add-btn">+ New Observation</button>
+                <div class="page-actions">
+                    <button id="downloadObservationsBtn" class="download-btn">Download CSV</button>
+                    <button id="newObservationBtn" class="add-btn">+ New Observation</button>
+                </div>
             </div>
 
             <div class="observation-layout single-column">
@@ -233,13 +320,32 @@
 
                     <div class="form-actions">
                         <button id="saveObservationBtn">Save Observation</button>
+                        <button id="deleteObservationBtn" class="delete-btn hidden">Delete Observation</button>
                         <button id="cancelObservationBtn" class="cancel-btn">Cancel</button>
                     </div>
                 </div>
 
                 <div class="observation-card">
-                    <div class="card-header">
+                    <div class="card-header observation-header">
                         <h3>Recent Observations</h3>
+
+                        <div class="observation-controls">
+                            <input id="observationSearch" type="text" placeholder="Search by student name...">
+
+                            <select id="observationFilter">
+                                <option value="all">All</option>
+                                <option value="positive">Positive</option>
+                                <option value="neutral">Neutral</option>
+                                <option value="negative">Negative</option>
+                            </select>
+
+                            <select id="observationSort">
+                                <option value="recent">Most Recent</option>
+                                <option value="positive">Positive First</option>
+                                <option value="neutral">Neutral First</option>
+                                <option value="negative">Negative First</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div id="observationList"></div>
@@ -248,9 +354,42 @@
             </div>
         </section>
 
+        <!-- DIETARY RESTRICTIONS SECTION -->
+         <section id="dietaryScreen" class="hub-screen">
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">DIETARY NEEDS</p>
+                    <h2>Dietary Restrictions</h2>
+                    <p class="subtext">Quickly review student allergies, food restrictions, and meal notes.</p>
+                </div>
+            </div>
+
+            <div class="student-panel">
+                <div class="card-header">
+                    <h3>Dietary Restrictions List</h3>
+                </div>
+
+                <div id="dietaryList"></div>
+            </div>
+        </section>
+
     </main>
 
 </section>
+
+<div id="acknowledgeModal" class="ack-modal hidden">
+    <div class="ack-card">
+        <h3>Acknowledge Observation</h3>
+        <p class="student-info">Add a note explaining what was done to acknowledge this observation.</p>
+
+        <textarea id="acknowledgementNoteInput" placeholder="Example: Spoke with student, contacted PA, followed up with group lead..."></textarea>
+
+        <div class="form-actions">
+            <button id="saveAcknowledgementBtn">Save Acknowledgement</button>
+            <button id="cancelAcknowledgementBtn" class="cancel-btn">Cancel</button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
