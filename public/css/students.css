@@ -218,6 +218,115 @@ header nav a:hover{
     font-weight:600;
 }
 
+.student-list-header{
+    align-items:flex-start;
+}
+
+.student-controls{
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:12px;
+    width:100%;
+    max-width:520px;
+}
+
+#studentGroupFilter,
+#editStudentName,
+#editStudentPronouns,
+#editStudentGroup,
+#editStudentAge,
+#editStudentInstrument,
+#editStudentMedication,
+#editStudentDietary,
+#editStudentNote{
+    width:100%;
+    padding:14px 16px;
+    border:1px solid #e5e5e5;
+    border-radius:14px;
+    background:#f5f5f5;
+    font-family:'Montserrat',sans-serif;
+    font-size:15px;
+}
+
+#editStudentMedication,
+#editStudentDietary,
+#editStudentNote{
+    min-height:110px;
+    resize:vertical;
+}
+
+.student-panel label{
+    display:block;
+    font-weight:700;
+    margin:16px 0 8px;
+}
+
+.student-actions{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:10px;
+}
+.edit-student-btn{
+    background:#6f2da8;
+    color:white;
+    border:none;
+    padding:12px 18px;
+    border-radius:14px;
+    font-family:'Montserrat',sans-serif;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.25s;
+    box-shadow:0 14px 30px rgba(0,0,0,.12);
+}
+
+#saveStudentEditBtn{
+    margin-top:18px;
+    background:#6f2da8;
+    color:white;
+    border:none;
+    padding:16px 22px;
+    border-radius:18px;
+    font-family:'Montserrat',sans-serif;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.25s;
+    box-shadow:0 14px 30px rgba(0,0,0,.18);
+}
+
+.edit-student-btn:hover,
+#saveStudentEditBtn:hover{
+    transform:translateY(-3px) scale(1.02);
+}
+
+@media(max-width:700px){
+    .student-controls{
+        grid-template-columns:1fr;
+        max-width:100%;
+    }
+
+    .student-actions{
+        align-items:flex-start;
+    }
+}
+
+.med-check-label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:800;
+    color:#6f2da8;
+}
+
+.med-check-label input{
+    width:22px;
+    height:22px;
+    accent-color:#8bc53f;
+    cursor:pointer;
+}
+
 .dashboard-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -280,6 +389,92 @@ header nav a:hover{
     justify-content:space-between;
     align-items:center;
     gap:18px;
+}
+
+.observation-header{
+    align-items:flex-start;
+}
+
+.observation-controls{
+    display:grid;
+    grid-template-columns:1.2fr 1fr 1fr;
+    gap:12px;
+    width:100%;
+    max-width:760px;
+}
+
+#observationSearch,
+#observationFilter,
+#observationSort{
+    width:100%;
+    padding:14px 16px;
+    border:1px solid #e5e5e5;
+    border-radius:14px;
+    background:#f5f5f5;
+    font-family:'Montserrat',sans-serif;
+    font-size:15px;
+}
+
+@media(max-width:900px){
+    .observation-controls{
+        grid-template-columns:1fr;
+        max-width:100%;
+    }
+}
+
+.acknowledge-box{
+    display:flex;
+    align-items:flex-start;
+    padding-top:4px;
+}
+
+.acknowledge-check{
+    width:22px;
+    height:22px;
+    cursor:pointer;
+    accent-color:#6f2da8;
+}
+
+.observation-main-info{
+    flex:1;
+}
+
+.observation-actions{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:10px;
+}
+
+.edit-observation-btn{
+    border:none;
+    background:#6f2da8;
+    color:white;
+    padding:10px 14px;
+    border-radius:12px;
+    font-family:'Montserrat',sans-serif;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.acknowledgement-note{
+    margin-top:10px;
+    padding:12px;
+    border-radius:12px;
+    background:rgba(255,255,255,0.65);
+    color:#333;
+    font-weight:600;
+    line-height:1.5;
+}
+
+.observation-row.acknowledged{
+    opacity:0.8;
+}
+
+@media(max-width:700px){
+    .observation-actions{
+        align-items:flex-start;
+    }
 }
 
 .student-name{
@@ -361,6 +556,35 @@ header nav a:hover{
     display:inline-block;
     transition:0.25s;
     box-shadow:0 14px 30px rgba(0,0,0,.18);
+}
+
+.page-actions{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+
+.download-btn{
+    margin-top:18px;
+    background:#1ca6d9;
+    color:white;
+    border:none;
+    padding:16px 22px;
+    border-radius:18px;
+    font-family:'Montserrat',sans-serif;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-block;
+    transition:0.25s;
+    box-shadow:0 14px 30px rgba(0,0,0,.18);
+}
+
+.download-btn:hover{
+    transform:translateY(-4px) scale(1.02);
+    background:#1689b3;
 }
 
 #saveObservationBtn:hover,
@@ -639,6 +863,31 @@ header nav a:hover{
     cursor:pointer;
 }
 
+.cancel-btn:hover{
+    transform:translateY(-4px) scale(1.02);
+    background:#555;
+}
+
+.delete-btn{
+    margin-top:18px;
+    background:#d12c2c;
+    color:white;
+    border:none;
+    padding:16px 22px;
+    border-radius:18px;
+    font-family:'Montserrat',sans-serif;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.25s;
+    box-shadow:0 14px 30px rgba(0,0,0,.18);
+}
+
+.delete-btn:hover{
+    transform:translateY(-4px) scale(1.02);
+    background:#b71c1c;
+}
+
 .mood-options{
     display:grid;
     grid-template-columns:repeat(3,1fr);
@@ -712,3 +961,116 @@ header nav a:hover{
         align-items:flex-start;
     }
 }
+
+.ack-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.45);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+    padding:20px;
+}
+
+.ack-modal.hidden{
+    display:none;
+}
+
+.ack-card{
+    width:100%;
+    max-width:560px;
+    background:white;
+    border-radius:24px;
+    padding:32px;
+    box-shadow:0 18px 35px rgba(0,0,0,.18);
+}
+
+.ack-card h3{
+    font-size:26px;
+    font-weight:800;
+    margin-bottom:10px;
+}
+
+#acknowledgementNoteInput{
+    width:100%;
+    min-height:150px;
+    margin-top:20px;
+    padding:14px 16px;
+    border:1px solid #e5e5e5;
+    border-radius:14px;
+    background:#f5f5f5;
+    font-family:'Montserrat',sans-serif;
+    font-size:15px;
+    resize:vertical;
+}
+
+#saveAcknowledgementBtn{
+    margin-top:18px;
+    background:#6f2da8;
+    color:white;
+    border:none;
+    padding:16px 22px;
+    border-radius:18px;
+    font-family:'Montserrat',sans-serif;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 14px 30px rgba(0,0,0,.18);
+}
+
+#hubHome .dashboard-grid .student-panel:nth-child(3){
+    grid-column:1 / -1;
+}
+/* ── CSV IMPORT CONTROLS ─────────────────────────────── */
+.csv-import-wrap {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.csv-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: #6f2da8;
+    color: white;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.csv-label:hover { background: #5b238c; }
+
+.clear-btn {
+    padding: 10px 18px;
+    background: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.clear-btn:hover { background: #fecaca; }
+
+/* Delete button on student rows */
+.delete-student-btn {
+    padding: 6px 10px;
+    background: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    margin-left: 4px;
+}
+
+.delete-student-btn:hover { background: #fecaca; }
