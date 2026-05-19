@@ -4,100 +4,156 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SHAD Portal | Dashboard</title>
-
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
 <link rel="stylesheet" href="/public/css/dashboard.css">
-
-<script src= "/public/js/dashboard.js"></script>
-
+<script src="/public/js/db.js"></script>
 </head>
 <body>
-
 <header class="topbar">
-
     <div class="logo-wrap">
         <div class="logo-box"></div>
         <h1>SHAD Portal</h1>
-        <nav>
-            <a href="/public/index.html">Home</a>
-        </nav>
+        <nav><a href="/public/index.html">Home</a></nav>
     </div>
-
     <nav>
         <a href="/public/dashboard.html">Dashboard</a>
         <a href="/public/students.html">Students</a>
         <a href="/public/contact.html">Contact Staff</a>
         <a href="/public/issues.html">Report An Issue</a>
     </nav>
-
 </header>
 
-
 <section class="dashboard-page">
-
     <div class="hero-card">
-
         <p class="mini-title">CONTROL CENTER</p>
-
         <h2>Operations Dashboard</h2>
-
-        <p class="subtext">
-            This page is reserved for live analytics, charts, alerts,
-            attendance data, staffing insights, and future Python integrations.
-        </p>
-
+        <p class="subtext">Live attendance, alerts, and student data pulled from the portal database.</p>
         <div class="status-row">
-
             <div class="status-box green">
-                <h3>Attendance Data</h3>
-                <span>Coming Soon</span>
+                <h3 id="db-checkedIn">—</h3>
+                <span>Checked In Today</span>
             </div>
-
-            <div class="status-box purple">
-                <h3>Live Reports</h3>
-                <span>Coming Soon</span>
-            </div>
-
             <div class="status-box orange">
-                <h3>Automation</h3>
-                <span>Coming Soon</span>
+                <h3 id="db-missing">—</h3>
+                <span>Not Yet Checked In</span>
             </div>
-
+            <div class="status-box purple">
+                <h3 id="db-total">—</h3>
+                <span>Total Students</span>
+            </div>
         </div>
-
     </div>
-
 
     <div class="placeholder-grid">
-
         <div class="panel">
-            <h3>Chart Area</h3>
-            <p>Use this section for matplotlib / Plotly charts later.</p>
+            <h3>Attendance Summary</h3>
+            <p id="db-attendance-text" style="font-size:14px;line-height:1.6;color:#555;">Loading...</p>
+            <a href="/public/students.html" style="display:inline-block;margin-top:12px;color:#6f2da8;font-weight:700;font-size:13px;">Go to Attendance →</a>
         </div>
-
         <div class="panel">
-            <h3>Attendance Feed</h3>
-            <p>Recent scans, absences, trends, timestamps.</p>
+            <h3>Recent Check-Ins</h3>
+            <div id="db-attendance-feed">Loading...</div>
         </div>
-
         <div class="panel">
             <h3>Alerts</h3>
-            <p>Late students, missing check-ins, incidents.</p>
+            <div id="db-alerts">Loading...</div>
         </div>
-
         <div class="panel">
-            <h3>Staff Metrics</h3>
-            <p>Coverage gaps, active staff, swaps pending.</p>
+            <h3>Medications</h3>
+            <p id="db-meds-text" style="font-size:14px;line-height:1.6;color:#555;">Loading...</p>
+            <a href="/public/students.html" style="display:inline-block;margin-top:12px;color:#6f2da8;font-weight:700;font-size:13px;">Go to Medications →</a>
         </div>
-
     </div>
-
 </section>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    renderDashboard();
+    setInterval(renderDashboard, 30000);
+    window.addEventListener('storage', renderDashboard);
+});
+
+function renderDashboard() {
+    var stats      = ShadDB.getDashboardStats();
+    var students   = ShadDB.getStudents();
+    var attendance = ShadDB.getTodayAttendance();
+
+    document.getElementById('db-checkedIn').textContent = stats.checkedIn;
+    document.getElementById('db-missing').textContent   = stats.missing;
+    document.getElementById('db-total').textContent     = stats.totalStudents;
+
+    var attText = document.getElementById('db-attendance-text');
+    if (stats.totalStudents === 0) {
+        attText.textContent = 'No students loaded yet. Import a CSV on the Students page.';
+    } else {
+        attText.textContent = stats.checkedIn + ' of ' + stats.totalStudents + ' students checked in. ' +
+            (stats.missing > 0 ? stats.missing + ' still missing.' : 'All accounted for!');
+    }
+
+    var feedBox = document.getElementById('db-attendance-feed');
+    feedBox.innerHTML = '';
+    var checkedStudents = students.filter(function(s) { return attendance[s.id] && attendance[s.id].checkedIn; });
+    if (checkedStudents.length === 0) {
+        feedBox.innerHTML = '<p style="color:#888;font-size:14px;">No check-ins recorded today.</p>';
+    } else {
+        var sorted = checkedStudents.slice().sort(function(a,b) {
+            return ((attendance[b.id]||{}).time||'').localeCompare((attendance[a.id]||{}).time||'');
+        }).slice(0,5);
+        sorted.forEach(function(s) {
+            var t = attendance[s.id].time ? new Date(attendance[s.id].time) : null;
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px;';
+            row.innerHTML = '<span style="font-weight:600;">' + esc(s.name) + '</span><span style="color:#888;">' + (t ? fmtTime(t) : '') + '</span>';
+            feedBox.appendChild(row);
+        });
+        if (checkedStudents.length > 5) {
+            var more = document.createElement('p');
+            more.style.cssText = 'color:#888;font-size:13px;margin-top:8px;';
+            more.textContent = '+ ' + (checkedStudents.length - 5) + ' more checked in.';
+            feedBox.appendChild(more);
+        }
+    }
+
+    var alertsBox = document.getElementById('db-alerts');
+    alertsBox.innerHTML = '';
+    var missing = students.filter(function(s) { return !(attendance[s.id] && attendance[s.id].checkedIn); });
+    if (missing.length === 0 && stats.unacknowledged === 0) {
+        alertsBox.innerHTML = '<p style="color:#8bc53f;font-weight:700;font-size:14px;">No active alerts.</p>';
+    } else {
+        missing.slice(0,3).forEach(function(s) {
+            var row = document.createElement('div');
+            row.style.cssText = 'padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px;';
+            row.innerHTML = '<span style="color:#d12c2c;font-weight:700;">&#9888; </span><strong>' + esc(s.name) + '</strong> — not checked in';
+            alertsBox.appendChild(row);
+        });
+        if (missing.length > 3) {
+            var m2 = document.createElement('p');
+            m2.style.cssText = 'color:#888;font-size:13px;margin-top:4px;';
+            m2.textContent = '+ ' + (missing.length - 3) + ' more missing.';
+            alertsBox.appendChild(m2);
+        }
+        if (stats.unacknowledged > 0) {
+            var o = document.createElement('div');
+            o.style.cssText = 'padding:8px 0;font-size:14px;';
+            o.innerHTML = '<span style="color:#f58220;font-weight:700;">&#128203; </span>' + stats.unacknowledged + ' unacknowledged observation(s).';
+            alertsBox.appendChild(o);
+        }
+    }
+
+    var medsText = document.getElementById('db-meds-text');
+    medsText.textContent = stats.needsMedication === 0
+        ? 'All required medications marked as taken.'
+        : stats.needsMedication + ' student(s) still need their medication.';
+}
+
+function fmtTime(d) {
+    var h = d.getHours(), m = d.getMinutes().toString().padStart(2,'0');
+    var ampm = h >= 12 ? 'PM' : 'AM'; h = h%12||12;
+    return h + ':' + m + ' ' + ampm;
+}
+function esc(s) { return !s ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
 </body>
 </html>
