@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHAD Portal | Admin</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/public/css/admin.css">
+
+<script src="/public/js/db.js" defer></script>
+<script src="/public/js/admin.js" defer></script>
+</head>
+
+<body>
+
+<header class="topbar">
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+        <nav>
+            <a href="/public/index.html">Home</a>
+        </nav>
+    </div>
+
+    <nav>
+        <a href="/public/dashboard.html">Dashboard</a>
+        <a href="/public/students.html">Students</a>
+        <a href="/public/contact.html">Contact Staff</a>
+        <a href="/public/issues.html">Report An Issue</a>
+    </nav>
+</header>
+
+<section class="admin-page">
+
+    <div class="page-header">
+        <p class="mini-title">ADMIN TOOLS</p>
+        <h2>Admin Panel</h2>
+        <p class="subtext">
+            Clear system issue tickets, upload staff contacts, and upload the staff schedule.
+        </p>
+    </div>
+
+    <div class="admin-grid">
+
+        <div class="admin-card">
+            <h3>Issue Tickets</h3>
+            <p>Clear all submitted Report an Issue tickets.</p>
+
+            <div id="ticketList" class="ticket-list"></div>
+
+            <button id="clearTicketsBtn" class="danger-btn">Clear All Tickets</button>
+        </div>
+
+        <div class="admin-card">
+            <h3>Upload Staff CSV</h3>
+            <p>CSV columns required: <strong>Name, Email, Slack</strong></p>
+
+            <input id="staffCsvInput" type="file" accept=".csv">
+            <button id="uploadStaffBtn">Upload Staff</button>
+
+            <p class="example">Example: Sarah Kim,sarah@email.com,https://slack.com/...</p>
+        </div>
+
+        <div class="admin-card">
+            <h3>Upload Schedule CSV</h3>
+            <p>CSV columns required: <strong>Name, Role, Status, Hours</strong></p>
+
+            <input id="scheduleCsvInput" type="file" accept=".csv">
+            <button id="uploadScheduleBtn">Upload Schedule</button>
+
+            <p class="example">Example: Sarah Kim,PA,duty,8AM - 4PM</p>
+        </div>
+
+        <div class="admin-card">
+            <h3>Upload Student CSV</h3>
+            <p>CSV columns accepted: <strong>Name, Pronouns, Group, Age, Instrument, Medication, Dietary, Note</strong></p>
+
+            <input id="studentCsvInput" type="file" accept=".csv">
+
+            <div class="button-row">
+                <button id="uploadStudentsReplaceBtn">Replace Students</button>
+                <button id="uploadStudentsAddBtn">Add Students</button>
+            </div>
+
+            <button id="clearStudentsAdminBtn" class="danger-btn">Clear All Students</button>
+
+            <p class="example">Example: Jane Smith,she/her,Group 1,16,Violin,None,Vegetarian,Quiet student</p>
+        </div>
+
+    </div>
+
+</section>
+
+</body>
+</html>
