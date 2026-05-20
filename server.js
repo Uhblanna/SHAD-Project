@@ -55,6 +55,38 @@ function rowToReport(row) {
     };
 }
 
+function rowToIssueTicket(row) {
+    return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        phone: row.phone || "",
+        issueType: row.issue_type || "",
+        description: row.description,
+        urgent: row.urgent === 1,
+        createdAt: row.created_at
+    };
+}
+
+function rowToStaff(row) {
+    return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        slackLink: row.slack_link || ""
+    };
+}
+
+function rowToSchedule(row) {
+    return {
+        id: row.id,
+        name: row.name,
+        role: row.role || "",
+        status: row.status || "duty",
+        hours: row.hours || ""
+    };
+}
+
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -229,6 +261,125 @@ app.post("/api/reports", (req, res) => {
         db.get("SELECT * FROM reports WHERE id = ?", [this.lastID], (err2, row) => {
             if (err2) return res.status(500).json({ error: err2.message });
             res.json(rowToReport(row));
+        });
+    });
+});
+
+// ISSUE TICKETS
+app.get("/api/issue-tickets", (req, res) => {
+    db.all("SELECT * FROM issue_tickets ORDER BY datetime(created_at) DESC, id DESC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(rowToIssueTicket));
+    });
+});
+
+app.post("/api/issue-tickets", (req, res) => {
+    const t = req.body;
+
+    db.run(`
+        INSERT INTO issue_tickets (name, email, phone, issue_type, description, urgent)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `, [
+        t.name,
+        t.email,
+        t.phone || "",
+        t.issueType || "",
+        t.description,
+        t.urgent ? 1 : 0
+    ], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.get("SELECT * FROM issue_tickets WHERE id = ?", [this.lastID], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json(rowToIssueTicket(row));
+        });
+    });
+});
+
+app.delete("/api/issue-tickets", (req, res) => {
+    db.run("DELETE FROM issue_tickets", [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ cleared: this.changes });
+    });
+});
+
+
+// STAFF
+app.get("/api/staff", (req, res) => {
+    db.all("SELECT * FROM staff ORDER BY name ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(rowToStaff));
+    });
+});
+
+app.post("/api/staff/replace", (req, res) => {
+    const staff = Array.isArray(req.body.staff) ? req.body.staff : [];
+
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        db.run("DELETE FROM staff");
+
+        const stmt = db.prepare(`
+            INSERT INTO staff (name, email, slack_link)
+            VALUES (?, ?, ?)
+        `);
+
+        staff.forEach(person => {
+            stmt.run([
+                person.name,
+                person.email,
+                person.slackLink || ""
+            ]);
+        });
+
+        stmt.finalize(err => {
+            if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
+
+            db.run("COMMIT", err2 => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ inserted: staff.length });
+            });
+        });
+    });
+});
+
+
+// SCHEDULE
+app.get("/api/schedule", (req, res) => {
+    db.all("SELECT * FROM schedule ORDER BY id ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(rowToSchedule));
+    });
+});
+
+app.post("/api/schedule/replace", (req, res) => {
+    const schedule = Array.isArray(req.body.schedule) ? req.body.schedule : [];
+
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        db.run("DELETE FROM schedule");
+
+        const stmt = db.prepare(`
+            INSERT INTO schedule (name, role, status, hours)
+            VALUES (?, ?, ?, ?)
+        `);
+
+        schedule.forEach(shift => {
+            stmt.run([
+                shift.name,
+                shift.role || "",
+                shift.status || "duty",
+                shift.hours || ""
+            ]);
+        });
+
+        stmt.finalize(err => {
+            if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
+
+            db.run("COMMIT", err2 => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ inserted: schedule.length });
+            });
         });
     });
 });
