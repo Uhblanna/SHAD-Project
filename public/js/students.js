@@ -15,7 +15,6 @@ let qrAnimFrame        = null;
 document.addEventListener('DOMContentLoaded', () => {
     setupHubNavigation();
     setupHamburgerMenu();
-    setupCSVImport();
     setupAddStudentBtn();
     refreshAll();
 
@@ -74,48 +73,6 @@ function loadStats() {
     el('observationCount').textContent = stats.observationCount;
 }
 
-// ── CSV IMPORT ────────────────────────────────────────────
-function setupCSVImport() {
-    const header = document.querySelector('#studentsScreen .page-header');
-    if (!header) return;
-
-    const importWrap = document.createElement('div');
-    importWrap.className = 'csv-import-wrap';
-    importWrap.innerHTML =
-        '<label class="csv-label" title="Upload a CSV to populate the student list">' +
-            '📂 Import CSV' +
-            '<input type="file" id="csvFileInput" accept=".csv" style="display:none">' +
-        '</label>' +
-        '<button id="clearStudentsBtn" class="clear-btn" title="Remove all students">Clear All</button>';
-    header.appendChild(importWrap);
-
-    document.getElementById('csvFileInput').addEventListener('change', handleCSVUpload);
-    document.getElementById('clearStudentsBtn').addEventListener('click', () => {
-        if (confirm('Remove all students from the database? This cannot be undone.')) {
-            ShadDB.setStudents([]);
-            refreshAll();
-            showMsg('Student list cleared.', 'success');
-        }
-    });
-}
-
-function handleCSVUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-        const rows = ShadDB.parseCSV(ev.target.result);
-        if (rows.length === 0) { showMsg('CSV appears empty or unreadable.', 'error'); return; }
-        const replace = confirm(
-            'Found ' + rows.length + ' student(s) in the CSV.\n\nClick OK to REPLACE the current list, or Cancel to ADD to it.'
-        );
-        const count = replace ? ShadDB.clearAndImportStudents(rows) : ShadDB.importStudentsFromCSV(rows);
-        refreshAll();
-        showMsg('Imported ' + count + ' student(s) successfully.', 'success');
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-}
 
 // ── ADD STUDENT ───────────────────────────────────────────
 function setupAddStudentBtn() {
