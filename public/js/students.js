@@ -386,6 +386,7 @@ function startQRScanner() {
             qrStream = stream;
             video.srcObject = stream;
             video.style.display = 'block';
+            document.querySelector('.scanner-box').classList.add('scanning');
             startBtn.style.display = 'none';
             stopBtn.style.display  = 'block';
             status.textContent = '\uD83D\uDFE2 Scanning\u2026 point camera at a student QR code';
@@ -475,6 +476,7 @@ function stopQRScanner() {
     var video = el('qrVideo'), status = el('qrStatus');
     var startBtn = el('startQRBtn'), stopBtn = el('stopQRBtn');
     if (video)    { video.style.display = 'none'; video.srcObject = null; }
+    document.querySelector('.scanner-box')?.classList.remove('scanning');
     if (status)   { status.textContent = 'Camera stopped.'; status.style.color = '#888'; }
     if (startBtn) startBtn.style.display = 'block';
     if (stopBtn)  stopBtn.style.display  = 'none';
