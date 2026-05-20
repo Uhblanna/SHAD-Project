@@ -12,7 +12,7 @@
 
 <link rel="stylesheet" href="/public/css/issues.css">
 
-<script src="/public/js/issues.js"></script>
+<script src="/public/js/issues.js" defer></script>
 
 </head>
 <body>
@@ -61,16 +61,16 @@
             <h3>Submit New Issue</h3>
 
             <label>Your Name</label>
-            <input type="text" placeholder="Full name">
+            <input id="issueName" type="text" placeholder="Full name">
 
             <label>Email Address</label>
-            <input type="email" placeholder="you@example.com">
+            <input id="issueEmail" type="email" placeholder="you@example.com">
 
             <label>Phone Number</label>
-            <input type="text" placeholder="Optional">
+            <input id="issuePhone" type="text" placeholder="Optional">
 
             <label>Issue Type</label>
-            <select>
+            <select id="issueType">
                 <option>Select issue type</option>
                 <option>Login Problem</option>
                 <option>Broken Page</option>
@@ -81,42 +81,27 @@
             </select>
 
             <label>Describe the Problem</label>
-            <textarea placeholder="What happened? What page were you on? What did you expect to happen?"></textarea>
+            <textarea id="issueDescription" placeholder="What happened? What page were you on? What did you expect to happen?"></textarea>
 
             <label>Upload Screenshot</label>
             <input type="file" class="file-upload">
 
             <label class="urgent-check">
-                <input type="checkbox">
+                <input id="issueUrgent" type="checkbox">
                 Mark as urgent issue
             </label>
 
-            <button>Send Issue Report</button>
+            <button id="sendIssueBtn" type="button">Send Issue Report</button>
 
         </div>
-
 
         <!-- RIGHT SIDE -->
         <div class="system-card">
 
             <h3>System Error Queue</h3>
 
-            <div class="error-item">
-                <h4>Attendance Page Not Loading</h4>
-                <p>Reported by Sarah Kim</p>
-                <span>Today • 9:42 AM</span>
-            </div>
-
-            <div class="error-item">
-                <h4>Student Search Returning Blank</h4>
-                <p>Reported by Jordan Lee</p>
-                <span>Today • 11:08 AM</span>
-            </div>
-
-            <div class="error-item">
-                <h4>QR Scanner Camera Permission Error</h4>
-                <p>Reported by Alex Chen</p>
-                <span>Yesterday • 6:14 PM</span>
+            <div id="issueQueue">
+                <p>No issue tickets submitted yet.</p>
             </div>
 
         </div>
