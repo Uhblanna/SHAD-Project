@@ -7,13 +7,7 @@
 // ── STAFF SCHEDULE DATA ───────────────────────────────────
 // When you connect Firebase this will come from the database.
 
-let schedule = [
-    { id: 1, name: 'Sarah Kim',  role: 'PA',       status: 'duty',   hours: '8AM - 4PM'   },
-    { id: 2, name: 'Jordan Lee', role: 'PA',       status: 'duty',   hours: '10AM - 6PM'  },
-    { id: 3, name: 'Alex Chen',  role: 'Floater',  status: 'oncall', hours: 'All Day'      },
-    { id: 4, name: 'Morgan Bell',role: 'PA',       status: 'halfday',hours: 'Off Until 2PM'},
-    { id: 5, name: 'Priya Das',  role: 'Director', status: 'away',   hours: 'Full Day'     },
-];
+let schedule = [];
 
 const statusLabels = {
     duty:    { text: 'On Duty',  css: 'green'  },
@@ -27,11 +21,19 @@ const statusLabels = {
 
 document.addEventListener('DOMContentLoaded', function() {
 
-    renderSchedule();
+    loadSchedule();
     setupAddShift();
 
 });
 
+function loadSchedule() {
+    fetch("/api/schedule")
+        .then(res => res.json())
+        .then(data => {
+            schedule = data;
+            renderSchedule();
+        });
+}
 
 // ── RENDER SCHEDULE TABLE ─────────────────────────────────
 
