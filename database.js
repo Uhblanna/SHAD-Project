@@ -57,6 +57,37 @@ db.serialize(() => {
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     `);
+        db.run(`
+        CREATE TABLE IF NOT EXISTS issue_tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT DEFAULT '',
+            issue_type TEXT DEFAULT '',
+            description TEXT NOT NULL,
+            urgent INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS staff (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            slack_link TEXT DEFAULT ''
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS schedule (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            role TEXT DEFAULT '',
+            status TEXT DEFAULT 'duty',
+            hours TEXT DEFAULT ''
+        )
+    `);
 });
 
 module.exports = db;
