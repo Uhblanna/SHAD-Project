@@ -226,3 +226,19 @@ nav a:hover{
         width:92%;
     }
 }
+
+.admin-footer{
+    width:88%;
+    margin:30px auto;
+    text-align:right;
+}
+
+.admin-footer a{
+    color:#6f2da8;
+    font-weight:800;
+    text-decoration:none;
+}
+
+.admin-footer a:hover{
+    text-decoration:underline;
+}
