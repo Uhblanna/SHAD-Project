@@ -225,9 +225,10 @@ nav a:hover { color: #8bc53f; }
         <div id="formState">
             <div class="rec-icon">🌅</div>
             <p class="mini">MORNING REC</p>
-            <h2>Sign Up for Today</h2>
+            <!-- Isabelle McLean — Sign-up is for the NEXT day's morning rec; date label below shows tomorrow's date -->
+            <h2>Sign Up for Tomorrow</h2>
             <p class="date-line" id="dateDisplay"></p>
-            <p class="sub">Select your name below to sign up for this morning's recreation activities.</p>
+            <p class="sub">Select your name below to sign up for tomorrow morning's recreation activities.</p>
 
             <select class="form-select" id="studentSelect">
                 <option value="">Loading names...</option>
@@ -242,7 +243,7 @@ nav a:hover { color: #8bc53f; }
         <div class="success-state" id="successState">
             <div class="check">✓</div>
             <h3>You're Signed Up!</h3>
-            <p id="successName">See you at morning rec today.</p>
+            <p id="successName">See you at morning rec tomorrow.</p>
             <button class="sign-up-another" onclick="resetForm()">Sign up another person</button>
         </div>
 
@@ -254,9 +255,11 @@ nav a:hover { color: #8bc53f; }
 </div>
 
 <script>
-var today = new Date();
+// Isabelle McLean — Display TOMORROW's date (students are signing up the night before for the next morning's rec)
+var tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
 var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-document.getElementById('dateDisplay').textContent = today.toLocaleDateString('en-CA', options);
+document.getElementById('dateDisplay').textContent = tomorrow.toLocaleDateString('en-CA', options);
 
 function loadStudents() {
     fetch('/api/students')
@@ -311,7 +314,7 @@ function submitSignup() {
             btn.disabled = false;
         } else {
             document.getElementById('formState').style.display = 'none';
-            document.getElementById('successName').textContent = name + ' — see you at morning rec today!';
+            document.getElementById('successName').textContent = name + ' — see you at morning rec tomorrow!';
             document.getElementById('successState').style.display = 'flex';
         }
     })

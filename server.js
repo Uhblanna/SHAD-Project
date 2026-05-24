@@ -45,6 +45,13 @@ function todayKey() {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
+// Isabelle McLean — Returns date string for TOMORROW; used by morning rec routes since students sign up the night before
+function tomorrowKey() {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
 function rowToStudent(row) {
     return {
         id: row.id,
@@ -413,36 +420,40 @@ app.post("/api/schedule/replace", (req, res) => {
     });
 });
 
-// Isabelle McLean — Morning rec API routes: fetch today's list, submit a signup (blocks same-day duplicates), remove one entry, or clear the whole day
+// Isabelle McLean — Morning rec API routes: fetch tomorrow's list (since rec is for the next morning), submit a signup, remove one entry, or clear all
 // MORNING REC
 app.get("/api/morning-rec", (req, res) => {
-    const today = todayKey();
-    db.all("SELECT * FROM morning_rec_signups WHERE signup_date = ? ORDER BY created_at ASC", [today], (err, rows) => {
+    // Isabelle McLean — Returns TOMORROW's signups (the upcoming morning rec); kids sign up the evening before
+    const tomorrow = tomorrowKey();
+    db.all("SELECT * FROM morning_rec_signups WHERE signup_date = ? ORDER BY created_at ASC", [tomorrow], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
 });
 
+// Isabelle McLean — POST stores TOMORROW's date as signup_date because students sign up the night before for the next morning's rec
 app.post("/api/morning-rec", (req, res) => {
     const { student_name } = req.body;
     if (!student_name || !student_name.trim()) return res.status(400).json({ error: "Student name is required." });
-    const today = todayKey();
+
+    const tomorrow = tomorrowKey();
     const name = student_name.trim();
 
-    db.get("SELECT id FROM morning_rec_signups WHERE student_name = ? AND signup_date = ?", [name, today], (err, row) => {
+    db.get("SELECT id FROM morning_rec_signups WHERE student_name = ? AND signup_date = ?", [name, tomorrow], (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
-        if (row) return res.status(409).json({ error: "You're already signed up for today!" });
+        if (row) return res.status(409).json({ error: "You're already signed up for tomorrow!" });
 
-        db.run("INSERT INTO morning_rec_signups (student_name, signup_date) VALUES (?, ?)", [name, today], function(err2) {
+        db.run("INSERT INTO morning_rec_signups (student_name, signup_date) VALUES (?, ?)", [name, tomorrow], function(err2) {
             if (err2) return res.status(500).json({ error: err2.message });
-            res.json({ id: this.lastID, student_name: name, signup_date: today });
+            res.json({ id: this.lastID, student_name: name, signup_date: tomorrow });
         });
     });
 });
 
+// Isabelle McLean — Clears TOMORROW's signups (the upcoming rec session); kept the /today route name for backwards-compat with the staff page
 app.delete("/api/morning-rec/today", (req, res) => {
-    const today = todayKey();
-    db.run("DELETE FROM morning_rec_signups WHERE signup_date = ?", [today], function(err) {
+    const tomorrow = tomorrowKey();
+    db.run("DELETE FROM morning_rec_signups WHERE signup_date = ?", [tomorrow], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ cleared: this.changes });
     });

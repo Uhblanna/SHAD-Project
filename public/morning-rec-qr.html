@@ -287,10 +287,10 @@ nav a:hover { color: #6f2da8; }
         <button class="print-btn" onclick="window.print()">🖨 Print QR Code</button>
     </div>
 
-    <!-- Isabelle McLean — Sign-ups panel: polls /api/morning-rec every 15s; staff can remove individual entries or clear the whole day -->
-    <!-- Today's Signups -->
+    <!-- Isabelle McLean — Sign-ups panel: polls /api/morning-rec every 15s; shows TOMORROW's signups since students sign up the evening before -->
+    <!-- Tomorrow's Signups -->
     <div class="card signups-panel">
-        <div class="card-title">Today's Sign-Ups</div>
+        <div class="card-title">Tomorrow's Sign-Ups</div>
         <h2>Morning Rec</h2>
         <p class="card-sub" id="dateDisplay"></p>
 
@@ -299,10 +299,10 @@ nav a:hover { color: #6f2da8; }
         </div>
 
         <ul class="signups-list" id="signupsList">
-            <li class="empty-state">No sign-ups yet today.</li>
+            <li class="empty-state">No sign-ups yet for tomorrow.</li>
         </ul>
 
-        <button class="clear-btn" onclick="clearToday()">Clear Today's Sign-Ups</button>
+        <button class="clear-btn" onclick="clearToday()">Clear Tomorrow's Sign-Ups</button>
     </div>
 
 </div>
@@ -324,9 +324,11 @@ new QRCode(document.getElementById('qrcode'), {
     correctLevel: QRCode.CorrectLevel.H
 });
 
-var today = new Date();
+// Isabelle McLean — Display TOMORROW's date (rec session students are signing up for)
+var tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
 var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-document.getElementById('dateDisplay').textContent = today.toLocaleDateString('en-CA', options);
+document.getElementById('dateDisplay').textContent = tomorrow.toLocaleDateString('en-CA', options);
 
 function copyUrl() {
     navigator.clipboard.writeText(recUrl).then(function() {
@@ -345,7 +347,7 @@ function loadSignups() {
             countEl.textContent = rows.length + (rows.length === 1 ? ' student' : ' students');
 
             if (rows.length === 0) {
-                list.innerHTML = '<li class="empty-state">No sign-ups yet today.</li>';
+                list.innerHTML = '<li class="empty-state">No sign-ups yet for tomorrow.</li>';
                 return;
             }
 
@@ -374,7 +376,7 @@ function removeSignup(id, btn) {
 }
 
 function clearToday() {
-    if (!confirm('Clear all of today\'s morning rec sign-ups?')) return;
+    if (!confirm('Clear all sign-ups for tomorrow\'s morning rec?')) return;
     fetch('/api/morning-rec/today', { method: 'DELETE' })
         .then(function() { loadSignups(); })
         .catch(function() {});
