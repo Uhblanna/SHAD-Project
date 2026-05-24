@@ -99,6 +99,16 @@ db.serialize(() => {
         )
     `);
 
+    // Isabelle McLean — Committee options table: list of committees students can sign up for; populated via admin CSV upload
+    db.run(`
+        CREATE TABLE IF NOT EXISTS committee_options (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL DEFAULT 'Project',
+            description TEXT DEFAULT ''
+        )
+    `);
+
     // Isabelle McLean — Committee signups table: stores student committee registrations; unique constraint blocks duplicate entries
     db.run(`
         CREATE TABLE IF NOT EXISTS committee_signups (

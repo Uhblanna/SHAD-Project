@@ -7,6 +7,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("uploadStudentsReplaceBtn").addEventListener("click", uploadStudentsReplace);
 document.getElementById("uploadStudentsAddBtn").addEventListener("click", uploadStudentsAdd);
 document.getElementById("clearStudentsAdminBtn").addEventListener("click", clearStudentsFromAdmin);
+    // Isabelle McLean — Wires up the Upload Committee Options CSV button on the admin page
+    document.getElementById("uploadCommitteeBtn").addEventListener("click", uploadCommitteeOptionsCSV);
+    // Isabelle McLean — Wires up the Remove a Committee button + confirm remove button
+    document.getElementById("removeCommitteeBtn").addEventListener("click", openRemoveCommitteePanel);
+    document.getElementById("confirmRemoveCommitteeBtn").addEventListener("click", confirmRemoveCommittee);
 });
 
 function apiRequest(method, url, data) {
@@ -143,6 +148,72 @@ function uploadScheduleCSV() {
                 input.value = "";
             });
     });
+}
+
+// Isabelle McLean — Parses committee CSV (Name, Type, Description) and replaces the full committee options list via the API
+function uploadCommitteeOptionsCSV() {
+    const input = document.getElementById("committeeCsvInput");
+    const file = input.files[0];
+
+    if (!file) {
+        alert("Please choose a committee CSV file first.");
+        return;
+    }
+
+    readCSV(file).then(rows => {
+        const committees = rows.map(row => ({
+            name: row.Name || row.name || "",
+            type: row.Type || row.type || "Project",
+            description: row.Description || row.description || row.Details || row.details || ""
+        })).filter(c => c.name);
+
+        apiRequest("POST", "/api/committee-options/replace", { committees })
+            .then(() => {
+                alert(committees.length + " committee option(s) uploaded.");
+                input.value = "";
+            });
+    });
+}
+
+// Isabelle McLean — Loads the current committees into the dropdown, then reveals the remove panel
+function openRemoveCommitteePanel() {
+    const panel = document.getElementById("removeCommitteePanel");
+    const select = document.getElementById("removeCommitteeSelect");
+
+    fetch("/api/committee-options")
+        .then(r => r.json())
+        .then(committees => {
+            if (!committees || committees.length === 0) {
+                alert("No committees to remove. Upload a CSV first.");
+                return;
+            }
+            select.innerHTML = '<option value="">Choose a committee...</option>';
+            committees.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.id;
+                opt.textContent = c.name + " (" + (c.type || "Project") + ")";
+                select.appendChild(opt);
+            });
+            panel.style.display = "block";
+        });
+}
+
+// Isabelle McLean — Deletes the selected committee, then hides the remove panel
+function confirmRemoveCommittee() {
+    const select = document.getElementById("removeCommitteeSelect");
+    const id = select.value;
+    if (!id) {
+        alert("Please choose a committee to remove.");
+        return;
+    }
+    const name = select.options[select.selectedIndex].text;
+    if (!confirm('Remove "' + name + '" from the committee list?')) return;
+
+    apiRequest("DELETE", "/api/committee-options/" + id)
+        .then(() => {
+            alert("Committee removed.");
+            document.getElementById("removeCommitteePanel").style.display = "none";
+        });
 }
 
 function readCSV(file) {

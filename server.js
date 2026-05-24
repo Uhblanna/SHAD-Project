@@ -466,6 +466,41 @@ app.delete("/api/morning-rec/:id", (req, res) => {
     });
 });
 
+// Isabelle McLean — Committee options API: GET list of committees students can sign up for, POST to replace the whole list (uploaded via admin CSV)
+app.get("/api/committee-options", (req, res) => {
+    db.all("SELECT * FROM committee_options ORDER BY type ASC, name ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// Isabelle McLean — Delete a single committee option by ID (used by the "Remove a Committee" button on the admin page)
+app.delete("/api/committee-options/:id", (req, res) => {
+    db.run("DELETE FROM committee_options WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+app.post("/api/committee-options/replace", (req, res) => {
+    const committees = Array.isArray(req.body.committees) ? req.body.committees : [];
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        db.run("DELETE FROM committee_options");
+        const stmt = db.prepare("INSERT INTO committee_options (name, type, description) VALUES (?, ?, ?)");
+        committees.forEach(c => {
+            stmt.run([c.name, c.type || "Project", c.description || ""]);
+        });
+        stmt.finalize(err => {
+            if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
+            db.run("COMMIT", err2 => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ inserted: committees.length });
+            });
+        });
+    });
+});
+
 // Isabelle McLean — Committee signup API routes: fetch all signups, submit a new one (blocks duplicate student+committee combos), remove by ID
 // COMMITTEE SIGNUPS
 app.get("/api/committee-signups", (req, res) => {

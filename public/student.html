@@ -105,6 +105,21 @@ nav a:hover { color: #8bc53f; }
 .badge-green { background: #e8f5d3; color: #5a9a20; }
 .badge-orange { background: #fef0e0; color: #c86000; }
 
+/* Isabelle McLean — Enrollment status banner styles; shows close date when open, switches to red when closed */
+.enrollment-status {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: inline-block;
+    letter-spacing: 0.3px;
+}
+.enrollment-status.open { background: #fef0e0; color: #c86000; }
+.enrollment-status.closed { background: #ffe5e5; color: #b71c1c; }
+.committee-card.disabled { opacity: 0.45; cursor: not-allowed !important; }
+.committee-card.disabled:hover { transform: none; box-shadow: 0 3px 14px rgba(0,0,0,0.06); }
+
 /* MORNING REC CARD */
 .morning-rec-card {
     background: white;
@@ -392,10 +407,14 @@ nav a:hover { color: #8bc53f; }
             <span class="section-badge badge-orange">Sign Up</span>
         </div>
 
+        <!-- Isabelle McLean — Enrollment status banner: only the close date+time is displayed (open date is internal only) -->
+        <div><p id="enrollmentStatus" class="enrollment-status open"></p></div>
+
         <!-- Sports -->
         <div class="committee-group">
             <div class="committee-group-label">Sports Committees</div>
-            <div class="committee-grid">
+            <!-- Isabelle McLean — id="sportsGrid" so JS can replace the placeholder cards with uploaded committees -->
+            <div class="committee-grid" id="sportsGrid">
 
                 <div class="committee-card sports-card" onclick="openModal('Basketball Committee','Sports')">
                     <div class="card-type">Sports</div>
@@ -438,7 +457,8 @@ nav a:hover { color: #8bc53f; }
         <!-- Projects -->
         <div class="committee-group">
             <div class="committee-group-label">Project Committees</div>
-            <div class="committee-grid">
+            <!-- Isabelle McLean — id="projectsGrid" so JS can replace the placeholder cards with uploaded committees -->
+            <div class="committee-grid" id="projectsGrid">
 
                 <div class="committee-card project-card" onclick="openModal('Engineering Design Committee','Project')">
                     <div class="card-type">Project</div>
@@ -506,6 +526,16 @@ nav a:hover { color: #8bc53f; }
 var currentCommittee = '';
 var currentType = '';
 
+// Isabelle McLean — Committee enrollment window (edit these dates to change open/close)
+// Open date is internal only — students never see it. Only the close date+time is displayed.
+var enrollmentOpenDate  = new Date('2026-01-01T00:00:00');
+var enrollmentCloseDate = new Date('2026-07-01T23:59:00');
+
+function isEnrollmentOpen() {
+    var now = new Date();
+    return now >= enrollmentOpenDate && now <= enrollmentCloseDate;
+}
+
 function loadStudents() {
     fetch('/api/students')
         .then(function(r) { return r.json(); })
@@ -526,6 +556,9 @@ function loadStudents() {
 }
 
 function openModal(committeeName, committeeType) {
+    // Isabelle McLean — Block opening the signup modal if enrollment is closed
+    if (!isEnrollmentOpen()) return;
+
     currentCommittee = committeeName;
     currentType = committeeType;
 
@@ -609,6 +642,88 @@ document.getElementById('committeeModal').addEventListener('click', function(e) 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeModal();
 });
+
+// Isabelle McLean — On page load, fetch uploaded committees from /api/committee-options; if any exist, replace the hardcoded placeholder cards with them
+function escHtmlCommittee(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderCommitteeCard(c) {
+    var typeClass = (c.type === 'Sports') ? 'sports-card' : 'project-card';
+    var card = document.createElement('div');
+    card.className = 'committee-card ' + typeClass;
+    card.setAttribute('data-name', c.name);
+    card.setAttribute('data-type', c.type || 'Project');
+    card.innerHTML =
+        '<div class="card-type">' + escHtmlCommittee(c.type || 'Project') + '</div>' +
+        '<h4>' + escHtmlCommittee(c.name) + '</h4>' +
+        '<p>' + escHtmlCommittee(c.description || '') + '</p>' +
+        '<button class="join-btn">Join</button>';
+    card.addEventListener('click', function() {
+        openModal(card.getAttribute('data-name'), card.getAttribute('data-type'));
+    });
+    return card;
+}
+
+function loadCommitteeOptions() {
+    fetch('/api/committee-options')
+        .then(function(r) { return r.json(); })
+        .then(function(committees) {
+            if (committees && committees.length > 0) {
+                var sportsGrid = document.getElementById('sportsGrid');
+                var projectsGrid = document.getElementById('projectsGrid');
+                sportsGrid.innerHTML = '';
+                projectsGrid.innerHTML = '';
+                committees.forEach(function(c) {
+                    var card = renderCommitteeCard(c);
+                    if ((c.type || '').toLowerCase() === 'sports') {
+                        sportsGrid.appendChild(card);
+                    } else {
+                        projectsGrid.appendChild(card);
+                    }
+                });
+            }
+            // Isabelle McLean — Apply enrollment-window state after the committee cards are in the DOM
+            updateEnrollmentStatus();
+        })
+        .catch(function() { updateEnrollmentStatus(); });
+}
+
+// Isabelle McLean — Renders the close date+time banner; disables all committee cards when closed
+function updateEnrollmentStatus() {
+    var statusEl = document.getElementById('enrollmentStatus');
+    if (!statusEl) return;
+
+    var dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    var timeOpts = { hour: 'numeric', minute: '2-digit' };
+    var closeStr = enrollmentCloseDate.toLocaleDateString('en-CA', dateOpts) +
+                   ' at ' + enrollmentCloseDate.toLocaleTimeString('en-US', timeOpts);
+
+    var now = new Date();
+    if (now > enrollmentCloseDate) {
+        statusEl.textContent = 'Committee enrollment has closed.';
+        statusEl.className = 'enrollment-status closed';
+        disableAllCommitteeCards();
+    } else if (now < enrollmentOpenDate) {
+        statusEl.textContent = 'Committee enrollment is not yet open. Closes ' + closeStr + '.';
+        statusEl.className = 'enrollment-status closed';
+        disableAllCommitteeCards();
+    } else {
+        statusEl.textContent = 'Enrollment closes ' + closeStr;
+        statusEl.className = 'enrollment-status open';
+    }
+}
+
+function disableAllCommitteeCards() {
+    document.querySelectorAll('.committee-card').forEach(function(card) {
+        card.classList.add('disabled');
+    });
+    document.querySelectorAll('.join-btn').forEach(function(btn) {
+        btn.textContent = 'Closed';
+    });
+}
+
+loadCommitteeOptions();
 </script>
 
 </body>

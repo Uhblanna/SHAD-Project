@@ -77,6 +77,31 @@
             <p class="example">Example: Sarah Kim,PA,duty,8AM - 4PM</p>
         </div>
 
+        <!-- Isabelle McLean — Upload Committee Options CSV: populates the committees students can sign up for on the student portal -->
+        <div class="admin-card">
+            <h3>Upload Committee Options CSV</h3>
+            <p>CSV columns required: <strong>Name, Type, Description</strong></p>
+
+            <input id="committeeCsvInput" type="file" accept=".csv">
+
+            <!-- Isabelle McLean — Upload + Remove buttons side-by-side; Remove opens a dropdown of current committees -->
+            <div class="button-row">
+                <button id="uploadCommitteeBtn">Upload Committees</button>
+                <button id="removeCommitteeBtn">Remove a Committee</button>
+            </div>
+
+            <!-- Isabelle McLean — Hidden by default; appears when "Remove a Committee" is clicked, populated from the current list -->
+            <div id="removeCommitteePanel" style="display:none; margin-bottom:14px;">
+                <select id="removeCommitteeSelect" style="margin-bottom:10px;">
+                    <option value="">Choose a committee...</option>
+                </select>
+                <button id="confirmRemoveCommitteeBtn" class="danger-btn">Remove Selected</button>
+            </div>
+
+            <p class="example">Example: Basketball,Sports,Pickup games every weekend morning</p>
+            <p class="example">Type must be either <strong>Sports</strong> or <strong>Project</strong>.</p>
+        </div>
+
         <div class="admin-card">
             <h3>Upload Student CSV</h3>
             <p>CSV columns accepted: <strong>Name, Pronouns, Group, Age, Instrument, Medication, Dietary, Note</strong></p>
