@@ -9,6 +9,8 @@ const PORT = 3000;
 
 // ── Change this to your actual staff password ──────────────────────────────
 const STAFF_PASSWORD = "shad2026";
+// Isabelle McLean — Separate admin password gating the /public/admin.html page; change this to set a new admin password
+const ADMIN_PASSWORD = "shadadmin";
 // ──────────────────────────────────────────────────────────────────────────
 
 app.use(cors());
@@ -37,6 +39,25 @@ app.get("/api/check-auth", (req, res) => {
 
 app.post("/api/staff-logout", (req, res) => {
     req.session.destroy();
+    res.json({ ok: true });
+});
+
+// Isabelle McLean — Admin auth routes: separate password layer for the /public/admin.html page
+app.post("/api/admin-login", (req, res) => {
+    if (req.body.password === ADMIN_PASSWORD) {
+        req.session.adminAuth = true;
+        res.json({ ok: true });
+    } else {
+        res.status(401).json({ ok: false, error: "Incorrect admin password." });
+    }
+});
+
+app.get("/api/check-admin-auth", (req, res) => {
+    res.json({ ok: !!req.session.adminAuth });
+});
+
+app.post("/api/admin-logout", (req, res) => {
+    req.session.adminAuth = false;
     res.json({ ok: true });
 });
 
