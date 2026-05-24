@@ -8,6 +8,7 @@
   "dependencies": {
     "cors": "latest",
     "express": "latest",
+    "express-session": "^1.19.0",
     "sqlite3": "latest"
   }
 }

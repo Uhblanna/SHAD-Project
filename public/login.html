@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHAD Portal — Welcome</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: #f5f5f5;
+    color: #111;
+    min-height: 100vh;
+}
+
+/* HEADER */
+header {
+    width: 100%;
+    padding: 22px 6%;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logo-box {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #8bc53f, #6f2da8, #f58220);
+    border-radius: 6px;
+}
+
+.logo-wrap h1 {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+nav {
+    display: flex;
+    gap: 30px;
+}
+
+nav a {
+    text-decoration: none;
+    color: #222;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+nav a:hover {
+    color: #6f2da8;
+}
+
+/* HERO */
+.hero {
+    position: relative;
+    min-height: 78vh;
+    background:
+        linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)),
+        url("https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=1600&q=80");
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 900px;
+    color: white;
+}
+
+.mini {
+    letter-spacing: 2px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #8bc53f;
+    margin-bottom: 20px;
+}
+
+.hero h2 {
+    font-size: 64px;
+    line-height: 1.05;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+
+.desc {
+    font-size: 20px;
+    color: #f1f1f1;
+    max-width: 700px;
+    margin: auto;
+    line-height: 1.7;
+    margin-bottom: 55px;
+}
+
+/* PORTAL CARDS */
+.portal-cards {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+}
+
+.portal-card {
+    background: white;
+    border-radius: 22px;
+    padding: 40px 36px;
+    width: 300px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    transition: transform 0.25s, box-shadow 0.25s;
+    text-decoration: none;
+    color: #111;
+    display: block;
+    cursor: pointer;
+    border: 3px solid transparent;
+}
+
+.portal-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+}
+
+.portal-card.staff {
+    border-color: #6f2da8;
+}
+
+.portal-card.student {
+    border-color: #8bc53f;
+}
+
+.portal-card .card-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 32px;
+}
+
+.portal-card.staff .card-icon {
+    background: linear-gradient(135deg, #6f2da8, #9b4dca);
+}
+
+.portal-card.student .card-icon {
+    background: linear-gradient(135deg, #8bc53f, #6da832);
+}
+
+.portal-card h3 {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.portal-card.staff h3 {
+    color: #6f2da8;
+}
+
+.portal-card.student h3 {
+    color: #5a9a20;
+}
+
+.portal-card p {
+    font-size: 15px;
+    color: #666;
+    line-height: 1.6;
+    font-weight: 500;
+    margin-bottom: 28px;
+}
+
+.portal-card .enter-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+    text-decoration: none;
+}
+
+.portal-card .enter-btn:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+}
+
+.portal-card.staff .enter-btn {
+    background: #6f2da8;
+}
+
+.portal-card.student .enter-btn {
+    background: #8bc53f;
+}
+
+/* Isabelle McLean — Removed opacity: 0.85 that was greying out the student card; card is now fully active */
+
+.coming-soon-badge {
+    display: inline-block;
+    background: #f0f0f0;
+    color: #888;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+}
+
+/* BOTTOM PANEL */
+.bottom-bar {
+    text-align: center;
+    padding: 32px 20px;
+    color: #888;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.bottom-bar a {
+    color: #6f2da8;
+    text-decoration: none;
+    font-weight: 800;
+}
+
+.bottom-bar a:hover {
+    text-decoration: underline;
+}
+
+/* MODAL */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-box {
+    background: white;
+    border-radius: 22px;
+    padding: 44px 40px 36px;
+    width: 340px;
+    text-align: center;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.45);
+    position: relative;
+}
+
+.modal-box .modal-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #6f2da8, #9b4dca);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.modal-box h3 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 8px;
+}
+
+.modal-box .modal-sub {
+    font-size: 14px;
+    color: #888;
+    font-weight: 500;
+    margin-bottom: 28px;
+    line-height: 1.5;
+}
+
+.modal-box input[type="password"] {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 14px;
+}
+
+.modal-box input[type="password"]:focus {
+    border-color: #6f2da8;
+}
+
+.modal-box .modal-submit {
+    width: 100%;
+    padding: 14px;
+    background: #6f2da8;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-bottom: 12px;
+}
+
+.modal-box .modal-submit:hover {
+    opacity: 0.9;
+}
+
+.modal-error {
+    font-size: 13px;
+    color: #d12c2c;
+    font-weight: 700;
+    min-height: 18px;
+    margin-bottom: 4px;
+}
+
+.modal-close {
+    font-size: 13px;
+    color: #aaa;
+    font-weight: 600;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: 'Montserrat', sans-serif;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: #555;
+}
+
+/* MOBILE */
+@media (max-width: 700px) {
+    header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    nav {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 14px;
+    }
+
+    .hero h2 {
+        font-size: 38px;
+    }
+
+    .desc {
+        font-size: 17px;
+    }
+
+    .portal-card {
+        width: 100%;
+        max-width: 340px;
+    }
+
+    .portal-cards {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+    </div>
+    <nav>
+        <a href="#">Home</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="hero-content">
+        <p class="mini">INTERNAL OPERATIONS PLATFORM</p>
+        <h2>Welcome to<br>SHAD 2026.</h2>
+        <p class="desc">
+            Choose your portal below to get started. Staff can manage operations,
+            attendance, and scheduling. Students can access their personal hub.
+        </p>
+    </div>
+
+    <div class="portal-cards">
+
+        <!-- Staff Portal -->
+        <a href="#" class="portal-card staff" onclick="openStaffModal(event)">
+            <div class="card-icon">
+                <svg width="34" height="34" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+            </div>
+            <h3>Staff Portal</h3>
+            <p>Dashboard, student tracking, scheduling, observations, med kits, and operations management.</p>
+            <span class="enter-btn">Enter Staff Portal →</span>
+        </a>
+
+        <!-- Student Portal -->
+        <!-- Isabelle McLean — Changed from a disabled "Coming Soon" div to an active link; removed badge and grey button; no password needed -->
+        <a href="/public/student.html" class="portal-card student">
+            <div class="card-icon">
+                <svg width="34" height="34" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                </svg>
+            </div>
+            <h3>Student Portal</h3>
+            <p>Sign up for morning rec, join a committee, and access your SHAD hub.</p>
+            <span class="enter-btn">Enter Student Portal →</span>
+        </a>
+
+    </div>
+</section>
+
+<!-- Staff Password Modal -->
+<div class="modal-overlay" id="staffModal">
+    <div class="modal-box">
+        <div class="modal-icon">
+            <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+        </div>
+        <h3>Staff Access</h3>
+        <p class="modal-sub">Enter the staff password to access the portal.</p>
+        <form id="staffLoginForm" onsubmit="submitStaffLogin(event)">
+            <input type="password" id="staffPassword" placeholder="Password" autocomplete="current-password">
+            <p class="modal-error" id="loginError"></p>
+            <button type="submit" class="modal-submit">Enter Staff Portal →</button>
+        </form>
+        <button class="modal-close" onclick="closeStaffModal()">Cancel</button>
+    </div>
+</div>
+
+<script>
+function openStaffModal(e) {
+    e.preventDefault();
+    document.getElementById('staffModal').classList.add('active');
+    setTimeout(function() { document.getElementById('staffPassword').focus(); }, 100);
+}
+
+function closeStaffModal() {
+    document.getElementById('staffModal').classList.remove('active');
+    document.getElementById('staffPassword').value = '';
+    document.getElementById('loginError').textContent = '';
+}
+
+function submitStaffLogin(e) {
+    e.preventDefault();
+    var password = document.getElementById('staffPassword').value;
+    var btn = document.querySelector('.modal-submit');
+    var errEl = document.getElementById('loginError');
+
+    btn.textContent = 'Checking...';
+    btn.disabled = true;
+    errEl.textContent = '';
+
+    fetch('/api/staff-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: password })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.ok) {
+            window.location.href = '/public/index.html';
+        } else {
+            errEl.textContent = 'Incorrect password. Try again.';
+            btn.textContent = 'Enter Staff Portal →';
+            btn.disabled = false;
+            document.getElementById('staffPassword').value = '';
+            document.getElementById('staffPassword').focus();
+        }
+    })
+    .catch(function() {
+        errEl.textContent = 'Connection error. Is the server running?';
+        btn.textContent = 'Enter Staff Portal →';
+        btn.disabled = false;
+    });
+}
+
+document.getElementById('staffModal').addEventListener('click', function(e) {
+    if (e.target === this) closeStaffModal();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeStaffModal();
+});
+</script>
+
+<div class="bottom-bar">
+    SHAD 2026 &nbsp;·&nbsp; Internal Use Only
+</div>
+
+</body>
+</html>

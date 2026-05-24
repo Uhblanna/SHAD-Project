@@ -1,0 +1,615 @@
+<!-- Isabelle McLean — New file: full student portal with morning rec sign-up card and 10 committee cards (5 sports, 5 project) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHAD Student Portal</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: #f5f5f5;
+    color: #111;
+    min-height: 100vh;
+}
+
+/* HEADER */
+header {
+    width: 100%;
+    padding: 22px 6%;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e5e5;
+}
+.logo-wrap { display: flex; align-items: center; gap: 14px; }
+.logo-box {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #8bc53f, #6f2da8, #f58220);
+    border-radius: 6px;
+}
+.logo-wrap h1 { font-size: 24px; font-weight: 800; }
+nav a {
+    text-decoration: none; color: #222; font-weight: 600;
+    transition: 0.2s;
+}
+nav a:hover { color: #8bc53f; }
+
+/* HERO */
+.student-hero {
+    background: linear-gradient(135deg, #8bc53f 0%, #5a9a20 100%);
+    padding: 56px 6%;
+    color: white;
+    text-align: center;
+}
+.student-hero .mini {
+    letter-spacing: 2px;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 14px;
+}
+.student-hero h2 {
+    font-size: 48px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    line-height: 1.1;
+}
+.student-hero p {
+    font-size: 17px;
+    color: rgba(255,255,255,0.88);
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.7;
+}
+
+/* CONTENT */
+.student-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 6%;
+    display: flex;
+    flex-direction: column;
+    gap: 52px;
+}
+
+/* SECTION HEADER */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+.section-header h3 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111;
+}
+.section-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+.badge-green { background: #e8f5d3; color: #5a9a20; }
+.badge-orange { background: #fef0e0; color: #c86000; }
+
+/* MORNING REC CARD */
+.morning-rec-card {
+    background: white;
+    border-radius: 20px;
+    padding: 36px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    flex-wrap: wrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border: 2px solid #d9f0b3;
+}
+.morning-rec-info h4 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 8px;
+}
+.morning-rec-info p {
+    font-size: 15px;
+    color: #666;
+    line-height: 1.6;
+    max-width: 520px;
+}
+.signup-btn {
+    padding: 16px 34px;
+    background: #8bc53f;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.25s;
+    box-shadow: 0 8px 22px rgba(139,197,63,0.3);
+    white-space: nowrap;
+}
+.signup-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(139,197,63,0.4);
+}
+
+/* COMMITTEES */
+.committee-group {
+    margin-bottom: 36px;
+}
+.committee-group:last-child { margin-bottom: 0; }
+.committee-group-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 16px;
+}
+.committee-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 16px;
+}
+.committee-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px 20px;
+    border: 2px solid #f0f0f0;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.06);
+    transition: 0.2s;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.committee-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.11);
+}
+.committee-card.sports-card:hover { border-color: #f58220; }
+.committee-card.project-card:hover { border-color: #8bc53f; }
+
+.committee-card .card-type {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+.sports-card .card-type { color: #f58220; }
+.project-card .card-type { color: #8bc53f; }
+
+.committee-card h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    line-height: 1.4;
+}
+.committee-card p {
+    font-size: 12px;
+    color: #999;
+    line-height: 1.5;
+    flex: 1;
+}
+.join-btn {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 9px 18px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    transition: opacity 0.2s;
+    color: white;
+}
+.join-btn:hover { opacity: 0.88; }
+.sports-card .join-btn { background: #f58220; }
+.project-card .join-btn { background: #8bc53f; }
+
+/* MODAL */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+
+.modal-box {
+    background: white;
+    border-radius: 22px;
+    padding: 40px 36px 32px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.4);
+}
+.modal-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    font-size: 26px;
+}
+.modal-box h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 6px;
+}
+.modal-sub {
+    font-size: 14px;
+    color: #888;
+    font-weight: 500;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+.modal-select {
+    width: 100%;
+    padding: 13px 16px;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 14px;
+    background: white;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+.modal-select:focus { border-color: #8bc53f; }
+.modal-select.sports-focus:focus { border-color: #f58220; }
+
+.modal-submit {
+    width: 100%;
+    padding: 14px;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-bottom: 10px;
+}
+.modal-submit:hover { opacity: 0.9; }
+.modal-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.modal-submit.green { background: #8bc53f; }
+.modal-submit.orange { background: #f58220; }
+
+.modal-msg {
+    font-size: 13px;
+    font-weight: 700;
+    min-height: 18px;
+    margin-bottom: 8px;
+}
+.modal-msg.error { color: #d12c2c; }
+.modal-msg.success { color: #5a9a20; }
+
+.modal-close {
+    font-size: 13px;
+    color: #aaa;
+    font-weight: 600;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: 'Montserrat', sans-serif;
+    transition: color 0.2s;
+}
+.modal-close:hover { color: #555; }
+
+/* BOTTOM */
+.bottom-bar {
+    text-align: center;
+    padding: 32px 20px;
+    color: #bbb;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* MOBILE */
+@media (max-width: 700px) {
+    .student-hero h2 { font-size: 34px; }
+    .morning-rec-card { flex-direction: column; text-align: center; }
+    .committee-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+    </div>
+    <nav>
+        <a href="/public/login.html">← Back to Portal Select</a>
+    </nav>
+</header>
+
+<section class="student-hero">
+    <p class="mini">STUDENT PORTAL</p>
+    <h2>Welcome, SHAD 2026!</h2>
+    <p>Sign up for morning rec activities and join a committee to get involved.</p>
+</section>
+
+<div class="student-content">
+
+    <!-- Isabelle McLean — Morning Rec section: card with link to morning-rec.html sign-up page -->
+    <!-- Morning Rec -->
+    <div>
+        <div class="section-header">
+            <h3>Morning Rec</h3>
+            <span class="section-badge badge-green">Daily Sign-Up</span>
+        </div>
+        <div class="morning-rec-card">
+            <div class="morning-rec-info">
+                <h4>Morning Recreation</h4>
+                <p>Sign up to participate in morning recreation activities. You can also scan the QR code posted by your instructor to go directly to the sign-up page.</p>
+            </div>
+            <a href="/public/morning-rec.html" class="signup-btn">Sign Up for Morning Rec →</a>
+        </div>
+    </div>
+
+    <!-- Isabelle McLean — Committees section: 5 sports + 5 project placeholder cards; edit name/description in each <h4> and <p> tag -->
+    <!-- Committees -->
+    <div>
+        <div class="section-header">
+            <h3>Committees</h3>
+            <span class="section-badge badge-orange">Sign Up</span>
+        </div>
+
+        <!-- Sports -->
+        <div class="committee-group">
+            <div class="committee-group-label">Sports Committees</div>
+            <div class="committee-grid">
+
+                <div class="committee-card sports-card" onclick="openModal('Basketball Committee','Sports')">
+                    <div class="card-type">Sports</div>
+                    <h4>Basketball Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+                <div class="committee-card sports-card" onclick="openModal('Soccer Committee','Sports')">
+                    <div class="card-type">Sports</div>
+                    <h4>Soccer Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+                <div class="committee-card sports-card" onclick="openModal('Swimming Committee','Sports')">
+                    <div class="card-type">Sports</div>
+                    <h4>Swimming Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+                <div class="committee-card sports-card" onclick="openModal('Track & Field Committee','Sports')">
+                    <div class="card-type">Sports</div>
+                    <h4>Track &amp; Field Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+                <div class="committee-card sports-card" onclick="openModal('Volleyball Committee','Sports')">
+                    <div class="card-type">Sports</div>
+                    <h4>Volleyball Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Projects -->
+        <div class="committee-group">
+            <div class="committee-group-label">Project Committees</div>
+            <div class="committee-grid">
+
+                <div class="committee-card project-card" onclick="openModal('Engineering Design Committee','Project')">
+                    <div class="card-type">Project</div>
+                    <h4>Engineering Design Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+                <div class="committee-card project-card" onclick="openModal('Environmental Science Committee','Project')">
+                    <div class="card-type">Project</div>
+                    <h4>Environmental Science Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+                <div class="committee-card project-card" onclick="openModal('Health & Wellness Committee','Project')">
+                    <div class="card-type">Project</div>
+                    <h4>Health &amp; Wellness Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+                <div class="committee-card project-card" onclick="openModal('Technology & Innovation Committee','Project')">
+                    <div class="card-type">Project</div>
+                    <h4>Technology &amp; Innovation Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+                <div class="committee-card project-card" onclick="openModal('Business & Entrepreneurship Committee','Project')">
+                    <div class="card-type">Project</div>
+                    <h4>Business &amp; Entrepreneurship Committee</h4>
+                    <p>Placeholder — edit committee name and details as needed.</p>
+                    <button class="join-btn">Join</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Isabelle McLean — Committee sign-up modal: loads student names from /api/students, posts to /api/committee-signups -->
+<!-- Committee Sign-Up Modal -->
+<div class="modal-overlay" id="committeeModal">
+    <div class="modal-box">
+        <div class="modal-icon" id="modalIcon">🏅</div>
+        <h3 id="modalTitle">Join Committee</h3>
+        <p class="modal-sub">Select your name to sign up.</p>
+        <select class="modal-select" id="studentSelect">
+            <option value="">Loading names...</option>
+        </select>
+        <p class="modal-msg" id="modalMsg"></p>
+        <button class="modal-submit green" id="modalSubmit" onclick="submitSignup()">Join Committee →</button>
+        <br>
+        <button class="modal-close" onclick="closeModal()">Cancel</button>
+    </div>
+</div>
+
+<div class="bottom-bar">
+    SHAD 2026 &nbsp;·&nbsp; Student Portal
+</div>
+
+<script>
+var currentCommittee = '';
+var currentType = '';
+
+function loadStudents() {
+    fetch('/api/students')
+        .then(function(r) { return r.json(); })
+        .then(function(students) {
+            var sel = document.getElementById('studentSelect');
+            sel.innerHTML = '<option value="">Select your name...</option>';
+            students.forEach(function(s) {
+                var opt = document.createElement('option');
+                opt.value = s.name;
+                opt.textContent = s.name;
+                sel.appendChild(opt);
+            });
+        })
+        .catch(function() {
+            var sel = document.getElementById('studentSelect');
+            sel.innerHTML = '<option value="">Could not load names</option>';
+        });
+}
+
+function openModal(committeeName, committeeType) {
+    currentCommittee = committeeName;
+    currentType = committeeType;
+
+    document.getElementById('modalTitle').textContent = 'Join ' + committeeName;
+
+    var icon = document.getElementById('modalIcon');
+    var btn = document.getElementById('modalSubmit');
+    var sel = document.getElementById('studentSelect');
+
+    if (committeeType === 'Sports') {
+        icon.style.background = 'linear-gradient(135deg,#f58220,#d96c00)';
+        btn.className = 'modal-submit orange';
+        sel.className = 'modal-select sports-focus';
+    } else {
+        icon.style.background = 'linear-gradient(135deg,#8bc53f,#5a9a20)';
+        btn.className = 'modal-submit green';
+        sel.className = 'modal-select';
+    }
+
+    document.getElementById('modalMsg').textContent = '';
+    document.getElementById('modalMsg').className = 'modal-msg';
+    document.getElementById('studentSelect').value = '';
+    btn.disabled = false;
+    btn.textContent = 'Join Committee →';
+
+    loadStudents();
+    document.getElementById('committeeModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('committeeModal').classList.remove('active');
+}
+
+function submitSignup() {
+    var name = document.getElementById('studentSelect').value;
+    var msgEl = document.getElementById('modalMsg');
+    var btn = document.getElementById('modalSubmit');
+
+    msgEl.textContent = '';
+    msgEl.className = 'modal-msg';
+
+    if (!name) {
+        msgEl.className = 'modal-msg error';
+        msgEl.textContent = 'Please select your name.';
+        return;
+    }
+
+    btn.textContent = 'Signing up...';
+    btn.disabled = true;
+
+    fetch('/api/committee-signups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_name: name, committee_name: currentCommittee, committee_type: currentType })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.error) {
+            msgEl.className = 'modal-msg error';
+            msgEl.textContent = data.error;
+            btn.textContent = 'Join Committee →';
+            btn.disabled = false;
+        } else {
+            msgEl.className = 'modal-msg success';
+            msgEl.textContent = 'You\'re signed up for ' + currentCommittee + '!';
+            btn.textContent = 'Done!';
+            setTimeout(function() { closeModal(); }, 1800);
+        }
+    })
+    .catch(function() {
+        msgEl.className = 'modal-msg error';
+        msgEl.textContent = 'Connection error. Please try again.';
+        btn.textContent = 'Join Committee →';
+        btn.disabled = false;
+    });
+}
+
+document.getElementById('committeeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+});
+</script>
+
+</body>
+</html>

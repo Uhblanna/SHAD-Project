@@ -1,15 +1,44 @@
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
+const session = require("express-session");
 const db = require("./database");
 
 const app = express();
 const PORT = 3000;
 
+// ── Change this to your actual staff password ──────────────────────────────
+const STAFF_PASSWORD = "shad2026";
+// ──────────────────────────────────────────────────────────────────────────
+
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+    secret: "shad2026-session-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 8 * 60 * 60 * 1000 }
+}));
 app.use("/public", express.static(path.join(__dirname, "public")));
+
+app.post("/api/staff-login", (req, res) => {
+    if (req.body.password === STAFF_PASSWORD) {
+        req.session.staffAuth = true;
+        res.json({ ok: true });
+    } else {
+        res.status(401).json({ ok: false, error: "Incorrect password." });
+    }
+});
+
+app.get("/api/check-auth", (req, res) => {
+    res.json({ ok: !!req.session.staffAuth });
+});
+
+app.post("/api/staff-logout", (req, res) => {
+    req.session.destroy();
+    res.json({ ok: true });
+});
 
 function todayKey() {
     const d = new Date();
@@ -88,7 +117,7 @@ function rowToSchedule(row) {
 }
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
+    res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
 // STUDENTS
@@ -381,6 +410,83 @@ app.post("/api/schedule/replace", (req, res) => {
                 res.json({ inserted: schedule.length });
             });
         });
+    });
+});
+
+// Isabelle McLean — Morning rec API routes: fetch today's list, submit a signup (blocks same-day duplicates), remove one entry, or clear the whole day
+// MORNING REC
+app.get("/api/morning-rec", (req, res) => {
+    const today = todayKey();
+    db.all("SELECT * FROM morning_rec_signups WHERE signup_date = ? ORDER BY created_at ASC", [today], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/morning-rec", (req, res) => {
+    const { student_name } = req.body;
+    if (!student_name || !student_name.trim()) return res.status(400).json({ error: "Student name is required." });
+    const today = todayKey();
+    const name = student_name.trim();
+
+    db.get("SELECT id FROM morning_rec_signups WHERE student_name = ? AND signup_date = ?", [name, today], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (row) return res.status(409).json({ error: "You're already signed up for today!" });
+
+        db.run("INSERT INTO morning_rec_signups (student_name, signup_date) VALUES (?, ?)", [name, today], function(err2) {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ id: this.lastID, student_name: name, signup_date: today });
+        });
+    });
+});
+
+app.delete("/api/morning-rec/today", (req, res) => {
+    const today = todayKey();
+    db.run("DELETE FROM morning_rec_signups WHERE signup_date = ?", [today], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ cleared: this.changes });
+    });
+});
+
+app.delete("/api/morning-rec/:id", (req, res) => {
+    db.run("DELETE FROM morning_rec_signups WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+// Isabelle McLean — Committee signup API routes: fetch all signups, submit a new one (blocks duplicate student+committee combos), remove by ID
+// COMMITTEE SIGNUPS
+app.get("/api/committee-signups", (req, res) => {
+    db.all("SELECT * FROM committee_signups ORDER BY committee_type ASC, committee_name ASC, created_at ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/committee-signups", (req, res) => {
+    const { student_name, committee_name, committee_type } = req.body;
+    if (!student_name || !committee_name) return res.status(400).json({ error: "Name and committee are required." });
+
+    db.run(
+        "INSERT INTO committee_signups (student_name, committee_name, committee_type) VALUES (?, ?, ?)",
+        [student_name.trim(), committee_name, committee_type || ""],
+        function(err) {
+            if (err) {
+                if (err.message.includes("UNIQUE")) {
+                    return res.status(409).json({ error: "You're already signed up for this committee!" });
+                }
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ id: this.lastID, student_name: student_name.trim(), committee_name, committee_type });
+        }
+    );
+});
+
+app.delete("/api/committee-signups/:id", (req, res) => {
+    db.run("DELETE FROM committee_signups WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
     });
 });
 

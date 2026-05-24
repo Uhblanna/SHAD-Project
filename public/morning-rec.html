@@ -1,0 +1,339 @@
+<!-- Isabelle McLean — New file: mobile-friendly sign-up page linked from the instructor QR code; students pick their name and submit to /api/morning-rec -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morning Rec Sign-Up — SHAD 2026</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: #f5f5f5;
+    color: #111;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER */
+header {
+    width: 100%;
+    padding: 18px 6%;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e5e5;
+}
+.logo-wrap { display: flex; align-items: center; gap: 12px; }
+.logo-box {
+    width: 26px; height: 26px;
+    background: linear-gradient(135deg, #8bc53f, #6f2da8, #f58220);
+    border-radius: 6px;
+}
+.logo-wrap h1 { font-size: 20px; font-weight: 800; }
+nav a {
+    text-decoration: none; color: #888; font-weight: 600;
+    font-size: 14px; transition: 0.2s;
+}
+nav a:hover { color: #8bc53f; }
+
+/* MAIN */
+.page-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.signup-card {
+    background: white;
+    border-radius: 24px;
+    padding: 48px 40px 40px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    border: 2px solid #d9f0b3;
+    text-align: center;
+}
+
+.rec-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, #8bc53f, #5a9a20);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 34px;
+}
+
+.signup-card .mini {
+    letter-spacing: 2px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #8bc53f;
+    margin-bottom: 10px;
+}
+
+.signup-card h2 {
+    font-size: 30px;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 8px;
+}
+
+.signup-card .date-line {
+    font-size: 14px;
+    color: #aaa;
+    font-weight: 600;
+    margin-bottom: 28px;
+}
+
+.signup-card .sub {
+    font-size: 15px;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 28px;
+}
+
+.form-select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 16px;
+    background: white;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    color: #111;
+}
+.form-select:focus { border-color: #8bc53f; }
+
+.submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: #8bc53f;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.25s;
+    box-shadow: 0 8px 22px rgba(139,197,63,0.3);
+    margin-bottom: 12px;
+}
+.submit-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+.submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.msg {
+    font-size: 14px;
+    font-weight: 700;
+    min-height: 20px;
+}
+.msg.error { color: #d12c2c; }
+.msg.success { color: #5a9a20; }
+
+/* SUCCESS STATE */
+.success-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+.success-state .check {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, #8bc53f, #5a9a20);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 8px;
+}
+.success-state h3 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #111;
+}
+.success-state p {
+    font-size: 15px;
+    color: #666;
+    line-height: 1.6;
+}
+.sign-up-another {
+    margin-top: 8px;
+    padding: 12px 28px;
+    background: transparent;
+    color: #8bc53f;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border: 2px solid #8bc53f;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.sign-up-another:hover { background: #8bc53f; color: white; }
+
+/* BOTTOM */
+.bottom-bar {
+    text-align: center;
+    padding: 24px 20px;
+    color: #ccc;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+    </div>
+    <nav>
+        <a href="/public/student.html">Student Portal</a>
+    </nav>
+</header>
+
+<main class="page-main">
+    <div class="signup-card">
+
+        <!-- Isabelle McLean — Sign-up form: dropdown populated from /api/students; blocks same-day duplicate submissions -->
+        <!-- Sign-up form -->
+        <div id="formState">
+            <div class="rec-icon">🌅</div>
+            <p class="mini">MORNING REC</p>
+            <h2>Sign Up for Today</h2>
+            <p class="date-line" id="dateDisplay"></p>
+            <p class="sub">Select your name below to sign up for this morning's recreation activities.</p>
+
+            <select class="form-select" id="studentSelect">
+                <option value="">Loading names...</option>
+            </select>
+
+            <p class="msg" id="msgEl"></p>
+            <button class="submit-btn" id="submitBtn" onclick="submitSignup()">Sign Me Up →</button>
+        </div>
+
+        <!-- Isabelle McLean — Success state: shown after a successful signup; "Sign up another person" button resets the form -->
+        <!-- Success state -->
+        <div class="success-state" id="successState">
+            <div class="check">✓</div>
+            <h3>You're Signed Up!</h3>
+            <p id="successName">See you at morning rec today.</p>
+            <button class="sign-up-another" onclick="resetForm()">Sign up another person</button>
+        </div>
+
+    </div>
+</main>
+
+<div class="bottom-bar">
+    SHAD 2026 &nbsp;·&nbsp; Morning Rec
+</div>
+
+<script>
+var today = new Date();
+var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+document.getElementById('dateDisplay').textContent = today.toLocaleDateString('en-CA', options);
+
+function loadStudents() {
+    fetch('/api/students')
+        .then(function(r) { return r.json(); })
+        .then(function(students) {
+            var sel = document.getElementById('studentSelect');
+            sel.innerHTML = '<option value="">Select your name...</option>';
+            students.forEach(function(s) {
+                var opt = document.createElement('option');
+                opt.value = s.name;
+                opt.textContent = s.name;
+                sel.appendChild(opt);
+            });
+            if (students.length === 0) {
+                sel.innerHTML = '<option value="">No students loaded yet</option>';
+            }
+        })
+        .catch(function() {
+            var sel = document.getElementById('studentSelect');
+            sel.innerHTML = '<option value="">Could not load names</option>';
+        });
+}
+
+function submitSignup() {
+    var name = document.getElementById('studentSelect').value;
+    var msgEl = document.getElementById('msgEl');
+    var btn = document.getElementById('submitBtn');
+
+    msgEl.className = 'msg';
+    msgEl.textContent = '';
+
+    if (!name) {
+        msgEl.className = 'msg error';
+        msgEl.textContent = 'Please select your name.';
+        return;
+    }
+
+    btn.textContent = 'Signing up...';
+    btn.disabled = true;
+
+    fetch('/api/morning-rec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_name: name })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.error) {
+            msgEl.className = 'msg error';
+            msgEl.textContent = data.error;
+            btn.textContent = 'Sign Me Up →';
+            btn.disabled = false;
+        } else {
+            document.getElementById('formState').style.display = 'none';
+            document.getElementById('successName').textContent = name + ' — see you at morning rec today!';
+            document.getElementById('successState').style.display = 'flex';
+        }
+    })
+    .catch(function() {
+        msgEl.className = 'msg error';
+        msgEl.textContent = 'Connection error. Please try again.';
+        btn.textContent = 'Sign Me Up →';
+        btn.disabled = false;
+    });
+}
+
+function resetForm() {
+    document.getElementById('successState').style.display = 'none';
+    document.getElementById('formState').style.display = 'block';
+    document.getElementById('studentSelect').value = '';
+    document.getElementById('msgEl').textContent = '';
+    document.getElementById('submitBtn').textContent = 'Sign Me Up →';
+    document.getElementById('submitBtn').disabled = false;
+}
+
+loadStudents();
+</script>
+
+</body>
+</html>

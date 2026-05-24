@@ -88,6 +88,28 @@ db.serialize(() => {
             hours TEXT DEFAULT ''
         )
     `);
+
+    // Isabelle McLean — Morning rec signups table: stores each student's daily sign-up; auto-resets each day via date filter
+    db.run(`
+        CREATE TABLE IF NOT EXISTS morning_rec_signups (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_name TEXT NOT NULL,
+            signup_date TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Isabelle McLean — Committee signups table: stores student committee registrations; unique constraint blocks duplicate entries
+    db.run(`
+        CREATE TABLE IF NOT EXISTS committee_signups (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_name TEXT NOT NULL,
+            committee_name TEXT NOT NULL,
+            committee_type TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(student_name, committee_name)
+        )
+    `);
 });
 
 module.exports = db;

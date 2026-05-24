@@ -1,0 +1,392 @@
+<!-- Isabelle McLean — New file: staff-side tool for morning rec; auto-generates a QR code from the server URL, shows today's sign-up list with remove/clear controls, and has a print button -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morning Rec — QR Code &amp; Sign-Ups</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: #f5f5f5;
+    color: #111;
+    min-height: 100vh;
+}
+
+/* HEADER */
+header {
+    width: 100%;
+    padding: 22px 6%;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e5e5;
+}
+.logo-wrap { display: flex; align-items: center; gap: 14px; }
+.logo-box {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #8bc53f, #6f2da8, #f58220);
+    border-radius: 6px;
+}
+.logo-wrap h1 { font-size: 24px; font-weight: 800; }
+nav { display: flex; gap: 24px; }
+nav a {
+    text-decoration: none; color: #222; font-weight: 600;
+    font-size: 15px; transition: 0.2s;
+}
+nav a:hover { color: #6f2da8; }
+
+/* PAGE LAYOUT */
+.page-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 48px 6%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+}
+
+/* CARDS */
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 36px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border: 2px solid #f0f0f0;
+}
+.card-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 18px;
+}
+.card h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 8px;
+}
+.card .card-sub {
+    font-size: 14px;
+    color: #888;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+/* QR CODE */
+.qr-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto 20px;
+    padding: 16px;
+    background: white;
+    border: 3px solid #e5e5e5;
+    border-radius: 16px;
+    width: fit-content;
+}
+#qrcode canvas, #qrcode img {
+    display: block;
+    border-radius: 4px;
+}
+
+.url-box {
+    background: #f8f8f8;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    word-break: break-all;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.copy-btn {
+    padding: 6px 14px;
+    background: #6f2da8;
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+.copy-btn:hover { opacity: 0.85; }
+
+.print-btn {
+    width: 100%;
+    padding: 13px;
+    background: #6f2da8;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.print-btn:hover { opacity: 0.88; }
+
+/* SIGNUPS PANEL */
+.count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #e8f5d3;
+    color: #5a9a20;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+}
+
+.signups-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 360px;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-bottom: 20px;
+}
+.signups-list::-webkit-scrollbar { width: 4px; }
+.signups-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 4px; }
+.signups-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+.signup-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8f8f8;
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+.signup-item .student-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+}
+.signup-item .signup-time {
+    font-size: 12px;
+    color: #aaa;
+    font-weight: 600;
+}
+.remove-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+.remove-btn:hover { color: #d12c2c; }
+
+.empty-state {
+    text-align: center;
+    padding: 32px 0;
+    color: #ccc;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.clear-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: #d12c2c;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border: 2px solid #f0d0d0;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.clear-btn:hover { background: #fff0f0; border-color: #d12c2c; }
+
+/* BOTTOM */
+.bottom-bar {
+    text-align: center;
+    padding: 32px 20px;
+    color: #ccc;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* PRINT STYLES */
+@media print {
+    header, .signups-panel, nav, .print-btn, .copy-btn, .clear-btn, .bottom-bar { display: none !important; }
+    .page-content { grid-template-columns: 1fr; }
+    .qr-card { box-shadow: none; border: none; }
+    .qr-wrap { border: 2px solid #ccc; }
+    body { background: white; }
+}
+
+/* MOBILE */
+@media (max-width: 700px) {
+    .page-content { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+    </div>
+    <nav>
+        <a href="/public/index.html">← Staff Home</a>
+    </nav>
+</header>
+
+<div class="page-content">
+
+    <!-- Isabelle McLean — QR Code card: generates QR pointing to morning-rec.html using the server's live URL; includes copy and print buttons -->
+    <!-- QR Code Card -->
+    <div class="card qr-card">
+        <div class="card-title">Instructor Tool</div>
+        <h2>Morning Rec QR Code</h2>
+        <p class="card-sub">Display or print this QR code so students can scan it and sign up for morning rec on their phones.</p>
+
+        <div class="qr-wrap">
+            <div id="qrcode"></div>
+        </div>
+
+        <div class="url-box">
+            <span id="urlDisplay"></span>
+            <button class="copy-btn" onclick="copyUrl()">Copy</button>
+        </div>
+
+        <button class="print-btn" onclick="window.print()">🖨 Print QR Code</button>
+    </div>
+
+    <!-- Isabelle McLean — Sign-ups panel: polls /api/morning-rec every 15s; staff can remove individual entries or clear the whole day -->
+    <!-- Today's Signups -->
+    <div class="card signups-panel">
+        <div class="card-title">Today's Sign-Ups</div>
+        <h2>Morning Rec</h2>
+        <p class="card-sub" id="dateDisplay"></p>
+
+        <div class="count-badge">
+            <span id="countEl">0 students</span> signed up
+        </div>
+
+        <ul class="signups-list" id="signupsList">
+            <li class="empty-state">No sign-ups yet today.</li>
+        </ul>
+
+        <button class="clear-btn" onclick="clearToday()">Clear Today's Sign-Ups</button>
+    </div>
+
+</div>
+
+<div class="bottom-bar">
+    SHAD 2026 &nbsp;·&nbsp; Staff — Morning Rec
+</div>
+
+<script>
+var recUrl = window.location.origin + '/public/morning-rec.html';
+document.getElementById('urlDisplay').textContent = recUrl;
+
+new QRCode(document.getElementById('qrcode'), {
+    text: recUrl,
+    width: 220,
+    height: 220,
+    colorDark: '#111111',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+});
+
+var today = new Date();
+var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+document.getElementById('dateDisplay').textContent = today.toLocaleDateString('en-CA', options);
+
+function copyUrl() {
+    navigator.clipboard.writeText(recUrl).then(function() {
+        var btn = document.querySelector('.copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy'; }, 1800);
+    });
+}
+
+function loadSignups() {
+    fetch('/api/morning-rec')
+        .then(function(r) { return r.json(); })
+        .then(function(rows) {
+            var list = document.getElementById('signupsList');
+            var countEl = document.getElementById('countEl');
+            countEl.textContent = rows.length + (rows.length === 1 ? ' student' : ' students');
+
+            if (rows.length === 0) {
+                list.innerHTML = '<li class="empty-state">No sign-ups yet today.</li>';
+                return;
+            }
+
+            list.innerHTML = '';
+            rows.forEach(function(row) {
+                var time = row.created_at ? row.created_at.slice(11, 16) : '';
+                var li = document.createElement('li');
+                li.className = 'signup-item';
+                li.innerHTML =
+                    '<div>' +
+                    '  <div class="student-name">' + escHtml(row.student_name) + '</div>' +
+                    (time ? '<div class="signup-time">' + time + '</div>' : '') +
+                    '</div>' +
+                    '<button class="remove-btn" onclick="removeSignup(' + row.id + ', this)" title="Remove">×</button>';
+                list.appendChild(li);
+            });
+        })
+        .catch(function() {});
+}
+
+function removeSignup(id, btn) {
+    btn.disabled = true;
+    fetch('/api/morning-rec/' + id, { method: 'DELETE' })
+        .then(function() { loadSignups(); })
+        .catch(function() { btn.disabled = false; });
+}
+
+function clearToday() {
+    if (!confirm('Clear all of today\'s morning rec sign-ups?')) return;
+    fetch('/api/morning-rec/today', { method: 'DELETE' })
+        .then(function() { loadSignups(); })
+        .catch(function() {});
+}
+
+function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadSignups();
+setInterval(loadSignups, 15000);
+</script>
+
+</body>
+</html>
