@@ -70,6 +70,20 @@ db.serialize(() => {
         )
     `);
 
+        db.run(`
+        CREATE TABLE IF NOT EXISTS medkits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            qr_code TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            assigned_staff TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            status TEXT DEFAULT 'Ready',
+            supplies TEXT DEFAULT '',
+            checked_in INTEGER DEFAULT 0,
+            checked_in_time TEXT
+        )
+    `);
+
     db.run(`
         CREATE TABLE IF NOT EXISTS staff (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,10 +96,40 @@ db.serialize(() => {
     db.run(`
         CREATE TABLE IF NOT EXISTS schedule (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            role TEXT DEFAULT '',
-            status TEXT DEFAULT 'duty',
-            hours TEXT DEFAULT ''
+            week_label TEXT DEFAULT '',
+            schedule_date TEXT DEFAULT '',
+            day_name TEXT DEFAULT '',
+            time_block TEXT DEFAULT '',
+            activity TEXT DEFAULT '',
+            staff_role TEXT DEFAULT '',
+            status TEXT DEFAULT ''
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS swap_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            requester_name TEXT NOT NULL,
+            requester_role TEXT DEFAULT '',
+            shift_date TEXT NOT NULL,
+            shift_time TEXT NOT NULL,
+            reason TEXT DEFAULT '',
+            status TEXT DEFAULT 'Pending',
+            resolved_by TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS coverage_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            alert_date TEXT NOT NULL,
+            time_block TEXT NOT NULL,
+            role_needed TEXT NOT NULL,
+            notes TEXT DEFAULT '',
+            status TEXT DEFAULT 'Open',
+            resolved_by TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     `);
 
