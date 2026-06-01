@@ -221,3 +221,9 @@ nav a:hover{
 .button-row button{
     flex:1;
 }
+
+.delete-ticket-btn{
+    margin-top:10px;
+    background:#ff3b30 !important;
+    color:white;
+}
