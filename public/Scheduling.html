@@ -5,142 +5,144 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="/public/js/auth-check.js"></script>
 <title>SHAD Portal | Scheduling</title>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
 <link rel="stylesheet" href="/public/css/shad-base.css">
 <link rel="stylesheet" href="/public/css/scheduling.css">
-
 <script src="/public/js/scheduling.js" defer></script>
-
 </head>
 <body>
 
 <header class="topbar">
-
-    <div class="logo-wrap">
-        <div class="logo-box"></div>
-        <h1>SHAD Portal</h1>
-        <nav>
-            <span style="color:#ddd; font-weight:400;">|</span>
-            <a href="/public/index.html">Home</a>
-        </nav>
-    </div>
-
+  <div class="logo-wrap">
+    <div class="logo-box"></div>
+    <h1>SHAD Portal</h1>
     <nav>
-        <a href="/public/dashboard.html">Dashboard</a>
-        <a href="/public/students.html">Student Hub</a>
-        <a href="/public/morning-rec-qr.html">Morning Rec</a>
-        <a href="/public/contact.html">Contact Staff</a>
-        <a href="/public/issues.html">System Issues</a>
-        <a href="/public/admin.html" style="color:#146ff8;font-weight:800;">Admin</a>
+      <span style="color:#ddd;font-weight:400;">|</span>
+      <a href="/public/index.html">Home</a>
     </nav>
-
+  </div>
+  <nav>
+    <a href="/public/dashboard.html">Dashboard</a>
+    <a href="/public/students.html">Student Hub</a>
+    <a href="/public/morning-rec-qr.html">Morning Rec</a>
+    <a href="/public/contact.html">Contact Staff</a>
+    <a href="/public/issues.html">System Issues</a>
+    <a href="/public/admin.html" style="color:#146ff8;font-weight:800;">Admin</a>
+  </nav>
 </header>
 
 <section class="schedule-page">
 
-    <div class="page-head">
-        <div>
-            <p class="mini-title">STAFF MANAGEMENT</p>
-            <h2>Scheduling Dashboard</h2>
-            <p class="subtext">
-                Manage active shifts, swaps, coverage, and on-call staff.
-            </p>
-        </div>
+  <!-- PAGE HEADER -->
+  <div class="page-head">
+    <div>
+      <p class="mini-title">STAFF MANAGEMENT</p>
+      <h2>Scheduling</h2>
+    </div>
+    <div class="head-controls">
+      <button class="nav-btn" id="prevWeekBtn">&#8592;</button>
+      <span class="week-label" id="weekLabel">Week of —</span>
+      <button class="nav-btn" id="nextWeekBtn">&#8594;</button>
+      <input type="date" id="scheduleDateFilter" class="date-jump">
+      <button class="apply-btn" id="applyScheduleFilterBtn">Jump</button>
+    </div>
+  </div>
 
-        <a href="#" class="add-btn">+ Add Shift</a>
+  <div class="main-layout">
+
+    <!-- CALENDAR -->
+    <div class="cal-wrap">
+      <div class="cal-status-bar">
+        <span id="entryCount">Loading schedule…</span>
+        <div class="legend">
+          <span class="leg-dot green"></span>On Duty
+          <span class="leg-dot purple"></span>On Call
+          <span class="leg-dot orange"></span>Meal
+          <span class="leg-dot red"></span>Off
+        </div>
+      </div>
+
+      <!-- Day header row -->
+      <div class="cal-grid" id="calGrid">
+        <!-- Injected by JS -->
+      </div>
+
+      <!-- Empty state -->
+      <div class="cal-empty" id="calEmpty" style="display:none;">
+        <div class="cal-empty-icon">📅</div>
+        <h3>No schedule for this week</h3>
+        <p>Upload a CSV from the Admin panel, then come back here.</p>
+      </div>
     </div>
 
+    <!-- SIDEBAR -->
+    <div class="sidebar">
 
-    <div class="layout-grid">
-
-        <!-- MAIN TABLE -->
-        <div class="schedule-card">
-
-            <div class="card-head">
-                <h3>Today's Schedule</h3>
-                <span>8AM - 10PM</span>
-            </div>
-
-            <table>
-
-                <tr>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Hours</th>
-                </tr>
-
-                <tr>
-                    <td>Sarah Kim</td>
-                    <td>PA</td>
-                    <td><span class="badge green">On Duty</span></td>
-                    <td>8AM - 4PM</td>
-                </tr>
-
-                <tr>
-                    <td>Jordan Lee</td>
-                    <td>PA</td>
-                    <td><span class="badge green">On Duty</span></td>
-                    <td>10AM - 6PM</td>
-                </tr>
-
-                <tr>
-                    <td>Alex Chen</td>
-                    <td>Floater</td>
-                    <td><span class="badge purple">On Call</span></td>
-                    <td>All Day</td>
-                </tr>
-
-                <tr>
-                    <td>Morgan Bell</td>
-                    <td>PA</td>
-                    <td><span class="badge orange">Half Day</span></td>
-                    <td>Off Until 2PM</td>
-                </tr>
-
-                <tr>
-                    <td>Priya Das</td>
-                    <td>Director</td>
-                    <td><span class="badge red">Away</span></td>
-                    <td>Full Day</td>
-                </tr>
-
-            </table>
-
+      <div class="side-card">
+        <div class="side-card-head">
+          <h3>Swap Requests <span class="s-badge" id="swapBadge" style="display:none">0</span></h3>
+          <button class="side-btn" id="openSwapModalBtn">+ Request</button>
         </div>
+        <div id="swapList" class="s-list"><p class="s-empty">Loading…</p></div>
+      </div>
 
-
-        <!-- SIDE -->
-        <div class="sidebar">
-
-            <div class="mini-card">
-                <h3>Swap Requests</h3>
-                <p>2 pending approvals.</p>
-                <a href="#">Review</a>
-            </div>
-
-            <div class="mini-card">
-                <h3>Coverage Alert</h3>
-                <p>Need 1 PA from 10PM - 12AM.</p>
-                <a href="#">Resolve</a>
-            </div>
-
-            <div class="mini-card">
-                <h3>Med Kits</h3>
-                <p>3 currently assigned.</p>
-                <a href="#">Track</a>
-            </div>
-
+      <div class="side-card">
+        <div class="side-card-head">
+          <h3>Coverage Alerts <span class="s-badge red-badge" id="alertBadge" style="display:none">0</span></h3>
+          <button class="side-btn red-btn" id="openAlertModalBtn">+ Alert</button>
         </div>
+        <div id="alertList" class="s-list"><p class="s-empty">Loading…</p></div>
+      </div>
 
     </div>
-
+  </div>
 </section>
+
+<!-- SWAP MODAL -->
+<div class="modal-backdrop" id="swapModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Request Shift Swap</h3>
+      <button class="modal-x" id="closeSwapModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Your Name</label>
+      <input id="swapName" type="text" placeholder="e.g. Jamie Smith">
+      <label>Your Role</label>
+      <input id="swapRole" type="text" placeholder="e.g. PA, Head Staff">
+      <label>Shift Date</label>
+      <input id="swapDate" type="date">
+      <label>Shift Time Block</label>
+      <input id="swapTime" type="text" placeholder="e.g. 10PM – 12AM">
+      <label>Reason <span class="opt">(optional)</span></label>
+      <textarea id="swapReason" placeholder="Why do you need this shift covered?"></textarea>
+      <button class="modal-submit" id="submitSwapBtn">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALERT MODAL -->
+<div class="modal-backdrop" id="alertModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Add Coverage Alert</h3>
+      <button class="modal-x" id="closeAlertModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Date Needed</label>
+      <input id="alertDate" type="date">
+      <label>Time Block</label>
+      <input id="alertTime" type="text" placeholder="e.g. 10PM – 12AM">
+      <label>Role Needed</label>
+      <input id="alertRole" type="text" placeholder="e.g. PA, Nurse">
+      <label>Notes <span class="opt">(optional)</span></label>
+      <textarea id="alertNotes" placeholder="Any extra context?"></textarea>
+      <button class="modal-submit red-submit" id="submitAlertBtn">Create Alert</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
