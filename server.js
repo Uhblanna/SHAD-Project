@@ -78,6 +78,20 @@ function recDateKey() {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
+function rowToMedkit(row) {
+    return {
+        id: row.id,
+        qrCode: row.qr_code,
+        name: row.name,
+        assignedStaff: row.assigned_staff || "",
+        location: row.location || "",
+        status: row.status || "Ready",
+        supplies: row.supplies || "",
+        checkedIn: row.checked_in === 1,
+        checkedInTime: row.checked_in_time || ""
+    };
+}
+
 function rowToStudent(row) {
     return {
         id: row.id,
@@ -142,10 +156,13 @@ function rowToStaff(row) {
 function rowToSchedule(row) {
     return {
         id: row.id,
-        name: row.name,
-        role: row.role || "",
-        status: row.status || "duty",
-        hours: row.hours || ""
+        weekLabel: row.week_label || "",
+        date: row.schedule_date || "",
+        dayName: row.day_name || "",
+        timeBlock: row.time_block || "",
+        activity: row.activity || "",
+        staffRole: row.staff_role || "",
+        status: row.status || ""
     };
 }
 
@@ -365,6 +382,14 @@ app.delete("/api/issue-tickets", (req, res) => {
     });
 });
 
+app.delete("/api/issue-tickets/:id", (req, res) => {
+    db.run("DELETE FROM issue_tickets WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        res.json({ deleted: this.changes });
+    });
+});
+
 
 // STAFF
 app.get("/api/staff", (req, res) => {
@@ -407,8 +432,39 @@ app.post("/api/staff/replace", (req, res) => {
 
 
 // SCHEDULE
+// SCHEDULE
 app.get("/api/schedule", (req, res) => {
-    db.all("SELECT * FROM schedule ORDER BY id ASC", [], (err, rows) => {
+    const range = req.query.range || "day";
+    const date = req.query.date || "";
+
+    let sql = "SELECT * FROM schedule";
+    const params = [];
+
+    if (date) {
+        if (range === "day") {
+            sql += " WHERE schedule_date = ?";
+            params.push(date);
+        }
+
+        if (range === "week") {
+            sql += `
+                WHERE schedule_date >= date(?, 'weekday 0', '-6 days')
+                AND schedule_date <= date(?, 'weekday 0')
+            `;
+            params.push(date, date);
+        }
+
+        if (range === "month") {
+            sql += `
+                WHERE strftime('%Y-%m', schedule_date) = strftime('%Y-%m', ?)
+            `;
+            params.push(date);
+        }
+    }
+
+    sql += " ORDER BY schedule_date ASC, id ASC";
+
+    db.all(sql, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows.map(rowToSchedule));
     });
@@ -419,30 +475,132 @@ app.post("/api/schedule/replace", (req, res) => {
 
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
-        db.run("DELETE FROM schedule");
+
+        const weekLabel = schedule[0]?.weekLabel || "";
+        const firstDate = schedule[0]?.date || "";
+
+        if (weekLabel || firstDate) {
+            db.run(
+                "DELETE FROM schedule WHERE week_label = ? OR schedule_date = ?",
+                [weekLabel, firstDate]
+            );
+        }
 
         const stmt = db.prepare(`
-            INSERT INTO schedule (name, role, status, hours)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO schedule (
+                week_label,
+                schedule_date,
+                day_name,
+                time_block,
+                activity,
+                staff_role,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
 
-        schedule.forEach(shift => {
+        schedule.forEach(row => {
             stmt.run([
-                shift.name,
-                shift.role || "",
-                shift.status || "duty",
-                shift.hours || ""
+                row.weekLabel || "",
+                row.date || "",
+                row.dayName || "",
+                row.timeBlock || "",
+                row.activity || "",
+                row.staffRole || "",
+                row.status || ""
             ]);
         });
 
         stmt.finalize(err => {
-            if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
+            if (err) {
+                return db.run("ROLLBACK", () => {
+                    res.status(500).json({ error: err.message });
+                });
+            }
 
             db.run("COMMIT", err2 => {
                 if (err2) return res.status(500).json({ error: err2.message });
                 res.json({ inserted: schedule.length });
             });
         });
+    });
+});
+
+// SWAP REQUESTS
+app.get("/api/swap-requests", (req, res) => {
+    db.all("SELECT * FROM swap_requests ORDER BY datetime(created_at) DESC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/swap-requests", (req, res) => {
+    const r = req.body;
+    db.run(`
+        INSERT INTO swap_requests (requester_name, requester_role, shift_date, shift_time, reason, status)
+        VALUES (?, ?, ?, ?, ?, 'Pending')
+    `, [r.requesterName, r.requesterRole || "", r.shiftDate, r.shiftTime, r.reason || ""], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get("SELECT * FROM swap_requests WHERE id = ?", [this.lastID], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json(row);
+        });
+    });
+});
+
+app.put("/api/swap-requests/:id", (req, res) => {
+    const r = req.body;
+    db.run(`
+        UPDATE swap_requests SET status = ?, resolved_by = ? WHERE id = ?
+    `, [r.status, r.resolvedBy || "", req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ updated: this.changes });
+    });
+});
+
+app.delete("/api/swap-requests/:id", (req, res) => {
+    db.run("DELETE FROM swap_requests WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+// COVERAGE ALERTS
+app.get("/api/coverage-alerts", (req, res) => {
+    db.all("SELECT * FROM coverage_alerts ORDER BY alert_date ASC, time_block ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/coverage-alerts", (req, res) => {
+    const a = req.body;
+    db.run(`
+        INSERT INTO coverage_alerts (alert_date, time_block, role_needed, notes, status)
+        VALUES (?, ?, ?, ?, 'Open')
+    `, [a.alertDate, a.timeBlock, a.roleNeeded, a.notes || ""], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get("SELECT * FROM coverage_alerts WHERE id = ?", [this.lastID], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json(row);
+        });
+    });
+});
+
+app.put("/api/coverage-alerts/:id", (req, res) => {
+    const a = req.body;
+    db.run(`
+        UPDATE coverage_alerts SET status = ?, resolved_by = ? WHERE id = ?
+    `, [a.status, a.resolvedBy || "", req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ updated: this.changes });
+    });
+});
+
+app.delete("/api/coverage-alerts/:id", (req, res) => {
+    db.run("DELETE FROM coverage_alerts WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
     });
 });
 
@@ -558,6 +716,117 @@ app.post("/api/committee-signups", (req, res) => {
 
 app.delete("/api/committee-signups/:id", (req, res) => {
     db.run("DELETE FROM committee_signups WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+// MEDKITS
+app.get("/api/medkits", (req, res) => {
+    db.all("SELECT * FROM medkits ORDER BY name ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(rowToMedkit));
+    });
+});
+
+app.post("/api/medkits", (req, res) => {
+    const kit = req.body;
+
+    db.run(`
+        INSERT INTO medkits (qr_code, name, assigned_staff, location, status, supplies, checked_in, checked_in_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+        kit.qrCode,
+        kit.name,
+        kit.assignedStaff || "",
+        kit.location || "",
+        kit.status || "Ready",
+        kit.supplies || "",
+        kit.checkedIn ? 1 : 0,
+        kit.checkedIn ? new Date().toISOString() : null
+    ], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.get("SELECT * FROM medkits WHERE id = ?", [this.lastID], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json(rowToMedkit(row));
+        });
+    });
+});
+
+app.post("/api/medkits/replace", (req, res) => {
+    const medkits = Array.isArray(req.body.medkits) ? req.body.medkits : [];
+
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        db.run("DELETE FROM medkits");
+
+        const stmt = db.prepare(`
+            INSERT INTO medkits (qr_code, name, assigned_staff, location, status, supplies, checked_in, checked_in_time)
+            VALUES (?, ?, ?, ?, ?, ?, 0, NULL)
+        `);
+
+        medkits.forEach(kit => {
+            stmt.run([
+                kit.qrCode,
+                kit.name,
+                kit.assignedStaff || "",
+                kit.location || "",
+                kit.status || "Ready",
+                kit.supplies || ""
+            ]);
+        });
+
+        stmt.finalize(err => {
+            if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
+
+            db.run("COMMIT", err2 => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ inserted: medkits.length });
+            });
+        });
+    });
+});
+
+app.post("/api/medkits/check-in", (req, res) => {
+    const qrCode = (req.body.qrCode || "").trim();
+
+    if (!qrCode) {
+        return res.status(400).json({ error: "QR code is required." });
+    }
+
+    db.run(`
+        UPDATE medkits
+        SET checked_in = 1,
+            checked_in_time = ?
+        WHERE qr_code = ?
+    `, [new Date().toISOString(), qrCode], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (this.changes === 0) {
+            return res.status(404).json({ error: "No med kit found with that QR code." });
+        }
+
+        db.get("SELECT * FROM medkits WHERE qr_code = ?", [qrCode], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json(rowToMedkit(row));
+        });
+    });
+});
+
+app.post("/api/medkits/reset-checkins", (req, res) => {
+    db.run(`
+        UPDATE medkits
+        SET checked_in = 0,
+            checked_in_time = NULL
+    `, [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ reset: this.changes });
+    });
+});
+
+app.delete("/api/medkits/:id", (req, res) => {
+    db.run("DELETE FROM medkits WHERE id = ?", [req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ deleted: this.changes });
     });
