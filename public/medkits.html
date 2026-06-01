@@ -14,7 +14,8 @@
 <link rel="stylesheet" href="/public/css/shad-base.css">
 <link rel="stylesheet" href="/public/css/medkits.css">
 
-<script src="/public/js/medkits.js"></script>
+<script src="https://unpkg.com/html5-qrcode" defer></script>
+<script src="/public/js/medkits.js" defer></script>
 
 </head>
 <body>
@@ -54,6 +55,26 @@
 
     <div class="med-layout">
 
+        <div class="scanner-card">
+            <h3>Scan Med Kit QR Code</h3>
+            <p class="subtext">Scan each med kit before a trip to check it in.</p>
+
+            <div id="qr-reader"></div>
+
+            <div class="button-row">
+                <button id="startScannerBtn">Start Scanner</button>
+                <button id="stopScannerBtn" class="secondary-btn">Stop Scanner</button>
+            </div>
+
+            <div class="manual-scan">
+                <label>Manual QR Code Entry</label>
+                <input type="text" id="manualQrCode" placeholder="Example: MEDKIT-001">
+                <button id="manualCheckInBtn">Check In Manually</button>
+            </div>
+
+            <p id="scanMessage" class="scan-message"></p>
+        </div>
+
         <div class="kit-list-card">
             <div class="card-head">
                 <h3>Current Med Kits</h3>
@@ -64,34 +85,36 @@
         </div>
 
         <div class="form-card">
-            <h3>Add / Update Med Kit</h3>
+            <button id="showAddKitBtn">Add Med Kit</button>
 
-            <label>Kit Name</label>
-            <input type="text" id="kitName" placeholder="Example: Main Med Kit">
+            <div id="addKitForm" class="hidden-form">
+                <h3>Add Med Kit Manually</h3>
 
-            <label>Assigned Staff</label>
-            <input type="text" id="assignedStaff" placeholder="Example: Sarah Kim">
+                <label>QR Code</label>
+                <input type="text" id="qrCode" placeholder="Example: MEDKIT-001">
 
-            <label>Current Location</label>
-            <input type="text" id="location" placeholder="Example: Lecture Hall">
+                <label>Kit Name</label>
+                <input type="text" id="kitName" placeholder="Example: Main Med Kit">
 
-            <label>Status</label>
-            <select id="status">
-                <option value="Checked">Checked</option>
-                <option value="Needs Restock">Needs Restock</option>
-                <option value="Missing">Missing</option>
-                <option value="In Use">In Use</option>
-            </select>
+                <label>Assigned Staff</label>
+                <input type="text" id="assignedStaff" placeholder="Example: Sarah Kim">
 
-            <label>Missing / Low Supplies</label>
-            <textarea id="supplies" placeholder="Example: Bandages, gloves, ice packs..."></textarea>
+                <label>Current Location</label>
+                <input type="text" id="location" placeholder="Example: Lecture Hall">
 
-            <label class="check-label">
-                <input type="checkbox" id="checkedToday">
-                Kit checked today
-            </label>
+                <label>Status</label>
+                <select id="status">
+                    <option value="Ready">Ready</option>
+                    <option value="Needs Restock">Needs Restock</option>
+                    <option value="Missing">Missing</option>
+                    <option value="In Use">In Use</option>
+                </select>
 
-            <button id="addKitBtn">Save Med Kit</button>
+                <label>Supply Notes</label>
+                <textarea id="supplies" placeholder="Example: Fully stocked, low on gloves..."></textarea>
+
+                <button id="addKitBtn">Save Med Kit</button>
+            </div>
         </div>
 
     </div>
