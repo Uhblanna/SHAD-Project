@@ -1,239 +1,371 @@
-// ============================================================
-//  SHAD Portal — Scheduling
-//  Handles: shift status updates, swap requests, coverage
-// ============================================================
+// ═══════════════════════════════════════════════════
+//  SHAD Scheduling — Calendar View
+// ═══════════════════════════════════════════════════
 
+let allSchedule   = [];
+let swapRequests  = [];
+let coverageAlerts = [];
+let currentWeekStart = null;
 
-// ── STAFF SCHEDULE DATA ───────────────────────────────────
-// When you connect Firebase this will come from the database.
+const tooltip = document.createElement("div");
+tooltip.className = "shift-tooltip";
+document.body.appendChild(tooltip);
 
-let schedule = [];
+// ── Bootstrap ─────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+    currentWeekStart = getMondayOf(new Date());
 
-const statusLabels = {
-    duty:    { text: 'On Duty',  css: 'green'  },
-    oncall:  { text: 'On Call',  css: 'purple' },
-    halfday: { text: 'Half Day', css: 'orange' },
-    away:    { text: 'Away',     css: 'red'    },
-};
+    document.getElementById("prevWeekBtn").addEventListener("click", () => shiftWeek(-1));
+    document.getElementById("nextWeekBtn").addEventListener("click", () => shiftWeek(1));
+    document.getElementById("applyScheduleFilterBtn").addEventListener("click", jumpToDate);
+    document.getElementById("scheduleDateFilter").valueAsDate = new Date();
 
+    document.getElementById("openSwapModalBtn").addEventListener("click", () => openModal("swapModal"));
+    document.getElementById("closeSwapModal").addEventListener("click",  () => closeModal("swapModal"));
+    document.getElementById("submitSwapBtn").addEventListener("click", submitSwap);
 
-// ── ON PAGE LOAD ──────────────────────────────────────────
+    document.getElementById("openAlertModalBtn").addEventListener("click", () => openModal("alertModal"));
+    document.getElementById("closeAlertModal").addEventListener("click",  () => closeModal("alertModal"));
+    document.getElementById("submitAlertBtn").addEventListener("click", submitAlert);
 
-document.addEventListener('DOMContentLoaded', function() {
-
-    loadSchedule();
-    setupAddShift();
-
-});
-
-function loadSchedule() {
-    fetch("/api/schedule")
-        .then(res => res.json())
-        .then(data => {
-            schedule = data;
-            renderSchedule();
-        });
-}
-
-// ── RENDER SCHEDULE TABLE ─────────────────────────────────
-
-function renderSchedule() {
-
-    const table = document.querySelector('table');
-    if (!table) return;
-
-    // Keep the header row, remove old data rows
-    const rows = table.querySelectorAll('tr:not(:first-child)');
-    rows.forEach(function(row) { row.remove(); });
-
-    schedule.forEach(function(staff) {
-
-        const statusInfo = statusLabels[staff.status] || { text: staff.status, css: 'green' };
-
-        const row = document.createElement('tr');
-        row.setAttribute('data-id', staff.id);
-
-        row.innerHTML =
-            '<td>' + staff.name + '</td>' +
-            '<td>' + staff.role + '</td>' +
-            '<td><span class="badge ' + statusInfo.css + '">' + statusInfo.text + '</span></td>' +
-            '<td>' + staff.hours + '</td>';
-
-        // Click to update status
-        row.style.cursor = 'pointer';
-        row.title = 'Click to update status';
-
-        row.addEventListener('click', function() {
-            showStatusUpdate(staff.id);
-        });
-
-        table.appendChild(row);
-
-    });
-
-}
-
-
-// ── UPDATE STATUS ─────────────────────────────────────────
-
-function showStatusUpdate(staffId) {
-
-    const staff = schedule.find(function(s) { return s.id === staffId; });
-    if (!staff) return;
-
-    const newStatus = prompt(
-        'Update status for ' + staff.name + ':\n\n' +
-        'Type one of: duty, oncall, halfday, away\n\n' +
-        'Current status: ' + staff.status
+    document.querySelectorAll(".modal-backdrop").forEach(el =>
+        el.addEventListener("click", e => { if (e.target === el) closeModal(el.id); })
     );
 
-    if (!newStatus) return;
+    Promise.all([
+        fetch("/api/schedule").then(r => r.json()).catch(() => []),
+        fetch("/api/swap-requests").then(r => r.json()).catch(() => []),
+        fetch("/api/coverage-alerts").then(r => r.json()).catch(() => [])
+    ]).then(([sched, swaps, alerts]) => {
+        allSchedule    = sched;
+        swapRequests   = swaps;
+        coverageAlerts = alerts;
 
-    const cleaned = newStatus.trim().toLowerCase();
+        if (sched.length > 0 && sched[0].date) {
+            currentWeekStart = getMondayOf(parseDate(sched[0].date));
+        }
 
-    if (!statusLabels[cleaned]) {
-        showMessage('Invalid status. Use: duty, oncall, halfday, or away', 'error');
+        renderWeek();
+        renderSwapPanel();
+        renderAlertPanel();
+    });
+});
+
+// ── Week navigation ───────────────────────────────────────────────
+function shiftWeek(dir) {
+    currentWeekStart = addDays(currentWeekStart, dir * 7);
+    renderWeek();
+}
+function jumpToDate() {
+    const val = document.getElementById("scheduleDateFilter").value;
+    if (val) { currentWeekStart = getMondayOf(parseDate(val)); renderWeek(); }
+}
+
+// ── Calendar render ───────────────────────────────────────────────
+//
+//  Layout:
+//    Rows    = TIME BLOCKS  (e.g. "7–8AM Breakfast", "On Call 8–10PM")
+//    Columns = DAYS Mon–Sun
+//    Each cell can have MULTIPLE staff role pills stacked vertically
+//
+function renderWeek() {
+    const days = weekDays(currentWeekStart);
+    const weekSet = new Set(days.map(toISO));
+    const entries = allSchedule.filter(e => weekSet.has(e.date));
+
+    document.getElementById("weekLabel").textContent =
+        `${fmtShort(days[0])} – ${fmtShort(days[6])}`;
+
+    document.getElementById("entryCount").textContent =
+        entries.length > 0
+            ? `${entries.length} schedule entries this week`
+            : "No schedule entries this week";
+
+    const grid = document.getElementById("calGrid");
+    const empty = document.getElementById("calEmpty");
+
+    grid.innerHTML = "";
+
+    if (entries.length === 0) {
+        grid.style.display = "none";
+        empty.style.display = "block";
         return;
     }
 
-    staff.status = cleaned;
-    renderSchedule();
-    showMessage(staff.name + ' updated to ' + statusLabels[cleaned].text, 'success');
+    grid.style.display = "block";
+    empty.style.display = "none";
 
-}
+    days.forEach(day => {
+        const dateStr = toISO(day);
+        const dayEntries = entries.filter(e => e.date === dateStr);
 
+        if (dayEntries.length === 0) return;
 
-// ── ADD SHIFT ─────────────────────────────────────────────
+        const staffRoles = [...new Set(dayEntries.map(e => e.staffRole))]
+            .filter(Boolean)
+            .sort(sortStaffRoles);
 
-function setupAddShift() {
+        const timeBlocks = [...new Set(dayEntries.map(e => e.timeBlock))]
+            .filter(Boolean)
+            .sort(sortTimeBlocks);
 
-    const addBtn = document.querySelector('.add-btn');
-    if (!addBtn) return;
+        const section = document.createElement("div");
+        section.className = "sheet-day";
 
-    addBtn.addEventListener('click', function(e) {
+        section.innerHTML = `
+            <div class="sheet-day-title">
+                ${dayEntries[0].dayName || day.toLocaleDateString("en", { weekday: "long" })} ${dateStr}
+            </div>
 
-        e.preventDefault();
-        showAddShiftForm();
+            <div class="sheet-table-wrap">
+                <table class="sheet-table">
+                    <thead>
+                        <tr>
+                            <th class="time-col">Time Block</th>
+                            <th class="activity-col">Activity</th>
+                            ${staffRoles.map(role => `<th>${role}</th>`).join("")}
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        `;
 
-    });
+        const tbody = section.querySelector("tbody");
 
-}
+        timeBlocks.forEach(timeBlock => {
+            const rowEntries = dayEntries.filter(e => e.timeBlock === timeBlock);
+            const activity = rowEntries.find(e => e.activity)?.activity || "";
 
-function showAddShiftForm() {
+            const row = document.createElement("tr");
 
-    if (document.querySelector('.add-shift-form')) return;
+            row.innerHTML = `
+                <td class="time-cell">${timeBlock}</td>
+                <td class="activity-cell">${activity}</td>
+                ${staffRoles.map(role => {
+                    const entry = rowEntries.find(e => e.staffRole === role);
+                    const status = entry ? entry.status : "";
+                    return `<td class="status-cell ${sheetStatusClass(status)}">${status}</td>`;
+                }).join("")}
+            `;
 
-    const form = document.createElement('div');
-    form.className = 'add-shift-form';
-
-    form.style.cssText =
-        'position:fixed; top:0; left:0; width:100%; height:100%;' +
-        'background:rgba(0,0,0,0.5); z-index:999;' +
-        'display:flex; justify-content:center; align-items:center;';
-
-    form.innerHTML =
-        '<div style="background:white; padding:40px; border-radius:24px;' +
-        'width:460px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">' +
-
-            '<h3 style="font-size:26px; margin-bottom:22px;">Add Staff Shift</h3>' +
-
-            '<label style="display:block; font-weight:700; margin-bottom:8px;">Name</label>' +
-            '<input id="shift-name" type="text" placeholder="Staff name"' +
-            'style="width:100%; padding:14px; border:none; background:#f4f5f7;' +
-            'border-radius:14px; font-size:15px; margin-bottom:14px; outline:none; font-family:Montserrat,sans-serif;">' +
-
-            '<label style="display:block; font-weight:700; margin-bottom:8px;">Role</label>' +
-            '<input id="shift-role" type="text" placeholder="PA, Director, Floater..."' +
-            'style="width:100%; padding:14px; border:none; background:#f4f5f7;' +
-            'border-radius:14px; font-size:15px; margin-bottom:14px; outline:none; font-family:Montserrat,sans-serif;">' +
-
-            '<label style="display:block; font-weight:700; margin-bottom:8px;">Hours</label>' +
-            '<input id="shift-hours" type="text" placeholder="8AM - 4PM"' +
-            'style="width:100%; padding:14px; border:none; background:#f4f5f7;' +
-            'border-radius:14px; font-size:15px; margin-bottom:14px; outline:none; font-family:Montserrat,sans-serif;">' +
-
-            '<label style="display:block; font-weight:700; margin-bottom:8px;">Status</label>' +
-            '<select id="shift-status"' +
-            'style="width:100%; padding:14px; border:none; background:#f4f5f7;' +
-            'border-radius:14px; font-size:15px; margin-bottom:22px; outline:none; font-family:Montserrat,sans-serif;">' +
-                '<option value="duty">On Duty</option>' +
-                '<option value="oncall">On Call</option>' +
-                '<option value="halfday">Half Day</option>' +
-                '<option value="away">Away</option>' +
-            '</select>' +
-
-            '<div style="display:flex; gap:12px;">' +
-                '<button id="save-shift-btn"' +
-                'style="flex:1; padding:16px; border:none; background:#6f2da8;' +
-                'color:white; border-radius:14px; font-size:16px; font-weight:800;' +
-                'cursor:pointer; font-family:Montserrat,sans-serif;">Save Shift</button>' +
-                '<button id="cancel-shift-btn"' +
-                'style="flex:1; padding:16px; border:none; background:#f4f5f7;' +
-                'color:#333; border-radius:14px; font-size:16px; font-weight:800;' +
-                'cursor:pointer; font-family:Montserrat,sans-serif;">Cancel</button>' +
-            '</div>' +
-
-        '</div>';
-
-    document.body.appendChild(form);
-
-    document.getElementById('cancel-shift-btn').addEventListener('click', function() {
-        form.remove();
-    });
-
-    document.getElementById('save-shift-btn').addEventListener('click', function() {
-
-        const name   = document.getElementById('shift-name').value.trim();
-        const role   = document.getElementById('shift-role').value.trim();
-        const hours  = document.getElementById('shift-hours').value.trim();
-        const status = document.getElementById('shift-status').value;
-
-        if (!name || !role || !hours) {
-            alert('Please fill in all fields.');
-            return;
-        }
-
-        schedule.push({
-            id: schedule.length + 1,
-            name: name,
-            role: role,
-            status: status,
-            hours: hours
+            tbody.appendChild(row);
         });
 
-        renderSchedule();
-        form.remove();
-        showMessage(name + ' added to the schedule.', 'success');
-
+        grid.appendChild(section);
     });
-
 }
 
+// ── Tooltip ───────────────────────────────────────────────────────
+function attachTooltip(el, entry) {
+    el.addEventListener("mouseenter", () => {
+        tooltip.innerHTML = `
+            <strong>${entry.activity || "Shift"}</strong>
+            ${entry.staffRole}<br>
+            ${entry.timeBlock}<br>
+            <span style="opacity:.65">${entry.date}</span>
+            ${entry.status ? `<br><span style="opacity:.65">Status: ${entry.status}</span>` : ""}
+        `;
+        tooltip.classList.add("show");
+    });
+    el.addEventListener("mousemove", e => {
+        tooltip.style.left = (e.clientX + 14) + "px";
+        tooltip.style.top  = (e.clientY - 10) + "px";
+    });
+    el.addEventListener("mouseleave", () => tooltip.classList.remove("show"));
+}
 
-// ── HELPERS ───────────────────────────────────────────────
+// ── Swap panel ────────────────────────────────────────────────────
+function renderSwapPanel() {
+    const pending = swapRequests.filter(r => r.status === "Pending");
+    const badge   = document.getElementById("swapBadge");
+    const list    = document.getElementById("swapList");
 
-function showMessage(text, type) {
+    badge.textContent = pending.length;
+    badge.style.display = pending.length > 0 ? "inline-flex" : "none";
 
-    const existing = document.querySelector('.js-message');
-    if (existing) existing.remove();
+    if (pending.length === 0) { list.innerHTML = `<p class="s-empty">No pending swap requests.</p>`; return; }
+    list.innerHTML = "";
+    pending.forEach(r => {
+        const item = mkDiv("s-item");
+        item.innerHTML = `
+            <div class="s-item-name">${r.requester_name}</div>
+            <div class="s-item-meta">${r.requester_role ? r.requester_role + " · " : ""}${r.shift_date} · ${r.shift_time}</div>
+            ${r.reason ? `<div class="s-item-reason">"${r.reason}"</div>` : ""}
+            <div class="s-item-actions">
+                <button class="act-btn act-approve" onclick="resolveSwap(${r.id},'Approved')">✓ Approve</button>
+                <button class="act-btn act-deny"    onclick="resolveSwap(${r.id},'Denied')">✕ Deny</button>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
 
-    const msg = document.createElement('div');
-    msg.className = 'js-message';
-    msg.textContent = text;
+function resolveSwap(id, status) {
+    fetch(`/api/swap-requests/${id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, resolvedBy: "Admin" })
+    }).then(() => {
+        const i = swapRequests.findIndex(r => r.id === id);
+        if (i !== -1) swapRequests[i].status = status;
+        renderSwapPanel();
+    });
+}
 
-    msg.style.cssText =
-        'position:fixed; bottom:30px; left:50%; transform:translateX(-50%);' +
-        'padding:14px 28px; border-radius:14px; font-weight:700; font-size:15px;' +
-        'font-family:Montserrat,sans-serif; z-index:9999; transition:opacity 0.4s;' +
-        (type === 'success'
-            ? 'background:#8bc53f; color:white;'
-            : 'background:#d12c2c; color:white;');
+function submitSwap() {
+    const name = v("swapName"), role = v("swapRole"), date = v("swapDate"),
+          time = v("swapTime"), reason = v("swapReason");
+    if (!name || !date || !time) return showFormErr("swapModal", "Please fill in your name, date, and shift time.");
 
-    document.body.appendChild(msg);
+    fetch("/api/swap-requests", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requesterName: name, requesterRole: role, shiftDate: date, shiftTime: time, reason })
+    }).then(r => r.json()).then(row => {
+        swapRequests.unshift(row);
+        renderSwapPanel();
+        closeModal("swapModal");
+        ["swapName","swapRole","swapDate","swapTime","swapReason"].forEach(id => document.getElementById(id).value = "");
+        showToast("Swap request submitted!");
+    });
+}
 
-    setTimeout(function() {
-        msg.style.opacity = '0';
-        setTimeout(function() { msg.remove(); }, 400);
-    }, 2500);
+// ── Alert panel ───────────────────────────────────────────────────
+function renderAlertPanel() {
+    const open  = coverageAlerts.filter(a => a.status === "Open");
+    const badge = document.getElementById("alertBadge");
+    const list  = document.getElementById("alertList");
 
+    badge.textContent = open.length;
+    badge.style.display = open.length > 0 ? "inline-flex" : "none";
+
+    if (open.length === 0) { list.innerHTML = `<p class="s-empty">No open coverage alerts.</p>`; return; }
+    list.innerHTML = "";
+    open.forEach(a => {
+        const item = mkDiv("s-item alert-item");
+        item.innerHTML = `
+            <div class="s-item-name">${a.role_needed}</div>
+            <div class="s-item-meta">${a.alert_date} · ${a.time_block}</div>
+            ${a.notes ? `<div class="s-item-reason">${a.notes}</div>` : ""}
+            <div class="s-item-actions">
+                <button class="act-btn act-resolve" onclick="resolveAlert(${a.id})">✓ Resolved</button>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+function resolveAlert(id) {
+    fetch(`/api/coverage-alerts/${id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Resolved", resolvedBy: "Admin" })
+    }).then(() => {
+        const i = coverageAlerts.findIndex(a => a.id === id);
+        if (i !== -1) coverageAlerts[i].status = "Resolved";
+        renderAlertPanel();
+    });
+}
+
+function submitAlert() {
+    const date = v("alertDate"), time = v("alertTime"),
+          role = v("alertRole"), notes = v("alertNotes");
+    if (!date || !time || !role) return showFormErr("alertModal", "Please fill in the date, time block, and role needed.");
+
+    fetch("/api/coverage-alerts", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alertDate: date, timeBlock: time, roleNeeded: role, notes })
+    }).then(r => r.json()).then(row => {
+        coverageAlerts.unshift(row);
+        renderAlertPanel();
+        closeModal("alertModal");
+        ["alertDate","alertTime","alertRole","alertNotes"].forEach(id => document.getElementById(id).value = "");
+        showToast("Coverage alert created!");
+    });
+}
+
+// ── Colour helpers ────────────────────────────────────────────────
+function colorClass(status) {
+    const s = (status || "").toLowerCase();
+    if (s.includes("duty"))    return "pill-green";
+    if (s.includes("call"))    return "pill-purple";
+    if (s.includes("breakfast") || s.includes("lunch") || s.includes("dinner") || s.includes("meal")) return "pill-orange";
+    if (s.includes("away") || s.includes("off")) return "pill-red";
+    return "pill-green";
+}
+
+function sheetStatusClass(status) {
+    const s = (status || "").toLowerCase();
+
+    if (s.includes("on duty")) return "sheet-duty";
+    if (s.includes("on call")) return "sheet-call";
+    if (s.includes("breakfast") || s.includes("lunch") || s.includes("dinner")) return "sheet-meal";
+    if (s.includes("night")) return "sheet-night";
+    if (s.includes("off")) return "sheet-off";
+
+    return "";
+}
+
+function sortStaffRoles(a, b) {
+    const order = ["PA1", "PA2", "PA3", "PA4", "PA5", "PA6", "PA7", "PA8", "PA9", "Rec Dir", "Teacher Fellow", "PD1", "PD2"];
+
+    const aIndex = order.indexOf(a);
+    const bIndex = order.indexOf(b);
+
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+    if (aIndex !== -1) return -1;
+    if (bIndex !== -1) return 1;
+
+    return a.localeCompare(b);
+}
+
+function sortTimeBlocks(a, b) {
+    const hour = s => {
+        const m = s.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+        if (!m) return 999;
+        let h = parseInt(m[1]);
+        const ap = (m[3] || "").toLowerCase();
+        if (ap === "pm" && h !== 12) h += 12;
+        if (ap === "am" && h === 12) h = 0;
+        return h * 60 + parseInt(m[2] || 0);
+    };
+    return hour(a) - hour(b);
+}
+
+// ── Date utilities ────────────────────────────────────────────────
+function getMondayOf(d) {
+    const dt = new Date(d);
+    const day = dt.getDay();
+    dt.setDate(dt.getDate() - day);
+    dt.setHours(0, 0, 0, 0);
+    return dt;
+}
+function weekDays(monday) { return Array.from({ length: 7 }, (_, i) => addDays(monday, i)); }
+function addDays(d, n) { const dt = new Date(d); dt.setDate(dt.getDate() + n); return dt; }
+function toISO(d) {
+    return d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+}
+function parseDate(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+function fmtShort(d)  { return d.toLocaleDateString("en", { month: "short", day: "numeric" }); }
+
+// ── DOM & UI helpers ──────────────────────────────────────────────
+function mkDiv(cls) { const el = document.createElement("div"); el.className = cls; return el; }
+function v(id) { return (document.getElementById(id)?.value || "").trim(); }
+function openModal(id)  { document.getElementById(id).classList.add("open"); document.body.style.overflow = "hidden"; }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); document.body.style.overflow = ""; }
+
+function showFormErr(modalId, msg) {
+    const modal = document.getElementById(modalId);
+    let err = modal.querySelector(".form-error");
+    if (!err) { err = document.createElement("p"); err.className = "form-error"; modal.querySelector(".modal-body").prepend(err); }
+    err.textContent = msg;
+    setTimeout(() => err.remove(), 4000);
+}
+
+function showToast(msg) {
+    const t = document.createElement("div");
+    t.className = "toast"; t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add("show"));
+    setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 300); }, 2500);
 }
