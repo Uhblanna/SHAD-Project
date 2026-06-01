@@ -278,3 +278,21 @@ button{
     }
 
 }
+
+.item-row.purchased .item-info h4,
+.item-row.purchased .item-info p,
+.item-row.purchased small{
+    text-decoration:line-through;
+    opacity:.55;
+}
+
+.save-btn{
+    background:#00d084;
+    margin-top:24px;
+}
+
+.empty-list{
+    color:#666;
+    font-weight:700;
+    padding:20px 0;
+}
