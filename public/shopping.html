@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="/public/css/shad-base.css">
 <link rel="stylesheet" href="/public/css/shopping.css">
 
-<script src= "/public/js/shopping.js"></script>
+<script src="/public/js/shopping.js" defer></script>
 
 </head>
 <body>
@@ -65,67 +65,12 @@
 
             <div class="card-head">
                 <h3>Current Purchase List</h3>
-                <span>8 Items Pending</span>
+                <span>0 Items Pending</span>
             </div>
 
-            <div class="item-row">
-                <label class="check-wrap">
-                    <input type="checkbox">
-                    <span class="custom-box"></span>
-                </label>
+            <div id="shoppingList"></div>
 
-                <div class="item-info">
-                    <h4>Bandages</h4>
-                    <p>Restock first aid kits</p>
-                </div>
-
-                <small>Costco</small>
-            </div>
-
-
-            <div class="item-row">
-                <label class="check-wrap">
-                    <input type="checkbox">
-                    <span class="custom-box"></span>
-                </label>
-
-                <div class="item-info">
-                    <h4>Markers</h4>
-                    <p>Activity supplies for workshop</p>
-                </div>
-
-                <small>Dollar Store</small>
-            </div>
-
-
-            <div class="item-row">
-                <label class="check-wrap">
-                    <input type="checkbox">
-                    <span class="custom-box"></span>
-                </label>
-
-                <div class="item-info">
-                    <h4>Electrolyte Drinks</h4>
-                    <p>Wellness support</p>
-                </div>
-
-                <small>Grocery</small>
-            </div>
-
-
-            <div class="item-row">
-                <label class="check-wrap">
-                    <input type="checkbox">
-                    <span class="custom-box"></span>
-                </label>
-
-                <div class="item-info">
-                    <h4>Printer Paper</h4>
-                    <p>Office supplies</p>
-                </div>
-
-                <small>Staples</small>
-            </div>
+            <button id="savePurchasedBtn" class="save-btn">Save Checked Items</button>
 
         </div>
 
