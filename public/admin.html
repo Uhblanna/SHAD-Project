@@ -105,13 +105,15 @@
                 <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
             <div class="admin-card-body">
-                <p>CSV columns required: <strong>Name, Role, Status, Hours</strong></p>
-
+                <p>
+                    Upload the PA weekly schedule CSV exported from Excel.
+                    The file should include rows like <strong>Sunday 2026-07-05</strong>,
+                    followed by <strong>Time Block, Activity, PA1, PA2...</strong>
+                </p>
                 <input id="scheduleCsvInput" type="file" accept=".csv">
                 <button id="uploadScheduleBtn">Upload Schedule</button>
 
-                <p class="example">Example: Sarah Kim,PA,duty,8AM - 4PM</p>
-            </div>
+                <p class="example">Example format: Week 1 Schedule, then Sunday 2026-07-05, then Time Block, Activity, PA1, PA2...</p>            </div>
         </div>
 
         <div class="admin-card">
@@ -150,6 +152,22 @@
             </div>
         </div>
 
+        <div class="admin-card">
+            <div class="admin-card-head">
+                <h3>Upload Med Kits CSV</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+
+            <div class="admin-card-body">
+                <p>CSV columns required: <strong>QRCode, Name, AssignedStaff, Location, Status, Supplies</strong></p>
+
+                <input id="medkitCsvInput" type="file" accept=".csv">
+
+                <button id="uploadMedkitsBtn">Upload Med Kits</button>
+
+                <p class="example">Example: MEDKIT-001,Main Med Kit,Sarah Kim,Lecture Hall,Ready,Fully stocked</p>
+            </div>
+        </div>
     </div>
 
 </section>
