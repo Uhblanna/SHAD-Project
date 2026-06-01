@@ -8,8 +8,9 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+    <link rel="stylesheet" href="/public/css/shad-base.css">
     <link rel="stylesheet" href="/public/css/students.css">
     <script src="/public/js/db.js"></script>
     <script src="/public/js/students.js" defer></script>
@@ -21,17 +22,19 @@
     <div class="logo-wrap">
         <div class="logo-box"></div>
         <h1>SHAD Portal</h1>
-
         <nav>
+            <span style="color:#ddd; font-weight:400;">|</span>
             <a href="/public/index.html">Home</a>
         </nav>
     </div>
 
     <nav>
         <a href="/public/dashboard.html">Dashboard</a>
-        <a href="/public/students.html">Students</a>
+        <a href="/public/students.html">Student Hub</a>
+        <a href="/public/morning-rec-qr.html">Morning Rec</a>
         <a href="/public/contact.html">Contact Staff</a>
-        <a href="/public/observations.html">Observations</a>
+        <a href="/public/issues.html">System Issues</a>
+        <a href="/public/admin.html" style="color:#146ff8;font-weight:800;">Admin</a>
     </nav>
 </header>
 
@@ -40,38 +43,39 @@
     <aside class="hub-sidebar" id="hubSidebar">
         <button class="hub-menu-btn" id="hubMenuBtn">☰</button>
 
-        <div class="hub-title">
-            <h2>SHAD 2026</h2>
-            <p>Student Portal</p>
-        </div>
-
-        <button class="hub-nav active" data-screen="hubHome">
-            <span>🏠</span>
+        <button class="hub-nav hub-home-title active" data-screen="hubHome" data-preview="Student Hub">
+            <span class="nav-emoji nav-globe">🌐</span>
+            <span class="nav-divider">|</span>
             <span class="nav-text">Student Hub</span>
         </button>
 
-        <button class="hub-nav" data-screen="studentsScreen">
-            <span>👥</span>
+        <button class="hub-nav" data-screen="studentsScreen" data-preview="Students">
+            <span class="nav-emoji nav-people">👥</span>
+            <span class="nav-divider">|</span>
             <span class="nav-text">Students</span>
         </button>
 
-        <button class="hub-nav" data-screen="medicationsScreen">
-            <span>💊</span>
+        <button class="hub-nav" data-screen="medicationsScreen" data-preview="Medications">
+            <span class="nav-emoji nav-cross">✚</span>
+            <span class="nav-divider">|</span>
             <span class="nav-text">Medications</span>
         </button>
 
-        <button class="hub-nav" data-screen="attendanceScreen">
-            <span>✓</span>
+        <button class="hub-nav" data-screen="attendanceScreen" data-preview="Attendance">
+            <span class="nav-emoji nav-check">✓</span>
+            <span class="nav-divider">|</span>
             <span class="nav-text">Attendance</span>
         </button>
 
-        <button class="hub-nav" data-screen="observationsScreen">
-            <span>📝</span>
+        <button class="hub-nav" data-screen="observationsScreen" data-preview="Observations">
+            <span class="nav-emoji">🔍</span>
+            <span class="nav-divider">|</span>
             <span class="nav-text">Observations</span>
         </button>
 
-        <button class="hub-nav" data-screen="dietaryScreen">
-            <span>🥗</span>
+        <button class="hub-nav" data-screen="dietaryScreen" data-preview="Dietary Restrictions">
+            <span class="nav-emoji nav-emoji-stack"><span class="emoji-base">🥜</span><span class="emoji-over">🚫</span></span>
+            <span class="nav-divider">|</span>
             <span class="nav-text">Dietary Restrictions</span>
         </button>
     </aside>
@@ -80,33 +84,32 @@
 
         <!-- STUDENT HUB HOME -->
         <section id="hubHome" class="hub-screen active">
-            <div class="page-header">
+            <div class="page-header hub-home-header">
                 <div>
                     <p class="mini-title">STUDENT OPERATIONS</p>
                     <h2>Student Hub</h2>
-                    <p class="subtext">Switch between student profiles, attendance, medications, and observations without leaving this page.</p>
-                </div>
-            </div>
-
-            <div class="hub-stats">
-                <div class="hub-card">
-                    <h3 id="studentCount">0</h3>
-                    <p>Total Students</p>
                 </div>
 
-                <div class="hub-card">
-                    <h3 id="presentCount">0</h3>
-                    <p>Checked In</p>
-                </div>
+                <div class="hub-stats">
+                    <div class="hub-card">
+                        <h3 id="presentCount">0</h3>
+                        <p>Checked In</p>
+                    </div>
 
-                <div class="hub-card">
-                    <h3 id="missingCount">0</h3>
-                    <p>Needs Follow Up</p>
-                </div>
+                    <div class="hub-card">
+                        <h3 id="missingCount">0</h3>
+                        <p>Follow ups</p>
+                    </div>
 
-                <div class="hub-card">
-                    <h3 id="observationCount">0</h3>
-                    <p>Observations</p>
+                    <div class="hub-card">
+                        <h3 id="observationCount">0</h3>
+                        <p>Observations</p>
+                    </div>
+
+                    <div class="hub-card">
+                        <h3 id="studentCount">0</h3>
+                        <p>Total Students</p>
+                    </div>
                 </div>
             </div>
 
@@ -114,22 +117,25 @@
                 <div class="student-panel">
                     <div class="card-header">
                         <h3>Attendance Alerts</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                     </div>
-                    <div id="attendanceAlerts"></div>
+                    <div id="attendanceAlerts" class="panel-body"></div>
                 </div>
 
                 <div class="student-panel">
                     <div class="card-header">
                         <h3>Medication Alerts</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                     </div>
-                    <div id="medicationAlerts"></div>
+                    <div id="medicationAlerts" class="panel-body"></div>
                 </div>
 
                 <div class="student-panel">
                     <div class="card-header">
                         <h3>Recent Observations</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                     </div>
-                    <div id="recentObservations"></div>
+                    <div id="recentObservations" class="panel-body"></div>
                 </div>
             </div>
         </section>
@@ -187,7 +193,10 @@
             <div class="student-panel">
                 <div class="card-header student-list-header">
                     <h3>Student List</h3>
+                    <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                </div>
 
+                <div class="panel-body">
                     <div class="student-controls">
                         <input id="studentSearch" type="text" placeholder="Search student name...">
 
@@ -199,9 +208,9 @@
                             <option value="Group 4">Group 4</option>
                         </select>
                     </div>
-                </div>
 
-                <div id="studentList"></div>
+                    <div id="studentList"></div>
+                </div>
             </div>
         </section>
 
@@ -218,9 +227,10 @@
             <div class="student-panel">
                 <div class="card-header">
                     <h3>Medication Checklist</h3>
+                    <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                 </div>
 
-                <div id="medicationList"></div>
+                <div id="medicationList" class="panel-body"></div>
             </div>
         </section>
 
@@ -329,7 +339,10 @@
                 <div class="observation-card">
                     <div class="card-header observation-header">
                         <h3>Recent Observations</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
 
+                    <div class="panel-body">
                         <div class="observation-controls">
                             <input id="observationSearch" type="text" placeholder="Search by student name...">
 
@@ -347,9 +360,9 @@
                                 <option value="negative">Negative First</option>
                             </select>
                         </div>
-                    </div>
 
-                    <div id="observationList"></div>
+                        <div id="observationList"></div>
+                    </div>
                 </div>
 
             </div>
@@ -368,9 +381,10 @@
             <div class="student-panel">
                 <div class="card-header">
                     <h3>Dietary Restrictions List</h3>
+                    <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                 </div>
 
-                <div id="dietaryList"></div>
+                <div id="dietaryList" class="panel-body"></div>
             </div>
         </section>
 

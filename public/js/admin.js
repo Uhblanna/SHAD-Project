@@ -12,7 +12,32 @@ document.getElementById("clearStudentsAdminBtn").addEventListener("click", clear
     // Isabelle McLean — Wires up the Remove a Committee button + confirm remove button
     document.getElementById("removeCommitteeBtn").addEventListener("click", openRemoveCommitteePanel);
     document.getElementById("confirmRemoveCommitteeBtn").addEventListener("click", confirmRemoveCommittee);
+    document.getElementById("clearCommitteesBtn").addEventListener("click", clearAllCommittees);
+
+    setupPanelToggles();
 });
+
+// Collapse/expand each admin card. Clicking the toggle hides the card body
+// and swaps the −/+ glyph.
+function setupPanelToggles() {
+    document.querySelectorAll(".panel-toggle").forEach(function (btn) {
+        const head = btn.closest(".admin-card-head");
+        const body = head.nextElementSibling;
+
+        function setCollapsed(collapsed) {
+            body.classList.toggle("collapsed", collapsed);
+            btn.textContent = collapsed ? "+" : "−";
+            btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+            btn.title = collapsed ? "Expand" : "Collapse";
+        }
+
+        btn.addEventListener("click", function () {
+            setCollapsed(!body.classList.contains("collapsed"));
+        });
+
+        setCollapsed(true); // start closed
+    });
+}
 
 function apiRequest(method, url, data) {
     return fetch(url, {
@@ -212,6 +237,17 @@ function confirmRemoveCommittee() {
     apiRequest("DELETE", "/api/committee-options/" + id)
         .then(() => {
             alert("Committee removed.");
+            document.getElementById("removeCommitteePanel").style.display = "none";
+        });
+}
+
+// Isabelle McLean — Clears every committee option (replaces the list with an empty one)
+function clearAllCommittees() {
+    if (!confirm("Clear ALL committees? This removes every committee option students can sign up for.")) return;
+
+    apiRequest("POST", "/api/committee-options/replace", { committees: [] })
+        .then(() => {
+            alert("All committees cleared.");
             document.getElementById("removeCommitteePanel").style.display = "none";
         });
 }

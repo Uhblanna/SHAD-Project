@@ -28,7 +28,32 @@ document.addEventListener('DOMContentLoaded', () => {
     setupManualAttendanceEntry();
     setupAttendanceSubmitButton();
     setupQRScanner();
+    setupPanelToggles();
 });
+
+// Collapse/expand the hub panels (alerts, lists, checklists). Each panel
+// starts collapsed and waits to be opened; clicking the toggle hides/shows the
+// panel body and swaps the −/+ glyph.
+function setupPanelToggles() {
+    document.querySelectorAll('.panel-toggle').forEach(function(btn) {
+        var header = btn.closest('.card-header');
+        var body   = header.nextElementSibling;
+
+        function setCollapsed(collapsed) {
+            body.classList.toggle('collapsed', collapsed);
+            header.classList.toggle('collapsed-header', collapsed);
+            btn.textContent = collapsed ? '+' : '−';
+            btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            btn.title = collapsed ? 'Expand' : 'Collapse';
+        }
+
+        btn.addEventListener('click', function() {
+            setCollapsed(!body.classList.contains('collapsed'));
+        });
+
+        setCollapsed(true); // start closed
+    });
+}
 
 function refreshAll() {
     loadStats();
@@ -44,17 +69,54 @@ function refreshAll() {
 }
 
 // ── NAV & MENU ────────────────────────────────────────────
+// Clean URL hashes for each hub sub-screen so the hub can be deep-linked
+// (e.g. students.html#observations) — lets other pages and the top nav fold
+// straight into a sub-page instead of needing separate standalone pages.
+const SCREEN_HASHES = {
+    hubHome:            'home',
+    studentsScreen:     'students',
+    medicationsScreen:  'medications',
+    attendanceScreen:   'attendance',
+    observationsScreen: 'observations',
+    dietaryScreen:      'dietary'
+};
+
+function activateScreen(screenId) {
+    if (!document.getElementById(screenId)) screenId = 'hubHome';
+    document.querySelectorAll('.hub-nav').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.screen === screenId);
+    });
+    document.querySelectorAll('.hub-screen').forEach(function(s) {
+        s.classList.toggle('active', s.id === screenId);
+    });
+    if (screenId !== 'attendanceScreen') stopQRScanner();
+}
+
+// Resolve a screen id from the current URL hash. Accepts either the clean
+// name (#observations) or the raw screen id (#observationsScreen).
+function screenIdFromHash() {
+    var h = (window.location.hash || '').replace('#', '');
+    if (!h) return 'hubHome';
+    for (var id in SCREEN_HASHES) {
+        if (SCREEN_HASHES[id] === h || id === h) return id;
+    }
+    return 'hubHome';
+}
+
 function setupHubNavigation() {
-    document.querySelectorAll('.hub-nav').forEach(button => {
-        button.addEventListener('click', () => {
-            const target = button.dataset.screen;
-            document.querySelectorAll('.hub-nav').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.hub-screen').forEach(s => s.classList.remove('active'));
-            button.classList.add('active');
-            document.getElementById(target).classList.add('active');
-            if (target !== 'attendanceScreen') stopQRScanner();
+    document.querySelectorAll('.hub-nav').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var target = button.dataset.screen;
+            window.location.hash = SCREEN_HASHES[target] || '';
+            activateScreen(target);
         });
     });
+    // React to back/forward and to deep links pasted into the address bar
+    window.addEventListener('hashchange', function() {
+        activateScreen(screenIdFromHash());
+    });
+    // Honour a deep-link hash on initial load (defaults to the hub home)
+    activateScreen(screenIdFromHash());
 }
 
 function setupHamburgerMenu() {
@@ -252,11 +314,20 @@ function displayAttendanceAlerts() {
     }
     missing.forEach(function(student) {
         var row = document.createElement('div');
-        row.classList.add('alert-row');
+        row.classList.add('observation-row', 'negative');
         row.innerHTML =
-            '<div><p class="student-name">' + esc(student.name) + ' \u2014 not yet checked in</p>' +
-            '<p class="alert-info">' + esc(student.group) + '</p></div>' +
-            '<span class="status missing">Alert</span>';
+            '<div class="acknowledge-box"><input type="checkbox" class="acknowledge-check" title="Check in to clear this alert"></div>' +
+            '<div class="observation-main-info">' +
+                '<p class="student-name">' + esc(student.name) + ' \u2014 not yet checked in</p>' +
+                '<p class="student-info">' + esc(student.group) + '</p>' +
+            '</div>' +
+            '<div class="observation-actions">' +
+                '<span class="status missing">Alert</span>' +
+            '</div>';
+        row.querySelector('.acknowledge-check').addEventListener('change', function() {
+            ShadDB.checkInStudent(student.id);
+            refreshAll();
+        });
         alertBox.appendChild(row);
     });
 }
@@ -324,7 +395,7 @@ function setupQRScanner() {
         '<div id="qrStatus" style="text-align:center;padding:8px 0;font-size:13px;color:#888;">Camera not started</div>' +
         '<video id="qrVideo" style="width:100%;border-radius:12px;display:none;background:#000;" autoplay muted playsinline></video>' +
         '<canvas id="qrCanvas" style="display:none;"></canvas>' +
-        '<button id="startQRBtn" style="margin-top:14px;width:100%;padding:14px;background:#6f2da8;color:white;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;">📷 Start QR Scanner</button>' +
+        '<button id="startQRBtn" style="margin-top:auto;width:100%;padding:14px;background:#6f2da8;color:white;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;">📷 Scan QR</button>' +
         '<button id="stopQRBtn" style="margin-top:8px;width:100%;padding:12px;background:#e5e5e5;color:#444;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;display:none;">Stop Camera</button>';
     el('startQRBtn').addEventListener('click', startQRScanner);
     el('stopQRBtn').addEventListener('click', stopQRScanner);
@@ -472,11 +543,20 @@ function displayMedicationAlerts() {
     if (needing.length === 0) { box.innerHTML = '<p class="student-info">All required medications have been marked as taken.</p>'; return; }
     needing.forEach(function(student) {
         var row = document.createElement('div');
-        row.classList.add('alert-row');
+        row.classList.add('observation-row', 'negative');
         row.innerHTML =
-            '<div><p class="student-name">' + esc(student.name) + ' \u2014 medication not taken</p>' +
-            '<p class="alert-info">' + esc(student.medication) + '</p></div>' +
-            '<span class="status missing">Alert</span>';
+            '<div class="acknowledge-box"><input type="checkbox" class="acknowledge-check" title="Mark medication taken to clear this alert"></div>' +
+            '<div class="observation-main-info">' +
+                '<p class="student-name">' + esc(student.name) + ' \u2014 medication not taken</p>' +
+                '<p class="student-info">' + esc(student.medication) + '</p>' +
+            '</div>' +
+            '<div class="observation-actions">' +
+                '<span class="status missing">Alert</span>' +
+            '</div>';
+        row.querySelector('.acknowledge-check').addEventListener('change', function() {
+            ShadDB.updateStudent(student.id, { medicationTaken: true });
+            refreshAll();
+        });
         box.appendChild(row);
     });
 }

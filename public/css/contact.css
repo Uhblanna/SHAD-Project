@@ -6,8 +6,8 @@
 }
 
 body{
-    font-family:'Montserrat',sans-serif;
-    background:#f5f6f8;
+    font-family:'Archivo',sans-serif;
+    background:#f7fafc;
     color:#111;
 }
 
@@ -31,7 +31,7 @@ body{
     width:28px;
     height:28px;
     border-radius:6px;
-    background:linear-gradient(135deg,#8bc53f,#6f2da8,#f58220);
+    background:url('/public/img/shad-logo.png') center/contain no-repeat;
 }
 
 .logo-wrap h1{
@@ -41,7 +41,7 @@ body{
 
 nav{
     display:flex;
-    gap:24px;
+    gap:26px;
     flex-wrap:wrap;
 }
 
@@ -52,11 +52,11 @@ nav a{
 }
 
 nav a:hover{
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 .active-link{
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 /* PAGE */
@@ -76,13 +76,14 @@ nav a:hover{
     font-size:13px;
     letter-spacing:2px;
     font-weight:700;
-    color:#8bc53f;
+    color:#00d084;
     margin-bottom:10px;
 }
 
 .page-header h2{
     font-size:46px;
     font-weight:800;
+    letter-spacing:-1.8px;
 }
 
 .subtext{
@@ -94,7 +95,7 @@ nav a:hover{
 
 .contact-all-btn{
     text-decoration:none;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     padding:16px 24px;
     border-radius:16px;
@@ -143,7 +144,7 @@ nav a:hover{
     width:74px;
     height:74px;
     border-radius:50%;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     display:flex;
     justify-content:center;
@@ -159,7 +160,7 @@ nav a:hover{
 }
 
 .role{
-    color:#8bc53f;
+    color:#00d084;
     font-weight:700;
     margin-bottom:18px;
 }
@@ -190,7 +191,7 @@ nav a:hover{
 }
 
 .actions a:hover{
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
 }
 

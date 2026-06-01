@@ -6,8 +6,8 @@
 }
 
 body{
-    font-family:'Montserrat',sans-serif;
-    background:#f5f6f8;
+    font-family:'Archivo',sans-serif;
+    background:#f7fafc;
     color:#111;
 }
 
@@ -31,7 +31,7 @@ body{
     width:28px;
     height:28px;
     border-radius:6px;
-    background:linear-gradient(135deg,#8bc53f,#6f2da8,#f58220);
+    background:url('/public/img/shad-logo.png') center/contain no-repeat;
 }
 
 .logo-wrap h1{
@@ -52,11 +52,11 @@ nav a{
 }
 
 nav a:hover{
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 .active-link{
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 /* PAGE */
@@ -72,13 +72,14 @@ nav a:hover{
     font-size:13px;
     letter-spacing:2px;
     font-weight:700;
-    color:#8bc53f;
+    color:#00d084;
     margin-bottom:10px;
 }
 
 .page-header h2{
     font-size:46px;
     font-weight:800;
+    letter-spacing:-1.8px;
 }
 
 .subtext{
@@ -123,7 +124,7 @@ select,
 textarea{
     width:100%;
     border:none;
-    background:#f4f5f7;
+    background:#edf2f7;
     border-radius:16px;
     padding:16px;
     font-size:15px;
@@ -169,7 +170,7 @@ textarea{
     margin-top:24px;
     width:100%;
     border:none;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     padding:18px;
     border-radius:16px;

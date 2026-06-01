@@ -15,7 +15,16 @@ fetch("/api/check-auth")
     });
 
 function injectLogout() {
-    var nav = document.querySelector("header nav:last-of-type");
+    var adminLink = document.querySelector('a[href="/public/admin.html"]');
+    var nav;
+    if (adminLink) {
+        nav = adminLink.parentElement;
+    } else {
+        // Fall back to the last (right-hand) nav, NOT header nav:last-of-type,
+        // which incorrectly matches the logo-group's Home nav first.
+        var navs = document.querySelectorAll("header nav, .topbar nav");
+        nav = navs[navs.length - 1];
+    }
     if (!nav) return;
 
     var divider = document.createElement("span");
@@ -33,6 +42,12 @@ function injectLogout() {
             .then(function() { window.location.href = "/public/login.html"; });
     });
 
-    nav.appendChild(divider);
-    nav.appendChild(btn);
+    if (adminLink) {
+        // Insert divider then Log Out immediately to the right of the Admin link
+        adminLink.insertAdjacentElement("afterend", btn);
+        adminLink.insertAdjacentElement("afterend", divider);
+    } else {
+        nav.appendChild(divider);
+        nav.appendChild(btn);
+    }
 }

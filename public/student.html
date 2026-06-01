@@ -8,14 +8,15 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/css/shad-base.css">
 
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: 'Montserrat', sans-serif;
-    background: #f5f5f5;
+    font-family: 'Archivo', sans-serif;
+    background: #f7fafc;
     color: #111;
     min-height: 100vh;
 }
@@ -33,7 +34,7 @@ header {
 .logo-wrap { display: flex; align-items: center; gap: 14px; }
 .logo-box {
     width: 28px; height: 28px;
-    background: linear-gradient(135deg, #8bc53f, #6f2da8, #f58220);
+    background: url('/public/img/shad-logo.png') center/contain no-repeat;
     border-radius: 6px;
 }
 .logo-wrap h1 { font-size: 24px; font-weight: 800; }
@@ -41,11 +42,11 @@ nav a {
     text-decoration: none; color: #222; font-weight: 600;
     transition: 0.2s;
 }
-nav a:hover { color: #8bc53f; }
+nav a:hover { color: #00d084; }
 
 /* HERO */
 .student-hero {
-    background: linear-gradient(135deg, #8bc53f 0%, #5a9a20 100%);
+    background: linear-gradient(135deg, #00d084 0%, #5a9a20 100%);
     padding: 56px 6%;
     color: white;
     text-align: center;
@@ -115,8 +116,43 @@ nav a:hover { color: #8bc53f; }
     display: inline-block;
     letter-spacing: 0.3px;
 }
-.enrollment-status.open { background: #fef0e0; color: #c86000; }
-.enrollment-status.closed { background: #ffe5e5; color: #b71c1c; }
+.enrollment-status.open { background: #ffe5e5; color: #cf2e2e; }
+.enrollment-status.closed { background: #ffe5e5; color: #cf2e2e; }
+
+/* Enrollment deadline banner — status on the left, calendar button on the right */
+.enrollment-banner {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: -3px;
+}
+/* Drop the banner's own bottom margin so the two items line up on the row */
+.enrollment-banner .enrollment-status {
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Add-to-calendar button — matches the status pill's size */
+.calendar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 16px;
+    background: #cf2e2e;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+.calendar-btn:hover { opacity: 0.88; }
 .committee-card.disabled { opacity: 0.45; cursor: not-allowed !important; }
 .committee-card.disabled:hover { transform: none; box-shadow: 0 3px 14px rgba(0,0,0,0.06); }
 
@@ -147,9 +183,9 @@ nav a:hover { color: #8bc53f; }
 }
 .signup-btn {
     padding: 16px 34px;
-    background: #8bc53f;
+    background: #00d084;
     color: white;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Archivo', sans-serif;
     font-size: 15px;
     font-weight: 700;
     border: none;
@@ -201,8 +237,13 @@ nav a:hover { color: #8bc53f; }
     transform: translateY(-4px);
     box-shadow: 0 10px 28px rgba(0,0,0,0.11);
 }
-.committee-card.sports-card:hover { border-color: #f58220; }
-.committee-card.project-card:hover { border-color: #8bc53f; }
+.committee-card.sports-card:hover { border-color: #ff6900; }
+.committee-card.project-card:hover { border-color: #00d084; }
+
+.committee-emoji {
+    font-size: 34px;
+    line-height: 1;
+}
 
 .committee-card .card-type {
     font-size: 10px;
@@ -210,8 +251,8 @@ nav a:hover { color: #8bc53f; }
     letter-spacing: 1.5px;
     text-transform: uppercase;
 }
-.sports-card .card-type { color: #f58220; }
-.project-card .card-type { color: #8bc53f; }
+.sports-card .card-type { color: #ff6900; }
+.project-card .card-type { color: #00d084; }
 
 .committee-card h4 {
     font-size: 14px;
@@ -234,13 +275,13 @@ nav a:hover { color: #8bc53f; }
     font-weight: 700;
     border: none;
     cursor: pointer;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Archivo', sans-serif;
     transition: opacity 0.2s;
     color: white;
 }
 .join-btn:hover { opacity: 0.88; }
-.sports-card .join-btn { background: #f58220; }
-.project-card .join-btn { background: #8bc53f; }
+.sports-card .join-btn { background: #ff6900; }
+.project-card .join-btn { background: #00d084; }
 
 /* MODAL */
 .modal-overlay {
@@ -292,7 +333,7 @@ nav a:hover { color: #8bc53f; }
     padding: 13px 16px;
     border: 2px solid #e5e5e5;
     border-radius: 12px;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Archivo', sans-serif;
     font-size: 14px;
     font-weight: 600;
     outline: none;
@@ -303,14 +344,14 @@ nav a:hover { color: #8bc53f; }
     -webkit-appearance: none;
     cursor: pointer;
 }
-.modal-select:focus { border-color: #8bc53f; }
-.modal-select.sports-focus:focus { border-color: #f58220; }
+.modal-select:focus { border-color: #00d084; }
+.modal-select.sports-focus:focus { border-color: #ff6900; }
 
 .modal-submit {
     width: 100%;
     padding: 14px;
     color: white;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Archivo', sans-serif;
     font-size: 15px;
     font-weight: 700;
     border: none;
@@ -321,8 +362,8 @@ nav a:hover { color: #8bc53f; }
 }
 .modal-submit:hover { opacity: 0.9; }
 .modal-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-.modal-submit.green { background: #8bc53f; }
-.modal-submit.orange { background: #f58220; }
+.modal-submit.green { background: #00d084; }
+.modal-submit.orange { background: #ff6900; }
 
 .modal-msg {
     font-size: 13px;
@@ -330,7 +371,7 @@ nav a:hover { color: #8bc53f; }
     min-height: 18px;
     margin-bottom: 8px;
 }
-.modal-msg.error { color: #d12c2c; }
+.modal-msg.error { color: #ff3b30; }
 .modal-msg.success { color: #5a9a20; }
 
 .modal-close {
@@ -340,7 +381,7 @@ nav a:hover { color: #8bc53f; }
     cursor: pointer;
     background: none;
     border: none;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Archivo', sans-serif;
     transition: color 0.2s;
 }
 .modal-close:hover { color: #555; }
@@ -371,7 +412,7 @@ nav a:hover { color: #8bc53f; }
         <h1>SHAD Portal</h1>
     </div>
     <nav>
-        <a href="/public/login.html">← Back to Portal Select</a>
+        <a href="#" onclick="staffLogout(event)" style="color:#d12c2c; font-weight:700;">Log Out</a>
     </nav>
 </header>
 
@@ -408,10 +449,13 @@ nav a:hover { color: #8bc53f; }
         </div>
 
         <!-- Isabelle McLean — Enrollment status banner: only the close date+time is displayed (open date is internal only) -->
-        <div><p id="enrollmentStatus" class="enrollment-status open"></p></div>
+        <div class="enrollment-banner">
+            <p id="enrollmentStatus" class="enrollment-status open"></p>
+            <button id="addToCalendarBtn" class="calendar-btn" onclick="addEnrollmentToCalendar()" style="display:none;">📅 Add deadline to calendar</button>
+        </div>
 
         <!-- Sports -->
-        <div class="committee-group">
+        <div class="committee-group" style="margin-top:2.5%;">
             <div class="committee-group-label">Sports Committees</div>
             <!-- Isabelle McLean — id="sportsGrid" so JS can replace the placeholder cards with uploaded committees -->
             <div class="committee-grid" id="sportsGrid">
@@ -526,6 +570,14 @@ nav a:hover { color: #8bc53f; }
 var currentCommittee = '';
 var currentType = '';
 
+// Log out the staff session, then return to the portal select / login page
+function staffLogout(e) {
+    if (e) e.preventDefault();
+    fetch('/api/staff-logout', { method: 'POST' })
+        .then(function() { window.location.href = '/public/login.html'; })
+        .catch(function() { window.location.href = '/public/login.html'; });
+}
+
 // Isabelle McLean — Committee enrollment window (edit these dates to change open/close)
 // Open date is internal only — students never see it. Only the close date+time is displayed.
 var enrollmentOpenDate  = new Date('2026-01-01T00:00:00');
@@ -568,12 +620,15 @@ function openModal(committeeName, committeeType) {
     var btn = document.getElementById('modalSubmit');
     var sel = document.getElementById('studentSelect');
 
+    // Isabelle McLean — Show the same keyword-matched emoji as the committee card
+    icon.textContent = committeeEmoji(committeeName, committeeType);
+
     if (committeeType === 'Sports') {
-        icon.style.background = 'linear-gradient(135deg,#f58220,#d96c00)';
+        icon.style.background = 'linear-gradient(135deg,#ff6900,#d96c00)';
         btn.className = 'modal-submit orange';
         sel.className = 'modal-select sports-focus';
     } else {
-        icon.style.background = 'linear-gradient(135deg,#8bc53f,#5a9a20)';
+        icon.style.background = 'linear-gradient(135deg,#00d084,#5a9a20)';
         btn.className = 'modal-submit green';
         sel.className = 'modal-select';
     }
@@ -648,6 +703,37 @@ function escHtmlCommittee(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Isabelle McLean — Pick an emoji for a committee by scanning its name +
+// description for a keyword; falls back to a per-type icon if nothing matches.
+function committeeEmoji(name, type, description) {
+    var text = ((name || '') + ' ' + (description || '')).toLowerCase();
+    var map = [
+        ['basketball','🏀'], ['soccer','⚽'], ['football','🏈'], ['swim','🏊'],
+        ['track','🏃'], ['running','🏃'], ['volleyball','🏐'], ['tennis','🎾'],
+        ['baseball','⚾'], ['softball','🥎'], ['hockey','🏒'], ['golf','⛳'],
+        ['climb','🧗'], ['yoga','🧘'], ['dance','💃'], ['cycl','🚴'], ['bike','🚴'],
+        ['box','🥊'], ['martial','🥋'], ['karate','🥋'], ['badminton','🏸'],
+        ['ping','🏓'], ['table tennis','🏓'], ['ultimate','🥏'], ['frisbee','🥏'],
+        ['ski','⛷️'], ['snowboard','🏂'], ['skate','🛹'], ['weight','🏋️'],
+        ['fitness','💪'], ['gym','💪'], ['archery','🏹'], ['rowing','🚣'],
+        ['engineer','⚙️'], ['environment','🌱'], ['eco','🌱'], ['sustain','♻️'],
+        ['health','💪'], ['wellness','🧘'], ['medic','⚕️'], ['robot','🤖'],
+        ['tech','💻'], ['computer','💻'], ['coding','💻'], ['code','💻'],
+        ['innovation','💡'], ['business','💼'], ['entrepreneur','💼'], ['finance','💰'],
+        ['art','🎨'], ['design','🎨'], ['music','🎵'], ['film','🎬'], ['photo','📷'],
+        ['writing','✍️'], ['journal','📰'], ['news','📰'], ['debate','🗣️'],
+        ['science','🔬'], ['chem','🧪'], ['biolog','🧬'], ['physics','🔭'],
+        ['math','📐'], ['space','🚀'], ['astro','🔭'], ['garden','🌻'],
+        ['cook','🍳'], ['food','🍽️'], ['bak','🧁'], ['game','🎮'], ['chess','♟️'],
+        ['build','🔨'], ['drama','🎭'], ['theatre','🎭'], ['theater','🎭'],
+        ['volunteer','🤝'], ['community','🤝'], ['book','📚'], ['read','📚']
+    ];
+    for (var i = 0; i < map.length; i++) {
+        if (text.indexOf(map[i][0]) !== -1) return map[i][1];
+    }
+    return (type && type.toLowerCase() === 'sports') ? '🏅' : '🧠';
+}
+
 function renderCommitteeCard(c) {
     var typeClass = (c.type === 'Sports') ? 'sports-card' : 'project-card';
     var card = document.createElement('div');
@@ -655,6 +741,7 @@ function renderCommitteeCard(c) {
     card.setAttribute('data-name', c.name);
     card.setAttribute('data-type', c.type || 'Project');
     card.innerHTML =
+        '<div class="committee-emoji">' + committeeEmoji(c.name, c.type, c.description) + '</div>' +
         '<div class="card-type">' + escHtmlCommittee(c.type || 'Project') + '</div>' +
         '<h4>' + escHtmlCommittee(c.name) + '</h4>' +
         '<p>' + escHtmlCommittee(c.description || '') + '</p>' +
@@ -682,11 +769,30 @@ function loadCommitteeOptions() {
                         projectsGrid.appendChild(card);
                     }
                 });
+            } else {
+                decoratePlaceholderEmojis();
             }
             // Isabelle McLean — Apply enrollment-window state after the committee cards are in the DOM
             updateEnrollmentStatus();
         })
-        .catch(function() { updateEnrollmentStatus(); });
+        .catch(function() { decoratePlaceholderEmojis(); updateEnrollmentStatus(); });
+}
+
+// Isabelle McLean — Adds a keyword-matched emoji to the hardcoded placeholder
+// cards (shown until committees are uploaded), so they match the CSV-rendered ones
+function decoratePlaceholderEmojis() {
+    document.querySelectorAll('.committee-card').forEach(function(card) {
+        if (card.querySelector('.committee-emoji')) return;
+        var nameEl = card.querySelector('h4');
+        var descEl = card.querySelector('p');
+        var name = nameEl ? nameEl.textContent : '';
+        var desc = descEl ? descEl.textContent : '';
+        var type = card.classList.contains('sports-card') ? 'Sports' : 'Project';
+        var em = document.createElement('div');
+        em.className = 'committee-emoji';
+        em.textContent = committeeEmoji(name, type, desc);
+        card.insertBefore(em, card.firstChild);
+    });
 }
 
 // Isabelle McLean — Renders the close date+time banner; disables all committee cards when closed
@@ -699,19 +805,67 @@ function updateEnrollmentStatus() {
     var closeStr = enrollmentCloseDate.toLocaleDateString('en-CA', dateOpts) +
                    ' at ' + enrollmentCloseDate.toLocaleTimeString('en-US', timeOpts);
 
+    var calBtn = document.getElementById('addToCalendarBtn');
+
     var now = new Date();
     if (now > enrollmentCloseDate) {
         statusEl.textContent = 'Committee enrollment has closed.';
         statusEl.className = 'enrollment-status closed';
+        if (calBtn) calBtn.style.display = 'none';
         disableAllCommitteeCards();
     } else if (now < enrollmentOpenDate) {
         statusEl.textContent = 'Committee enrollment is not yet open. Closes ' + closeStr + '.';
         statusEl.className = 'enrollment-status closed';
+        if (calBtn) calBtn.style.display = 'none';
         disableAllCommitteeCards();
     } else {
         statusEl.textContent = 'Enrollment closes ' + closeStr;
         statusEl.className = 'enrollment-status open';
+        if (calBtn) calBtn.style.display = 'inline-flex';
     }
+}
+
+// Isabelle McLean — Build a calendar (.ics) event for the enrollment deadline and
+// download it; the student's device opens it to add the event to their calendar.
+function addEnrollmentToCalendar() {
+    function pad(n) { return String(n).padStart(2, '0'); }
+    // Floating local time (no Z) so the deadline stays at the displayed local time
+    function icsDate(d) {
+        return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T' +
+               pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+    }
+
+    var dt = icsDate(enrollmentCloseDate);
+    var ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//SHAD 2026//Committee Enrollment//EN',
+        'CALSCALE:GREGORIAN',
+        'BEGIN:VEVENT',
+        'UID:shad-committee-enrollment-' + dt + '@shad2026',
+        'DTSTAMP:' + icsDate(new Date()),
+        'DTSTART:' + dt,
+        'DTEND:' + dt,
+        'SUMMARY:SHAD Committee Enrollment Closes',
+        'DESCRIPTION:Last chance to sign up for a SHAD committee on the student portal.',
+        'BEGIN:VALARM',
+        'TRIGGER:-PT1H',
+        'ACTION:DISPLAY',
+        'DESCRIPTION:Committee enrollment closes in 1 hour',
+        'END:VALARM',
+        'END:VEVENT',
+        'END:VCALENDAR'
+    ].join('\r\n');
+
+    var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'shad-committee-enrollment.ics';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 }
 
 function disableAllCommitteeCards() {

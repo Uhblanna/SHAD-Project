@@ -5,7 +5,7 @@ const session = require("express-session");
 const db = require("./database");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // ── Change this to your actual staff password ──────────────────────────────
 const STAFF_PASSWORD = "shad2026";
@@ -66,10 +66,15 @@ function todayKey() {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
-// Isabelle McLean — Returns date string for TOMORROW; used by morning rec routes since students sign up the night before
-function tomorrowKey() {
+// Isabelle McLean — Returns the active morning-rec date with a 10 AM reset point.
+// Before 10 AM the rec is happening THIS morning, so we stay on today's signups.
+// At/after 10 AM that session is over, so we roll forward to tomorrow's signups
+// (students sign up the evening before for the next morning's rec).
+function recDateKey() {
     const d = new Date();
-    d.setDate(d.getDate() + 1);
+    if (d.getHours() >= 10) {
+        d.setDate(d.getDate() + 1);
+    }
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
@@ -441,40 +446,41 @@ app.post("/api/schedule/replace", (req, res) => {
     });
 });
 
-// Isabelle McLean — Morning rec API routes: fetch tomorrow's list (since rec is for the next morning), submit a signup, remove one entry, or clear all
+// Isabelle McLean — Morning rec API routes: fetch the active session's list, submit a signup, remove one entry, or clear all.
+// Active session uses a 10 AM reset (see recDateKey): this morning's list stays up until 10 AM, then rolls to the next day.
 // MORNING REC
 app.get("/api/morning-rec", (req, res) => {
-    // Isabelle McLean — Returns TOMORROW's signups (the upcoming morning rec); kids sign up the evening before
-    const tomorrow = tomorrowKey();
-    db.all("SELECT * FROM morning_rec_signups WHERE signup_date = ? ORDER BY created_at ASC", [tomorrow], (err, rows) => {
+    // Isabelle McLean — Returns the active rec session's signups (today before 10 AM, tomorrow after)
+    const recDate = recDateKey();
+    db.all("SELECT * FROM morning_rec_signups WHERE signup_date = ? ORDER BY created_at ASC", [recDate], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
 });
 
-// Isabelle McLean — POST stores TOMORROW's date as signup_date because students sign up the night before for the next morning's rec
+// Isabelle McLean — POST stores the active rec date as signup_date (today before 10 AM, tomorrow after the 10 AM reset)
 app.post("/api/morning-rec", (req, res) => {
     const { student_name } = req.body;
     if (!student_name || !student_name.trim()) return res.status(400).json({ error: "Student name is required." });
 
-    const tomorrow = tomorrowKey();
+    const recDate = recDateKey();
     const name = student_name.trim();
 
-    db.get("SELECT id FROM morning_rec_signups WHERE student_name = ? AND signup_date = ?", [name, tomorrow], (err, row) => {
+    db.get("SELECT id FROM morning_rec_signups WHERE student_name = ? AND signup_date = ?", [name, recDate], (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
-        if (row) return res.status(409).json({ error: "You're already signed up for tomorrow!" });
+        if (row) return res.status(409).json({ error: "You're already signed up for the next rec!" });
 
-        db.run("INSERT INTO morning_rec_signups (student_name, signup_date) VALUES (?, ?)", [name, tomorrow], function(err2) {
+        db.run("INSERT INTO morning_rec_signups (student_name, signup_date) VALUES (?, ?)", [name, recDate], function(err2) {
             if (err2) return res.status(500).json({ error: err2.message });
-            res.json({ id: this.lastID, student_name: name, signup_date: tomorrow });
+            res.json({ id: this.lastID, student_name: name, signup_date: recDate });
         });
     });
 });
 
-// Isabelle McLean — Clears TOMORROW's signups (the upcoming rec session); kept the /today route name for backwards-compat with the staff page
+// Isabelle McLean — Clears the active rec session's signups; kept the /today route name for backwards-compat with the staff page
 app.delete("/api/morning-rec/today", (req, res) => {
-    const tomorrow = tomorrowKey();
-    db.run("DELETE FROM morning_rec_signups WHERE signup_date = ?", [tomorrow], function(err) {
+    const recDate = recDateKey();
+    db.run("DELETE FROM morning_rec_signups WHERE signup_date = ?", [recDate], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ cleared: this.changes });
     });

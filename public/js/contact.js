@@ -25,7 +25,11 @@ function renderStaff() {
         return;
     }
 
-    staffMembers.forEach(person => {
+    const sortedStaff = staffMembers.slice().sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+    );
+
+    sortedStaff.forEach(person => {
         const card = document.createElement("div");
         card.className = "staff-card";
 

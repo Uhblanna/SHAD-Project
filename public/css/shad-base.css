@@ -1,0 +1,281 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SHAD CANADA DESIGN SYSTEM — Shared Base
+   Brand identity matched to shad.ca (visual only — no new structure)
+
+   Color palette from the Shad Canada website:
+     Primary blue   #146ff8  (leadColor / triggerColor)
+     Accent green   #00d084
+     Warm orange    #ff6900
+     Secondary cyan #0693e3
+     Deep dark      #1A202C  (--global-palette3)
+     Charcoal       #2D3748  (--global-palette4)
+     Slate          #4A5568  (--global-palette5)
+     Muted          #718096  (--global-palette6)
+     Light bg       #EDF2F7  (--global-palette7)
+     Page bg        #F7FAFC  (--global-palette8)
+
+   Typography: "Archivo" — same font as shad.ca (Elementor Google Font)
+     Headings: weight 800, letter-spacing −2.5px (large), −1.8px (medium)
+     Body: weight 400–600
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── DESIGN TOKENS ──────────────────────────────────────────────── */
+:root {
+  /* Brand palette */
+  --shad-blue:        #146ff8;
+  --shad-blue-dark:   #0d52c4;
+  --shad-green:       #00d084;
+  --shad-orange:      #ff6900;
+  --shad-cyan:        #0693e3;
+  --shad-red:         #ff3b30;
+
+  /* Neutral palette (from Kadence global palette) */
+  --shad-dark:        #1A202C;
+  --shad-charcoal:    #2D3748;
+  --shad-slate:       #4A5568;
+  --shad-muted:       #718096;
+  --shad-light:       #EDF2F7;
+  --shad-bg:          #F7FAFC;
+  --shad-white:       #ffffff;
+
+  /* Typography */
+  --shad-font:        'Archivo', sans-serif;
+
+  /* Radius scale (shad.ca uses 35px on large cards) */
+  --radius-xs:  6px;
+  --radius-sm:  10px;
+  --radius-md:  16px;
+  --radius-lg:  24px;
+  --radius-xl:  35px;
+
+  /* Shadows */
+  --shadow-sm:  0 6px 16px rgba(0,0,0,.06);
+  --shadow-md:  0 15px 30px rgba(0,0,0,.08);
+  --shadow-lg:  0 20px 45px rgba(0,0,0,.12);
+
+  /* Logo gradient (the three-colour Shad Canada palette) */
+  --shad-logo-gradient: linear-gradient(135deg, #00d084 0%, #146ff8 55%, #ff6900 100%);
+}
+
+/* ── RESET ──────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--shad-font);
+  background: var(--shad-bg);
+  color: #111;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN HEADER / TOPBAR  — applies to existing <header> / .topbar
+═══════════════════════════════════════════════════════════════════ */
+header,
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  width: 100%;
+  padding: 16px 6%;
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e5e5;
+  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+}
+
+/* Logo group */
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.logo-box {
+  width: 32px;
+  height: 32px;
+  background: url('/public/img/shad-logo.png') center/contain no-repeat;
+  border-radius: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(20,111,248,.35);
+}
+
+.logo-wrap h1 {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  color: #111;
+}
+
+/* Align the "| Home" divider in the logo group so the pipe sits evenly with
+   26px on both sides — matching the "Admin | Log Out" divider in the main nav.
+   (.logo-wrap gap is 13px, so +13px margin makes the title→pipe gap 26px.) */
+.logo-wrap nav {
+  margin-left: 13px;
+}
+
+/* Nav links inside header */
+header nav,
+.topbar nav,
+nav {
+  display: flex;
+  gap: 26px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+header nav a,
+.topbar nav a,
+nav a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 600;
+  font-size: 14.5px;
+  transition: color .18s;
+}
+
+header nav a:hover,
+.topbar nav a:hover,
+nav a:hover,
+nav a.active-link,
+.active-link {
+  color: var(--shad-blue);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EYEBROW / MINI TITLE
+   "OPERATIONS CENTRE" style label above headings — matches shad.ca
+═══════════════════════════════════════════════════════════════════ */
+.mini-title,
+.mini {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--shad-green);
+  margin-bottom: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HEADINGS  — Archivo 800, tight kerning (shad.ca uses −2.5px)
+═══════════════════════════════════════════════════════════════════ */
+h1, h2, h3 {
+  font-family: var(--shad-font);
+  font-weight: 800;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CARDS  — White surfaces, consistent radius + shadow
+═══════════════════════════════════════════════════════════════════ */
+.card,
+.panel,
+.hero-card,
+.staff-card,
+.admin-card,
+.list-card,
+.form-card,
+.kit-list-card,
+.issue-card,
+.system-card,
+.scanner-card,
+.missing-card,
+.ack-card,
+.modal-box {
+  background: var(--shad-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* Stat numbers in quick panel */
+.card h3,
+.hub-card h3 {
+  color: var(--shad-blue);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BUTTONS  — Shared hover physics (matches Elementor buttons on shad.ca)
+═══════════════════════════════════════════════════════════════════ */
+.btn,
+.add-btn,
+.submit-btn,
+.download-btn,
+.contact-all-btn,
+button.modal-submit {
+  font-family: var(--shad-font);
+  font-weight: 700;
+  transition: transform .22s, box-shadow .22s, opacity .2s;
+}
+
+.btn:hover,
+.add-btn:hover,
+.submit-btn:hover,
+.download-btn:hover,
+.contact-all-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,.18);
+}
+
+/* Primary action colour */
+.btn.blue,
+.csv-label,
+.hub-menu-btn,
+.edit-student-btn,
+#saveStudentEditBtn,
+#saveObservationBtn,
+#saveAcknowledgementBtn,
+#addKitBtn,
+.issue-card button,
+.admin-card button:not(.danger-btn) {
+  background: var(--shad-blue);
+  color: var(--shad-white);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FORM INPUTS  — Consistent across all pages
+═══════════════════════════════════════════════════════════════════ */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+select,
+textarea {
+  font-family: var(--shad-font);
+  font-size: 15px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--shad-blue);
+  outline-offset: 1px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STATUS BADGES  — Coloured pills (present / missing / observation)
+═══════════════════════════════════════════════════════════════════ */
+.present     { background: var(--shad-green);  color: var(--shad-white); }
+.missing     { background: var(--shad-orange); color: var(--shad-white); }
+.observation { background: var(--shad-cyan);   color: var(--shad-white); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE  — collapse header on mobile
+═══════════════════════════════════════════════════════════════════ */
+@media(max-width: 700px) {
+  header,
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 5%;
+  }
+
+  nav { flex-wrap: wrap; gap: 12px; }
+}

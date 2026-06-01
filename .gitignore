@@ -1,0 +1,10 @@
+# Dependencies
+node_modules/
+
+# Local Claude Code agent state (not part of the app)
+.claude/
+
+# OS / editor cruft
+.DS_Store
+*.log
+npm-debug.log*

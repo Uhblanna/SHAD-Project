@@ -6,8 +6,8 @@
 }
 
 body{
-    font-family:'Montserrat',sans-serif;
-    background:#f5f5f5;
+    font-family:'Archivo',sans-serif;
+    background:#f7fafc;
     color:#111;
 }
 
@@ -31,7 +31,7 @@ header{
 .logo-box{
     width:28px;
     height:28px;
-    background:linear-gradient(135deg,#8bc53f,#6f2da8,#f58220);
+    background:url('/public/img/shad-logo.png') center/contain no-repeat;
     border-radius:6px;
 }
 
@@ -42,7 +42,7 @@ header{
 
 header nav{
     display:flex;
-    gap:30px;
+    gap:26px;
     align-items:center;
 }
 
@@ -54,7 +54,7 @@ header nav a{
 }
 
 header nav a:hover{
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 /* STUDENT HUB LAYOUT */
@@ -81,7 +81,7 @@ header nav a:hover{
     height:46px;
     border:none;
     border-radius:14px;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     font-size:22px;
     cursor:pointer;
@@ -90,7 +90,7 @@ header nav a:hover{
 }
 
 .hub-menu-btn:hover{
-    background:#5b238c;
+    background:#0d52c4;
 }
 
 .hub-title{
@@ -109,6 +109,7 @@ header nav a:hover{
 }
 
 .hub-nav{
+    position:relative;
     width:100%;
     border:none;
     background:transparent;
@@ -117,7 +118,7 @@ header nav a:hover{
     display:flex;
     align-items:center;
     gap:12px;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
     font-size:16px;
     font-weight:700;
     color:#222;
@@ -129,11 +130,153 @@ header nav a:hover{
 
 .hub-nav:hover,
 .hub-nav.active{
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
 }
 
+/* Hover preview — slides out a copy of the whole button (emoji | name) to
+   the right of the tab, styled like the tab itself. Handy when collapsed. */
+.hub-nav::after{
+    content:attr(data-preview);
+    position:absolute;
+    left:calc(100% + 12px);
+    top:50%;
+    transform:translateY(-50%) translateX(-8px);
+    background:#146ff8;
+    color:#fff;
+    padding:16px 18px;
+    border-radius:16px;
+    font-family:'Archivo',sans-serif;
+    font-size:16px;
+    font-weight:700;
+    white-space:nowrap;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    box-shadow:0 14px 30px rgba(0,0,0,.18);
+    transition:opacity 0.2s ease, transform 0.2s ease;
+    z-index:60;
+}
+
+/* Only preview when the sidebar is collapsed; when fully expanded the
+   label is already visible, so no preview is needed. */
+.hub-sidebar.collapsed .hub-nav:hover::after{
+    opacity:1;
+    visibility:visible;
+    transform:translateY(-50%) translateX(0);
+}
+
+/* Student Hub home button doubles as the sidebar title — larger and spaced
+   from the rest of the nav, replacing the old "Student Portal" heading. */
+.hub-home-title{
+    font-size:20px;
+    font-weight:800;
+    margin-bottom:24px;
+}
+
+/* Uniform emoji box — fixed width + centered so every glyph is the same
+   size and sits on the same vertical line regardless of its native metrics */
+.nav-emoji{
+    flex-shrink:0;
+    width:24px;
+    text-align:center;
+    font-size:20px;
+    line-height:1;
+}
+
+/* Attendance check — a black rounded box with a white tick, since the green
+   ✅ emoji can't be recolored. Sized to sit in the same 24px emoji column. */
+.nav-check{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:22px;
+    height:22px;
+    margin:0 1px;
+    background:#4d4d4d;
+    color:#fff;
+    border-radius:6px;
+    font-size:14px;
+    font-weight:800;
+    line-height:1;
+    text-indent:-1.5px;   /* shift tick ~7.5% of box width to the left */
+    padding-bottom:1px;    /* the ✓ glyph sits high, drop it to center vertically */
+}
+/* Keep the tick white even when the tab is active/hover (blue background) */
+.hub-nav:hover .nav-check,
+.hub-nav.active .nav-check{
+    background:#4d4d4d;
+    color:#fff;
+}
+
+/* Students — render the 👥 emoji as dark grey (color emojis can't be set via
+   `color`, so desaturate + darken with a filter) */
+.nav-people{
+    filter:grayscale(1) brightness(0.45) contrast(1.1);
+}
+
+/* Student Hub — 🌐 as a dark-grey silhouette (black lightened ~40%) */
+.nav-globe{
+    filter:grayscale(1) brightness(0.4);
+}
+
+/* Medications — a first-aid cross: white "✚" on a medical-green rounded box,
+   sized to sit in the same 24px emoji column as the others. */
+.nav-cross{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:22px;
+    height:22px;
+    margin:0 1px;
+    background:#d63031;
+    color:#fff;
+    border-radius:6px;
+    font-size:15px;
+    font-weight:800;
+    line-height:1;
+    padding-top:1px;       /* lower the cross ~5% of box height */
+}
+/* Hold the colors steady on hover/active (blue) tab background */
+.hub-nav:hover .nav-cross,
+.hub-nav.active .nav-cross{
+    background:#d63031;
+    color:#fff;
+}
+
+/* Stacked "no peanut" allergy glyph — a 🚫 layered on top of a 🥜, since no
+   single emoji exists for it. Both sit centered in the same 22px box. */
+.nav-emoji-stack{
+    position:relative;
+    display:inline-block;
+    line-height:1;
+}
+.nav-emoji-stack .emoji-base{
+    display:block;
+    font-size:0.62em;
+}
+.nav-emoji-stack .emoji-over{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:1em;
+    opacity:0.95;
+}
+
+/* "emoji | Name" divider inside each sidebar button — fixed centered box at
+   a constant font-size so every "|" lines up in the same column */
+.nav-divider{
+    flex-shrink:0;
+    width:8px;
+    text-align:center;
+    font-size:16px;
+    color:#ddd;
+    font-weight:400;
+}
+
 .hub-sidebar.collapsed .hub-title,
+.hub-sidebar.collapsed .nav-divider,
 .hub-sidebar.collapsed .nav-text{
     display:none;
 }
@@ -168,7 +311,7 @@ header nav a:hover{
     letter-spacing:2px;
     font-size:14px;
     font-weight:700;
-    color:#8bc53f;
+    color:#00d084;
     margin-bottom:12px;
 }
 
@@ -176,6 +319,7 @@ header nav a:hover{
     font-size:48px;
     line-height:1.05;
     font-weight:800;
+    letter-spacing:-2px;
     margin-bottom:12px;
 }
 
@@ -193,13 +337,60 @@ header nav a:hover{
     margin-bottom:30px;
 }
 
+/* On the hub home, the stat bubbles sit next to the title — compact row,
+   no bottom margin, and shrunk down so they fit beside the heading */
+.hub-home-header{
+    align-items:center;
+    flex-wrap:wrap;
+}
+.hub-home-header .hub-stats{
+    display:flex;
+    gap:12px;
+    margin-bottom:0;
+    flex:1;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+}
+.hub-home-header .hub-card{
+    padding:14px 18px;
+    width:152px;          /* uniform width — wide enough to keep every label on one line */
+    flex:0 0 152px;
+}
+.hub-home-header .hub-card h3{
+    font-size:24px;
+    margin-bottom:2px;
+}
+.hub-home-header .hub-card p{
+    font-size:13px;
+    white-space:nowrap;   /* never wrap "Needs Follow Up" onto a second line */
+}
+
+/* Narrow screens: the title stacks above the bubbles, so left-align them and
+   let them fill the row instead of staying pinned right at a fixed 140px */
+@media(max-width:700px){
+    .hub-home-header .hub-stats{
+        justify-content:flex-start;
+        width:100%;
+    }
+    .hub-home-header .hub-card{
+        flex:1 1 130px;
+        width:auto;
+    }
+    /* Keep the collapse toggle on the right of its panel header even though the
+       generic .card-header switches to a stacked column at this breakpoint */
+    .card-header:has(.panel-toggle){
+        flex-direction:row;
+        align-items:center;
+    }
+}
+
 .hub-card,
 .student-panel,
 .attendance-card,
 .observation-card{
     background:white;
     padding:28px;
-    border-radius:18px;
+    border-radius:22px;
     box-shadow:0 15px 30px rgba(0,0,0,.08);
 }
 
@@ -210,7 +401,7 @@ header nav a:hover{
 .hub-card h3{
     font-size:34px;
     margin-bottom:8px;
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 .hub-card p{
@@ -218,9 +409,6 @@ header nav a:hover{
     font-weight:600;
 }
 
-.student-list-header{
-    align-items:flex-start;
-}
 
 .student-controls{
     display:grid;
@@ -243,8 +431,8 @@ header nav a:hover{
     padding:14px 16px;
     border:1px solid #e5e5e5;
     border-radius:14px;
-    background:#f5f5f5;
-    font-family:'Montserrat',sans-serif;
+    background:#f7fafc;
+    font-family:'Archivo',sans-serif;
     font-size:15px;
 }
 
@@ -268,12 +456,12 @@ header nav a:hover{
     gap:10px;
 }
 .edit-student-btn{
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     border:none;
     padding:12px 18px;
     border-radius:14px;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
     font-size:15px;
     font-weight:700;
     cursor:pointer;
@@ -283,12 +471,12 @@ header nav a:hover{
 
 #saveStudentEditBtn{
     margin-top:18px;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     border:none;
     padding:16px 22px;
     border-radius:18px;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
     font-size:16px;
     font-weight:700;
     cursor:pointer;
@@ -317,13 +505,13 @@ header nav a:hover{
     align-items:center;
     gap:10px;
     font-weight:800;
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 .med-check-label input{
     width:22px;
     height:22px;
-    accent-color:#8bc53f;
+    accent-color:#00d084;
     cursor:pointer;
 }
 
@@ -343,6 +531,36 @@ header nav a:hover{
     border-bottom:1px solid #e5e5e5;
 }
 
+/* Collapse/expand toggle for alert panels */
+.panel-toggle{
+    flex-shrink:0;
+    width:32px;
+    height:32px;
+    border:none;
+    border-radius:10px;
+    background:#f0f0f0;
+    color:#333;
+    font-family:'Archivo',sans-serif;
+    font-size:22px;
+    font-weight:800;
+    line-height:1;
+    cursor:pointer;
+    transition:0.2s;
+}
+.panel-toggle:hover{ background:#e2e2e2; }
+
+/* !important so it beats the ID-level `display:grid` on #attendanceAlerts /
+   #recentObservations (an ID selector otherwise outranks this class rule) */
+.panel-body.collapsed{ display:none !important; }
+
+/* When collapsed, drop the header's bottom border/spacing so it reads as a
+   single tidy bar */
+.card-header.collapsed-header{
+    margin-bottom:0;
+    padding-bottom:0;
+    border-bottom:none;
+}
+
 .card-header h3,
 .attendance-card h3,
 .observation-card h3{
@@ -358,8 +576,8 @@ header nav a:hover{
     padding:14px 16px;
     border:1px solid #e5e5e5;
     border-radius:14px;
-    background:#f5f5f5;
-    font-family:'Montserrat',sans-serif;
+    background:#f7fafc;
+    font-family:'Archivo',sans-serif;
     font-size:15px;
 }
 
@@ -382,17 +600,13 @@ header nav a:hover{
 .alert-row,
 .attendance-row,
 .observation-row{
-    background:#f5f5f5;
+    background:#f7fafc;
     border-radius:16px;
     padding:18px;
     display:flex;
     justify-content:space-between;
     align-items:center;
     gap:18px;
-}
-
-.observation-header{
-    align-items:flex-start;
 }
 
 .observation-controls{
@@ -403,6 +617,13 @@ header nav a:hover{
     max-width:760px;
 }
 
+/* Search/filter controls now live inside the collapsible body, above the
+   list — space them off the list below */
+.panel-body > .student-controls,
+.panel-body > .observation-controls{
+    margin-bottom:22px;
+}
+
 #observationSearch,
 #observationFilter,
 #observationSort{
@@ -410,8 +631,8 @@ header nav a:hover{
     padding:14px 16px;
     border:1px solid #e5e5e5;
     border-radius:14px;
-    background:#f5f5f5;
-    font-family:'Montserrat',sans-serif;
+    background:#f7fafc;
+    font-family:'Archivo',sans-serif;
     font-size:15px;
 }
 
@@ -432,7 +653,7 @@ header nav a:hover{
     width:22px;
     height:22px;
     cursor:pointer;
-    accent-color:#6f2da8;
+    accent-color:#146ff8;
 }
 
 .observation-main-info{
@@ -448,11 +669,11 @@ header nav a:hover{
 
 .edit-observation-btn{
     border:none;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     padding:10px 14px;
     border-radius:12px;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
     font-weight:700;
     cursor:pointer;
 }
@@ -499,17 +720,17 @@ header nav a:hover{
 }
 
 .present{
-    background:#8bc53f;
+    background:#00d084;
     color:white;
 }
 
 .missing{
-    background:#f58220;
+    background:#ff6900;
     color:white;
 }
 
 .observation{
-    background:#1ca6d9;
+    background:#0693e3;
     color:white;
 }
 
@@ -533,7 +754,7 @@ header nav a:hover{
 }
 
 .checkbox-grid label{
-    background:#f5f5f5;
+    background:#f7fafc;
     padding:14px;
     border-radius:14px;
     margin:0;
@@ -543,12 +764,12 @@ header nav a:hover{
 #saveObservationBtn,
 .add-btn{
     margin-top:18px;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     border:none;
     padding:16px 22px;
     border-radius:18px;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
     font-size:16px;
     font-weight:700;
     cursor:pointer;
@@ -567,12 +788,12 @@ header nav a:hover{
 
 .download-btn{
     margin-top:18px;
-    background:#1ca6d9;
+    background:#0693e3;
     color:white;
     border:none;
     padding:16px 22px;
     border-radius:18px;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
     font-size:16px;
     font-weight:700;
     cursor:pointer;
@@ -681,7 +902,7 @@ header nav a:hover{
 /* ATTENDANCE SECTION */
 .submit-btn{
     text-decoration:none;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     padding:16px 24px;
     border-radius:14px;
@@ -703,9 +924,9 @@ header nav a:hover{
 .scanner-card,
 .missing-card{
     background:white;
-    border-radius:24px;
+    border-radius:22px;
     padding:28px;
-    box-shadow:0 18px 35px rgba(0,0,0,.05);
+    box-shadow:0 15px 30px rgba(0,0,0,.08);
 }
 
 .scanner-card h3,
@@ -765,18 +986,18 @@ header nav a:hover{
     background:#f4f4f4;
     border-radius:14px;
     outline:none;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
 }
 
 .manual-entry button{
     padding:16px 20px;
     border:none;
-    background:#8bc53f;
+    background:#00d084;
     color:white;
     font-weight:700;
     border-radius:14px;
     cursor:pointer;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
 }
 
 .recent-scans h4{
@@ -804,7 +1025,7 @@ header nav a:hover{
 
 .missing-head span{
     background:#ffeaea;
-    color:#d12c2c;
+    color:#ff3b30;
     padding:8px 14px;
     border-radius:999px;
     font-size:14px;
@@ -823,7 +1044,7 @@ header nav a:hover{
     width:50px;
     height:50px;
     border-radius:50%;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     display:flex;
     justify-content:center;
@@ -833,7 +1054,7 @@ header nav a:hover{
 
 .student-missing a{
     text-decoration:none;
-    color:#1ca6d9;
+    color:#0693e3;
     font-weight:700;
     font-size:14px;
 }
@@ -872,7 +1093,7 @@ header nav a:hover{
     border:none;
     padding:16px 22px;
     border-radius:18px;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
     font-size:16px;
     font-weight:700;
     cursor:pointer;
@@ -885,12 +1106,12 @@ header nav a:hover{
 
 .delete-btn{
     margin-top:18px;
-    background:#d12c2c;
+    background:#ff3b30;
     color:white;
     border:none;
     padding:16px 22px;
     border-radius:18px;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
     font-size:16px;
     font-weight:700;
     cursor:pointer;
@@ -900,7 +1121,7 @@ header nav a:hover{
 
 .delete-btn:hover{
     transform:translateY(-4px) scale(1.02);
-    background:#b71c1c;
+    background:#cf2e2e;
 }
 
 .mood-options{
@@ -939,7 +1160,7 @@ header nav a:hover{
 /* POSITIVE */
 .observation-row.positive{
     background:#edf9e5;
-    border-left-color:#8bc53f;
+    border-left-color:#00d084;
 }
 
 .observation-row.positive .student-name{
@@ -959,11 +1180,11 @@ header nav a:hover{
 /* NEGATIVE */
 .observation-row.negative{
     background:#ffe8e8;
-    border-left-color:#d12c2c;
+    border-left-color:#ff3b30;
 }
 
 .observation-row.negative .student-name{
-    color:#b71c1c;
+    color:#cf2e2e;
 }
 
 @media(max-width:700px){
@@ -996,7 +1217,7 @@ header nav a:hover{
     width:100%;
     max-width:560px;
     background:white;
-    border-radius:24px;
+    border-radius:22px;
     padding:32px;
     box-shadow:0 18px 35px rgba(0,0,0,.18);
 }
@@ -1014,28 +1235,30 @@ header nav a:hover{
     padding:14px 16px;
     border:1px solid #e5e5e5;
     border-radius:14px;
-    background:#f5f5f5;
-    font-family:'Montserrat',sans-serif;
+    background:#f7fafc;
+    font-family:'Archivo',sans-serif;
     font-size:15px;
     resize:vertical;
 }
 
 #saveAcknowledgementBtn{
     margin-top:18px;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     border:none;
     padding:16px 22px;
     border-radius:18px;
-    font-family:'Montserrat',sans-serif;
+    font-family:'Archivo',sans-serif;
     font-size:16px;
     font-weight:700;
     cursor:pointer;
     box-shadow:0 14px 30px rgba(0,0,0,.18);
 }
 
-#hubHome .dashboard-grid .student-panel:nth-child(3){
-    grid-column:1 / -1;
+/* Hub home: stack the panels in a single column so they read top-to-bottom —
+   Attendance Alerts, then Medication Alerts, then Recent Observations */
+#hubHome .dashboard-grid{
+    grid-template-columns:1fr;
 }
 /* ── CSV IMPORT CONTROLS ─────────────────────────────── */
 .csv-import-wrap {
@@ -1050,7 +1273,7 @@ header nav a:hover{
     align-items: center;
     gap: 6px;
     padding: 10px 18px;
-    background: #6f2da8;
+    background: #146ff8;
     color: white;
     border-radius: 10px;
     font-weight: 700;
@@ -1059,7 +1282,7 @@ header nav a:hover{
     transition: background 0.2s;
 }
 
-.csv-label:hover { background: #5b238c; }
+.csv-label:hover { background: #0d52c4; }
 
 .clear-btn {
     padding: 10px 18px;

@@ -8,14 +8,15 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/css/shad-base.css">
 
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: 'Montserrat', sans-serif;
-    background: #f5f5f5;
+    font-family: 'Archivo', sans-serif;
+    background: #f7fafc;
     color: #111;
     min-height: 100vh;
     display: flex;
@@ -35,7 +36,7 @@ header {
 .logo-wrap { display: flex; align-items: center; gap: 12px; }
 .logo-box {
     width: 26px; height: 26px;
-    background: linear-gradient(135deg, #8bc53f, #6f2da8, #f58220);
+    background: url('/public/img/shad-logo.png') center/contain no-repeat;
     border-radius: 6px;
 }
 .logo-wrap h1 { font-size: 20px; font-weight: 800; }
@@ -43,7 +44,7 @@ nav a {
     text-decoration: none; color: #888; font-weight: 600;
     font-size: 14px; transition: 0.2s;
 }
-nav a:hover { color: #8bc53f; }
+nav a:hover { color: #00d084; }
 
 /* MAIN */
 .page-main {
@@ -68,7 +69,7 @@ nav a:hover { color: #8bc53f; }
 .rec-icon {
     width: 72px;
     height: 72px;
-    background: linear-gradient(135deg, #8bc53f, #5a9a20);
+    background: linear-gradient(135deg, #00d084, #5a9a20);
     border-radius: 20px;
     display: flex;
     align-items: center;
@@ -81,7 +82,7 @@ nav a:hover { color: #8bc53f; }
     letter-spacing: 2px;
     font-size: 12px;
     font-weight: 700;
-    color: #8bc53f;
+    color: #00d084;
     margin-bottom: 10px;
 }
 
@@ -111,7 +112,7 @@ nav a:hover { color: #8bc53f; }
     padding: 14px 16px;
     border: 2px solid #e5e5e5;
     border-radius: 12px;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Archivo', sans-serif;
     font-size: 15px;
     font-weight: 600;
     outline: none;
@@ -123,14 +124,14 @@ nav a:hover { color: #8bc53f; }
     cursor: pointer;
     color: #111;
 }
-.form-select:focus { border-color: #8bc53f; }
+.form-select:focus { border-color: #00d084; }
 
 .submit-btn {
     width: 100%;
     padding: 15px;
-    background: #8bc53f;
+    background: #00d084;
     color: white;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Archivo', sans-serif;
     font-size: 16px;
     font-weight: 700;
     border: none;
@@ -148,7 +149,7 @@ nav a:hover { color: #8bc53f; }
     font-weight: 700;
     min-height: 20px;
 }
-.msg.error { color: #d12c2c; }
+.msg.error { color: #ff3b30; }
 .msg.success { color: #5a9a20; }
 
 /* SUCCESS STATE */
@@ -161,7 +162,7 @@ nav a:hover { color: #8bc53f; }
 .success-state .check {
     width: 72px;
     height: 72px;
-    background: linear-gradient(135deg, #8bc53f, #5a9a20);
+    background: linear-gradient(135deg, #00d084, #5a9a20);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -183,16 +184,16 @@ nav a:hover { color: #8bc53f; }
     margin-top: 8px;
     padding: 12px 28px;
     background: transparent;
-    color: #8bc53f;
-    font-family: 'Montserrat', sans-serif;
+    color: #00d084;
+    font-family: 'Archivo', sans-serif;
     font-size: 14px;
     font-weight: 700;
-    border: 2px solid #8bc53f;
+    border: 2px solid #00d084;
     border-radius: 10px;
     cursor: pointer;
     transition: 0.2s;
 }
-.sign-up-another:hover { background: #8bc53f; color: white; }
+.sign-up-another:hover { background: #00d084; color: white; }
 
 /* BOTTOM */
 .bottom-bar {

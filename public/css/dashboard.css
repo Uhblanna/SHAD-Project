@@ -6,8 +6,8 @@
 }
 
 body{
-    font-family:'Montserrat',sans-serif;
-    background:#f5f6f8;
+    font-family:'Archivo',sans-serif;
+    background:#f7fafc;
     color:#111;
 }
 
@@ -31,7 +31,7 @@ body{
     width:28px;
     height:28px;
     border-radius:6px;
-    background:linear-gradient(135deg,#8bc53f,#6f2da8,#f58220);
+    background:url('/public/img/shad-logo.png') center/contain no-repeat;
 }
 
 .logo-wrap h1{
@@ -41,7 +41,7 @@ body{
 
 nav{
     display:flex;
-    gap:28px;
+    gap:26px;
 }
 
 nav a{
@@ -51,11 +51,11 @@ nav a{
 }
 
 nav a:hover{
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 .active-link{
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 /* PAGE */
@@ -66,7 +66,7 @@ nav a:hover{
 /* HERO */
 .hero-card{
     background:white;
-    border-radius:28px;
+    border-radius:35px;
     padding:50px;
     box-shadow:0 20px 40px rgba(0,0,0,.05);
     margin-bottom:28px;
@@ -76,13 +76,14 @@ nav a:hover{
     font-size:13px;
     letter-spacing:2px;
     font-weight:700;
-    color:#8bc53f;
+    color:#00d084;
     margin-bottom:12px;
 }
 
 .hero-card h2{
     font-size:52px;
     font-weight:800;
+    letter-spacing:-2px;
     margin-bottom:16px;
 }
 
@@ -118,15 +119,15 @@ nav a:hover{
 }
 
 .green{
-    background:#8bc53f;
+    background:#00d084;
 }
 
 .purple{
-    background:#6f2da8;
+    background:#146ff8;
 }
 
 .orange{
-    background:#f58220;
+    background:#ff6900;
 }
 
 /* GRID */
@@ -138,7 +139,7 @@ nav a:hover{
 
 .panel{
     background:white;
-    border-radius:24px;
+    border-radius:28px;
     padding:32px;
     min-height:220px;
     box-shadow:0 18px 35px rgba(0,0,0,.05);

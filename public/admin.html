@@ -10,8 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+<link rel="stylesheet" href="/public/css/shad-base.css">
 <link rel="stylesheet" href="/public/css/admin.css">
 
 <script src="/public/js/db.js" defer></script>
@@ -25,15 +26,18 @@
         <div class="logo-box"></div>
         <h1>SHAD Portal</h1>
         <nav>
+            <span style="color:#ddd; font-weight:400;">|</span>
             <a href="/public/index.html">Home</a>
         </nav>
     </div>
 
     <nav>
         <a href="/public/dashboard.html">Dashboard</a>
-        <a href="/public/students.html">Students</a>
+        <a href="/public/students.html">Student Hub</a>
+        <a href="/public/morning-rec-qr.html">Morning Rec</a>
         <a href="/public/contact.html">Contact Staff</a>
-        <a href="/public/issues.html">Report An Issue</a>
+        <a href="/public/issues.html">System Issues</a>
+        <a href="/public/admin.html" style="color:#146ff8;font-weight:800;">Admin</a>
     </nav>
 </header>
 
@@ -49,74 +53,101 @@
 
     <div class="admin-grid">
 
-        <div class="admin-card">
-            <h3>Issue Tickets</h3>
-            <p>Clear all submitted Report an Issue tickets.</p>
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Issue Tickets</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Clear all submitted System Issues tickets.</p>
 
-            <div id="ticketList" class="ticket-list"></div>
+                <div id="ticketList" class="ticket-list"></div>
 
-            <button id="clearTicketsBtn" class="danger-btn">Clear All Tickets</button>
-        </div>
-
-        <div class="admin-card">
-            <h3>Upload Staff CSV</h3>
-            <p>CSV columns required: <strong>Name, Email, Slack</strong></p>
-
-            <input id="staffCsvInput" type="file" accept=".csv">
-            <button id="uploadStaffBtn">Upload Staff</button>
-
-            <p class="example">Example: Sarah Kim,sarah@email.com,https://slack.com/...</p>
-        </div>
-
-        <div class="admin-card">
-            <h3>Upload Schedule CSV</h3>
-            <p>CSV columns required: <strong>Name, Role, Status, Hours</strong></p>
-
-            <input id="scheduleCsvInput" type="file" accept=".csv">
-            <button id="uploadScheduleBtn">Upload Schedule</button>
-
-            <p class="example">Example: Sarah Kim,PA,duty,8AM - 4PM</p>
+                <button id="clearTicketsBtn" class="danger-btn">Clear All Tickets</button>
+            </div>
         </div>
 
         <!-- Isabelle McLean — Upload Committee Options CSV: populates the committees students can sign up for on the student portal -->
         <div class="admin-card">
-            <h3>Upload Committee Options CSV</h3>
-            <p>CSV columns required: <strong>Name, Type, Description</strong></p>
-
-            <input id="committeeCsvInput" type="file" accept=".csv">
-
-            <!-- Isabelle McLean — Upload + Remove buttons side-by-side; Remove opens a dropdown of current committees -->
-            <div class="button-row">
-                <button id="uploadCommitteeBtn">Upload Committees</button>
-                <button id="removeCommitteeBtn">Remove a Committee</button>
+            <div class="admin-card-head">
+                <h3>Upload Committee Options CSV</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
+            <div class="admin-card-body">
+                <p>CSV columns required: <strong>Name, Type, Description</strong></p>
 
-            <!-- Isabelle McLean — Hidden by default; appears when "Remove a Committee" is clicked, populated from the current list -->
-            <div id="removeCommitteePanel" style="display:none; margin-bottom:14px;">
-                <select id="removeCommitteeSelect" style="margin-bottom:10px;">
-                    <option value="">Choose a committee...</option>
-                </select>
-                <button id="confirmRemoveCommitteeBtn" class="danger-btn">Remove Selected</button>
+                <input id="committeeCsvInput" type="file" accept=".csv">
+
+                <!-- Isabelle McLean — Upload + Remove buttons side-by-side; Remove opens a dropdown of current committees -->
+                <div class="button-row">
+                    <button id="uploadCommitteeBtn">Upload Committees</button>
+                    <button id="removeCommitteeBtn">Remove a Committee</button>
+                </div>
+
+                <!-- Isabelle McLean — Hidden by default; appears when "Remove a Committee" is clicked, populated from the current list -->
+                <div id="removeCommitteePanel" style="display:none; margin-bottom:14px;">
+                    <select id="removeCommitteeSelect" style="margin-bottom:10px;">
+                        <option value="">Choose a committee...</option>
+                    </select>
+                    <button id="confirmRemoveCommitteeBtn" class="danger-btn">Remove Selected</button>
+                </div>
+
+                <button id="clearCommitteesBtn" class="danger-btn">Clear All Committees</button>
+
+                <p class="example">Example: Basketball,Sports,Pickup games every weekend morning</p>
+                <p class="example">Type must be either <strong>Sports</strong> or <strong>Project</strong>.</p>
             </div>
-
-            <p class="example">Example: Basketball,Sports,Pickup games every weekend morning</p>
-            <p class="example">Type must be either <strong>Sports</strong> or <strong>Project</strong>.</p>
         </div>
 
         <div class="admin-card">
-            <h3>Upload Student CSV</h3>
-            <p>CSV columns accepted: <strong>Name, Pronouns, Group, Age, Instrument, Medication, Dietary, Note</strong></p>
-
-            <input id="studentCsvInput" type="file" accept=".csv">
-
-            <div class="button-row">
-                <button id="uploadStudentsReplaceBtn">Replace Students</button>
-                <button id="uploadStudentsAddBtn">Add Students</button>
+            <div class="admin-card-head">
+                <h3>Upload Schedule CSV</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
+            <div class="admin-card-body">
+                <p>CSV columns required: <strong>Name, Role, Status, Hours</strong></p>
 
-            <button id="clearStudentsAdminBtn" class="danger-btn">Clear All Students</button>
+                <input id="scheduleCsvInput" type="file" accept=".csv">
+                <button id="uploadScheduleBtn">Upload Schedule</button>
 
-            <p class="example">Example: Jane Smith,she/her,Group 1,16,Violin,None,Vegetarian,Quiet student</p>
+                <p class="example">Example: Sarah Kim,PA,duty,8AM - 4PM</p>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-head">
+                <h3>Upload Staff CSV</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>CSV columns required: <strong>Name, Email, Slack</strong></p>
+
+                <input id="staffCsvInput" type="file" accept=".csv">
+                <button id="uploadStaffBtn">Upload Staff</button>
+
+                <p class="example">Example: Sarah Kim,sarah@email.com,https://slack.com/...</p>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-head">
+                <h3>Upload Student CSV</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>CSV columns accepted: <strong>Name, Pronouns, Group, Age, Instrument, Medication, Dietary, Note</strong></p>
+
+                <input id="studentCsvInput" type="file" accept=".csv">
+
+                <div class="button-row">
+                    <button id="uploadStudentsReplaceBtn">Replace Students</button>
+                    <button id="uploadStudentsAddBtn">Add Students</button>
+                </div>
+
+                <button id="clearStudentsAdminBtn" class="danger-btn">Clear All Students</button>
+
+                <p class="example">Example: Jane Smith,she/her,Group 1,16,Violin,None,Vegetarian,Quiet student</p>
+            </div>
         </div>
 
     </div>

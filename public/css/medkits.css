@@ -5,8 +5,8 @@
 }
 
 body{
-    font-family:'Montserrat',sans-serif;
-    background:#f5f6f8;
+    font-family:'Archivo',sans-serif;
+    background:#f7fafc;
     color:#111;
 }
 
@@ -29,7 +29,7 @@ body{
     width:28px;
     height:28px;
     border-radius:6px;
-    background:linear-gradient(135deg,#8bc53f,#6f2da8,#f58220);
+    background:url('/public/img/shad-logo.png') center/contain no-repeat;
 }
 
 .logo-wrap h1{
@@ -39,7 +39,7 @@ body{
 
 nav{
     display:flex;
-    gap:24px;
+    gap:26px;
     flex-wrap:wrap;
 }
 
@@ -51,7 +51,7 @@ nav a{
 
 nav a:hover,
 .active-link{
-    color:#6f2da8;
+    color:#146ff8;
 }
 
 .med-page{
@@ -66,13 +66,14 @@ nav a:hover,
     font-size:13px;
     letter-spacing:2px;
     font-weight:700;
-    color:#8bc53f;
+    color:#00d084;
     margin-bottom:10px;
 }
 
 .page-header h2{
     font-size:46px;
     font-weight:800;
+    letter-spacing:-1.8px;
 }
 
 .subtext{
@@ -110,8 +111,8 @@ nav a:hover,
 }
 
 .card-head span{
-    background:#efe6ff;
-    color:#6f2da8;
+    background:#e8f0fe;
+    color:#146ff8;
     padding:8px 14px;
     border-radius:999px;
     font-size:14px;
@@ -147,23 +148,23 @@ nav a:hover,
 }
 
 .status.checked{
-    background:#e9f8da;
+    background:#e6f9ef;
     color:#5f8c1d;
 }
 
 .status.restock{
-    background:#fff0d9;
+    background:#fff1e0;
     color:#cc7a00;
 }
 
 .status.missing{
     background:#ffe7e7;
-    color:#d12c2c;
+    color:#ff3b30;
 }
 
 .status.inuse{
     background:#e8f4ff;
-    color:#1ca6d9;
+    color:#0693e3;
 }
 
 .kit-info p{
@@ -176,7 +177,7 @@ nav a:hover,
     margin-top:16px;
     border:none;
     background:#ffe7e7;
-    color:#d12c2c;
+    color:#ff3b30;
     padding:10px 14px;
     border-radius:12px;
     font-weight:800;
@@ -195,7 +196,7 @@ select,
 textarea{
     width:100%;
     border:none;
-    background:#f4f5f7;
+    background:#edf2f7;
     padding:16px;
     border-radius:16px;
     font-size:15px;
@@ -228,7 +229,7 @@ textarea{
     width:100%;
     margin-top:24px;
     border:none;
-    background:#6f2da8;
+    background:#146ff8;
     color:white;
     padding:18px;
     border-radius:16px;

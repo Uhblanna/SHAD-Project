@@ -37,7 +37,17 @@ document.documentElement.style.visibility = "hidden";
 
     // Same logout-injection pattern as auth-check.js, plus also clears admin auth so re-entry requires the admin password again
     function injectLogout() {
-        var nav = document.querySelector("header nav:last-of-type");
+        // Anchor on the Admin link so Log Out sits to its right; fall back to the
+        // last (right-hand) nav in the header — NOT header nav:last-of-type, which
+        // incorrectly matches the logo-group's Home nav first.
+        var adminLink = document.querySelector('a[href="/public/admin.html"]');
+        var nav;
+        if (adminLink) {
+            nav = adminLink.parentElement;
+        } else {
+            var navs = document.querySelectorAll("header nav, .topbar nav");
+            nav = navs[navs.length - 1];
+        }
         if (!nav) return;
 
         var divider = document.createElement("span");
@@ -57,8 +67,14 @@ document.documentElement.style.visibility = "hidden";
                 .then(function() { window.location.href = "/public/login.html"; });
         });
 
-        nav.appendChild(divider);
-        nav.appendChild(btn);
+        if (adminLink) {
+            // Insert divider then Log Out immediately to the right of the Admin link
+            adminLink.insertAdjacentElement("afterend", btn);
+            adminLink.insertAdjacentElement("afterend", divider);
+        } else {
+            nav.appendChild(divider);
+            nav.appendChild(btn);
+        }
     }
 
     // Builds and shows the admin password modal. Uses inline visibility:visible so it appears even while <html> is hidden.
@@ -72,7 +88,7 @@ document.documentElement.style.visibility = "hidden";
 
         overlay.innerHTML =
             '<div style="visibility:visible;background:white;border-radius:22px;padding:44px 40px 36px;width:340px;max-width:100%;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,0.45);">' +
-                '<div style="width:64px;height:64px;background:linear-gradient(135deg,#6f2da8,#9b4dca);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">' +
+                '<div style="width:64px;height:64px;background:linear-gradient(135deg,#146ff8,#4d94ff);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">' +
                     '<svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">' +
                         '<path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>' +
                     '</svg>' +
@@ -88,7 +104,7 @@ document.documentElement.style.visibility = "hidden";
                         'margin-bottom:14px;box-sizing:border-box;">' +
                     '<p id="adminLoginError" style="font-size:13px;color:#d12c2c;font-weight:700;min-height:18px;margin-bottom:4px;"></p>' +
                     '<button type="submit" id="adminLoginSubmit" ' +
-                        'style="width:100%;padding:14px;background:#6f2da8;color:white;' +
+                        'style="width:100%;padding:14px;background:#146ff8;color:white;' +
                         'font-family:Montserrat,sans-serif;font-size:16px;font-weight:700;' +
                         'border:none;border-radius:12px;cursor:pointer;margin-bottom:12px;">' +
                         'Enter Admin →' +
