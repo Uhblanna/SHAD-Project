@@ -1,53 +1,34 @@
-// ============================================================
-//  SHAD Portal — Shopping
-//  Handles: add items, check off items, pending count
-// ============================================================
+let shoppingItems = JSON.parse(localStorage.getItem("shoppingItems")) || [];
+let nextItemId = Number(localStorage.getItem("nextShoppingItemId")) || 1;
 
-
-// ── SHOPPING DATA ─────────────────────────────────────────
-// Existing items on the list.
-// When you connect Firebase this will come from the database.
-
-let shoppingItems = [
-    { id: 1, name: 'Bandages',          description: 'Restock first aid kits',        store: 'Costco',       priority: false, purchased: false },
-    { id: 2, name: 'Markers',           description: 'Activity supplies for workshop', store: 'Dollar Store', priority: false, purchased: false },
-    { id: 3, name: 'Electrolyte Drinks',description: 'Wellness support',               store: 'Grocery',      priority: true,  purchased: false },
-    { id: 4, name: 'Printer Paper',     description: 'Office supplies',                store: 'Staples',      priority: false, purchased: false },
-];
-
-let nextItemId = 5;
-
-
-// ── ON PAGE LOAD ──────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function() {
 
     renderShoppingList();
     setupAddItemForm();
+    document.getElementById("savePurchasedBtn").addEventListener("click", savePurchasedItems);
+
 
 });
 
-
-// ── RENDER LIST ───────────────────────────────────────────
-
 function renderShoppingList() {
 
-    const listCard = document.querySelector('.list-card');
+    const listCard = document.getElementById('shoppingList');
+    listCard.innerHTML = "";
 
-    // Keep the heading, remove old rows
-    const oldRows = listCard.querySelectorAll('.item-row');
-    oldRows.forEach(function(row) { row.remove(); });
-
-    // Update pending count badge
     const pending = shoppingItems.filter(function(i) { return !i.purchased; }).length;
-    const badge = listCard.querySelector('.card-head span');
+    const badge = document.querySelector('.card-head span');
     badge.textContent = pending + ' Items Pending';
 
-    // Rebuild rows
+    if (shoppingItems.length === 0) {
+        listCard.innerHTML = "<p class='empty-list'>No shopping items added yet.</p>";
+        return;
+    }
+
     shoppingItems.forEach(function(item) {
 
         const row = document.createElement('div');
-        row.className = 'item-row';
+        row.className = item.purchased ? 'item-row purchased' : 'item-row';
         row.setAttribute('data-id', item.id);
 
         if (item.purchased) {
@@ -65,7 +46,6 @@ function renderShoppingList() {
             '</div>' +
             '<small>' + item.store + '</small>';
 
-        // Checkbox toggle
         const checkbox = row.querySelector('input[type="checkbox"]');
         checkbox.addEventListener('change', function() {
             togglePurchased(item.id);
@@ -77,15 +57,13 @@ function renderShoppingList() {
 
 }
 
-
-// ── TOGGLE PURCHASED ─────────────────────────────────────
-
 function togglePurchased(id) {
 
     const item = shoppingItems.find(function(i) { return i.id === id; });
     if (!item) return;
 
     item.purchased = !item.purchased;
+    saveShoppingItems();
     renderShoppingList();
 
     const status = item.purchased ? 'marked as purchased' : 'moved back to pending';
@@ -93,8 +71,6 @@ function togglePurchased(id) {
 
 }
 
-
-// ── ADD ITEM FORM ─────────────────────────────────────────
 
 function setupAddItemForm() {
 
@@ -133,9 +109,10 @@ function setupAddItemForm() {
         };
 
         shoppingItems.push(newItem);
+        saveShoppingItems();
+        localStorage.setItem("nextShoppingItemId", nextItemId);
         renderShoppingList();
 
-        // Clear the form
         nameInput.value       = '';
         storeSelect.value     = 'Select Store';
         descTextarea.value    = '';
@@ -148,7 +125,6 @@ function setupAddItemForm() {
 }
 
 
-// ── HELPERS ───────────────────────────────────────────────
 
 function showMessage(text, type) {
 
@@ -174,4 +150,23 @@ function showMessage(text, type) {
         setTimeout(function() { msg.remove(); }, 400);
     }, 2500);
 
+}
+
+function saveShoppingItems() {
+    localStorage.setItem("shoppingItems", JSON.stringify(shoppingItems));
+}
+
+function savePurchasedItems() {
+    const purchasedCount = shoppingItems.filter(item => item.purchased).length;
+
+    if (purchasedCount === 0) {
+        showMessage("No checked items to remove.", "error");
+        return;
+    }
+
+    shoppingItems = shoppingItems.filter(item => !item.purchased);
+    saveShoppingItems();
+    renderShoppingList();
+
+    showMessage(purchasedCount + " checked item(s) removed.", "success");
 }
