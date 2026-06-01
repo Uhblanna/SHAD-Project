@@ -86,7 +86,7 @@ nav a:hover,
 
 .med-layout{
     display:grid;
-    grid-template-columns:1.2fr .8fr;
+    grid-template-columns:1fr 1.2fr .8fr;
     gap:24px;
 }
 
@@ -271,4 +271,70 @@ textarea{
     .kit-top{
         flex-direction:column;
     }
+}
+
+.scanner-card{
+    background:white;
+    border-radius:24px;
+    padding:32px;
+    box-shadow:0 18px 35px rgba(0,0,0,.05);
+}
+
+#qr-reader{
+    width:100%;
+    min-height:280px;
+    margin:20px 0;
+    border-radius:18px;
+    overflow:hidden;
+    background:#f4f5f7;
+}
+
+.button-row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:16px;
+}
+
+#startScannerBtn,
+#stopScannerBtn,
+#manualCheckInBtn,
+#showAddKitBtn{
+    border:none;
+    background:#6f2da8;
+    color:white;
+    padding:14px 18px;
+    border-radius:14px;
+    font-weight:800;
+    cursor:pointer;
+}
+
+.secondary-btn{
+    background:#666 !important;
+}
+
+.manual-scan{
+    margin-top:24px;
+}
+
+.scan-message{
+    margin-top:18px;
+    font-weight:800;
+}
+
+.scan-message.success{
+    color:#5f8c1d;
+}
+
+.scan-message.error{
+    color:#d12c2c;
+}
+
+.hidden-form{
+    display:none;
+    margin-top:24px;
+}
+
+.hidden-form.show{
+    display:block;
 }
