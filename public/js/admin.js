@@ -399,8 +399,8 @@ function uploadMedkitsCSV() {
 
 function formatShadStudentRows(rows) {
     return rows.map(row => {
-        const firstName = row.FirstName || row["First Name"] || "";
-        const lastName = row.LastName || row["Last Name"] || "";
+        const firstName = row.FirstName || row["FirstName"] || "";
+        const lastName = row.LastName || row["LastName"] || "";
         const prefName = row.PrefName || row["PrefName"] || "";
 
         const displayName = prefName
@@ -409,15 +409,26 @@ function formatShadStudentRows(rows) {
 
         const dietary = row["Dietary Restrictions And/Or Intolerances"] || "None";
         const allergies = row.Allergies || "None";
+        const epipen = row["Epipen?"] || "No";
+
+        let dietaryNote = dietary;
+
+        if (allergies && allergies.toLowerCase() !== "none") {
+            dietaryNote += ` | Allergies: ${allergies}`;
+        }
+
+        if (epipen && epipen.toLowerCase() !== "no") {
+            dietaryNote += ` | Epipen: ${epipen}`;
+        }
 
         return {
             Name: displayName.trim(),
             Pronouns: row.Pronoun || row["Self-ID Pronoun"] || "",
-            Group: row.Group || row.Campus || "Group 1",
+            Group: row.Campus || "Group 1",
             Age: row["Age Start Prog"] || "",
             Instrument: "",
-            Medication: "",
-            Dietary: `${dietary}${allergies !== "None" ? " | Allergies: " + allergies : ""}`,
+            Medication: "None",
+            Dietary: dietaryNote,
             Note: row["Notes for PD to be aware of"] || ""
         };
     }).filter(student => student.Name);
