@@ -237,22 +237,12 @@ nav a:hover { color: #00d084; }
     transform: translateY(-4px);
     box-shadow: 0 10px 28px rgba(0,0,0,0.11);
 }
-.committee-card.sports-card:hover { border-color: #ff6900; }
-.committee-card.project-card:hover { border-color: #00d084; }
+.committee-card:hover { border-color: #146ff8; }
 
 .committee-emoji {
     font-size: 34px;
     line-height: 1;
 }
-
-.committee-card .card-type {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-}
-.sports-card .card-type { color: #ff6900; }
-.project-card .card-type { color: #00d084; }
 
 .committee-card h4 {
     font-size: 14px;
@@ -279,9 +269,8 @@ nav a:hover { color: #00d084; }
     transition: opacity 0.2s;
     color: white;
 }
+.join-btn { background: #146ff8; }
 .join-btn:hover { opacity: 0.88; }
-.sports-card .join-btn { background: #ff6900; }
-.project-card .join-btn { background: #00d084; }
 
 /* MODAL */
 .modal-overlay {
@@ -454,88 +443,25 @@ nav a:hover { color: #00d084; }
             <button id="addToCalendarBtn" class="calendar-btn" onclick="addEnrollmentToCalendar()" style="display:none;">📅 Add deadline to calendar</button>
         </div>
 
-        <!-- Sports -->
+        <!-- Committees -->
         <div class="committee-group" style="margin-top:2.5%;">
-            <div class="committee-group-label">Sports Committees</div>
-            <!-- Isabelle McLean — id="sportsGrid" so JS can replace the placeholder cards with uploaded committees -->
-            <div class="committee-grid" id="sportsGrid">
+            <div class="committee-grid" id="committeesGrid">
 
-                <div class="committee-card sports-card" onclick="openModal('Basketball Committee','Sports')">
-                    <div class="card-type">Sports</div>
-                    <h4>Basketball Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
+                <div class="committee-card" onclick="openModal('Committee 1','')">
+                    <h4>Committee 1</h4>
+                    <p>Placeholder — upload committees via admin panel.</p>
                     <button class="join-btn">Join</button>
                 </div>
 
-                <div class="committee-card sports-card" onclick="openModal('Soccer Committee','Sports')">
-                    <div class="card-type">Sports</div>
-                    <h4>Soccer Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
+                <div class="committee-card" onclick="openModal('Committee 2','')">
+                    <h4>Committee 2</h4>
+                    <p>Placeholder — upload committees via admin panel.</p>
                     <button class="join-btn">Join</button>
                 </div>
 
-                <div class="committee-card sports-card" onclick="openModal('Swimming Committee','Sports')">
-                    <div class="card-type">Sports</div>
-                    <h4>Swimming Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
-                    <button class="join-btn">Join</button>
-                </div>
-
-                <div class="committee-card sports-card" onclick="openModal('Track & Field Committee','Sports')">
-                    <div class="card-type">Sports</div>
-                    <h4>Track &amp; Field Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
-                    <button class="join-btn">Join</button>
-                </div>
-
-                <div class="committee-card sports-card" onclick="openModal('Volleyball Committee','Sports')">
-                    <div class="card-type">Sports</div>
-                    <h4>Volleyball Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
-                    <button class="join-btn">Join</button>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Projects -->
-        <div class="committee-group">
-            <div class="committee-group-label">Project Committees</div>
-            <!-- Isabelle McLean — id="projectsGrid" so JS can replace the placeholder cards with uploaded committees -->
-            <div class="committee-grid" id="projectsGrid">
-
-                <div class="committee-card project-card" onclick="openModal('Engineering Design Committee','Project')">
-                    <div class="card-type">Project</div>
-                    <h4>Engineering Design Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
-                    <button class="join-btn">Join</button>
-                </div>
-
-                <div class="committee-card project-card" onclick="openModal('Environmental Science Committee','Project')">
-                    <div class="card-type">Project</div>
-                    <h4>Environmental Science Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
-                    <button class="join-btn">Join</button>
-                </div>
-
-                <div class="committee-card project-card" onclick="openModal('Health & Wellness Committee','Project')">
-                    <div class="card-type">Project</div>
-                    <h4>Health &amp; Wellness Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
-                    <button class="join-btn">Join</button>
-                </div>
-
-                <div class="committee-card project-card" onclick="openModal('Technology & Innovation Committee','Project')">
-                    <div class="card-type">Project</div>
-                    <h4>Technology &amp; Innovation Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
-                    <button class="join-btn">Join</button>
-                </div>
-
-                <div class="committee-card project-card" onclick="openModal('Business & Entrepreneurship Committee','Project')">
-                    <div class="card-type">Project</div>
-                    <h4>Business &amp; Entrepreneurship Committee</h4>
-                    <p>Placeholder — edit committee name and details as needed.</p>
+                <div class="committee-card" onclick="openModal('Committee 3','')">
+                    <h4>Committee 3</h4>
+                    <p>Placeholder — upload committees via admin panel.</p>
                     <button class="join-btn">Join</button>
                 </div>
 
@@ -545,18 +471,29 @@ nav a:hover { color: #00d084; }
 
 </div>
 
-<!-- Isabelle McLean — Committee sign-up modal: loads student names from /api/students, posts to /api/committee-signups -->
+<!-- Isabelle McLean — Committee sign-up modal: loads student names from /api/students, posts to /api/committee-signups; enforces max 3 preferences per student -->
 <!-- Committee Sign-Up Modal -->
 <div class="modal-overlay" id="committeeModal">
     <div class="modal-box">
         <div class="modal-icon" id="modalIcon">🏅</div>
         <h3 id="modalTitle">Join Committee</h3>
-        <p class="modal-sub">Select your name to sign up.</p>
-        <select class="modal-select" id="studentSelect">
-            <option value="">Loading names...</option>
-        </select>
+        <p class="modal-sub">Select your name to express interest. You can choose up to <strong>3 committees</strong>.</p>
+        <!-- Isabelle — slotBadge shows X/3 choices used after a student selects their name; turns red when all 3 slots are filled -->
+        <div id="slotBadge" style="display:none; margin-bottom:12px; font-size:13px; font-weight:700; padding:5px 12px; border-radius:20px; display:inline-block;"></div>
+        <div style="position:relative; margin-bottom:14px;" id="namePickerWrap">
+            <input type="text" id="nameSearch" class="modal-select" style="margin-bottom:0; cursor:text;"
+                placeholder="Type your name..." autocomplete="off" oninput="filterNames()" onfocus="showNameList()">
+            <div id="nameDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:2px solid #e5e5e5; border-top:none; border-radius:0 0 12px 12px; max-height:200px; overflow-y:auto; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,0.1);"></div>
+        </div>
+        <!-- Hidden value holder — keeps all existing logic working -->
+        <input type="hidden" id="studentSelect">
+        <!-- Isabelle — alreadyChosen lists the committees this student has already picked, each with a remove button so they can change their mind -->
+        <div id="alreadyChosen" style="display:none; margin-bottom:12px; text-align:left;">
+            <p style="font-size:12px; font-weight:700; color:#aaa; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;">Already selected:</p>
+            <ul id="chosenList" style="list-style:none; display:flex; flex-direction:column; gap:5px;"></ul>
+        </div>
         <p class="modal-msg" id="modalMsg"></p>
-        <button class="modal-submit green" id="modalSubmit" onclick="submitSignup()">Join Committee →</button>
+        <button class="modal-submit green" id="modalSubmit" onclick="submitSignup()">Add to My Choices →</button>
         <br>
         <button class="modal-close" onclick="closeModal()">Cancel</button>
     </div>
@@ -588,24 +525,65 @@ function isEnrollmentOpen() {
     return now >= enrollmentOpenDate && now <= enrollmentCloseDate;
 }
 
+var allStudentNames = [];
+
 function loadStudents() {
     fetch('/api/students')
         .then(function(r) { return r.json(); })
         .then(function(students) {
-            var sel = document.getElementById('studentSelect');
-            sel.innerHTML = '<option value="">Select your name...</option>';
-            students.forEach(function(s) {
-                var opt = document.createElement('option');
-                opt.value = s.name;
-                opt.textContent = s.name;
-                sel.appendChild(opt);
-            });
+            allStudentNames = students.map(function(s) { return s.name; }).sort();
+            document.getElementById('nameSearch').placeholder = 'Type your name...';
         })
         .catch(function() {
-            var sel = document.getElementById('studentSelect');
-            sel.innerHTML = '<option value="">Could not load names</option>';
+            document.getElementById('nameSearch').placeholder = 'Could not load names';
         });
 }
+
+function showNameList() {
+    filterNames();
+}
+
+function filterNames() {
+    var query = document.getElementById('nameSearch').value.toLowerCase().trim();
+    var dropdown = document.getElementById('nameDropdown');
+    var matches = query
+        ? allStudentNames.filter(function(n) { return n.toLowerCase().indexOf(query) !== -1; })
+        : allStudentNames;
+
+    if (matches.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    dropdown.innerHTML = '';
+    matches.forEach(function(name) {
+        var item = document.createElement('div');
+        item.textContent = name;
+        item.style.cssText = 'padding:11px 16px; font-size:14px; font-weight:600; color:#111; cursor:pointer; transition:background 0.15s;';
+        item.addEventListener('mouseenter', function() { this.style.background = '#f0f6ff'; });
+        item.addEventListener('mouseleave', function() { this.style.background = 'white'; });
+        item.addEventListener('mousedown', function(e) {
+            e.preventDefault(); // prevent blur before click registers
+            selectStudent(name);
+        });
+        dropdown.appendChild(item);
+    });
+    dropdown.style.display = 'block';
+}
+
+function selectStudent(name) {
+    document.getElementById('nameSearch').value = name;
+    document.getElementById('studentSelect').value = name;
+    document.getElementById('nameDropdown').style.display = 'none';
+    onStudentChange();
+}
+
+document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('namePickerWrap');
+    if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('nameDropdown').style.display = 'none';
+    }
+});
 
 function openModal(committeeName, committeeType) {
     // Isabelle McLean — Block opening the signup modal if enrollment is closed
@@ -614,33 +592,115 @@ function openModal(committeeName, committeeType) {
     currentCommittee = committeeName;
     currentType = committeeType;
 
-    document.getElementById('modalTitle').textContent = 'Join ' + committeeName;
+    document.getElementById('modalTitle').textContent = committeeName;
 
     var icon = document.getElementById('modalIcon');
     var btn = document.getElementById('modalSubmit');
     var sel = document.getElementById('studentSelect');
 
-    // Isabelle McLean — Show the same keyword-matched emoji as the committee card
     icon.textContent = committeeEmoji(committeeName, committeeType);
-
-    if (committeeType === 'Sports') {
-        icon.style.background = 'linear-gradient(135deg,#ff6900,#d96c00)';
-        btn.className = 'modal-submit orange';
-        sel.className = 'modal-select sports-focus';
-    } else {
-        icon.style.background = 'linear-gradient(135deg,#00d084,#5a9a20)';
-        btn.className = 'modal-submit green';
-        sel.className = 'modal-select';
-    }
+    icon.style.background = 'linear-gradient(135deg,#146ff8,#0a4fb8)';
+    btn.className = 'modal-submit green';
+    sel.className = 'modal-select';
 
     document.getElementById('modalMsg').textContent = '';
     document.getElementById('modalMsg').className = 'modal-msg';
     document.getElementById('studentSelect').value = '';
+    document.getElementById('nameSearch').value = '';
+    document.getElementById('nameDropdown').style.display = 'none';
+    document.getElementById('slotBadge').style.display = 'none';
+    document.getElementById('alreadyChosen').style.display = 'none';
     btn.disabled = false;
-    btn.textContent = 'Join Committee →';
+    btn.textContent = 'Add to My Choices →';
 
     loadStudents();
     document.getElementById('committeeModal').classList.add('active');
+}
+
+// Isabelle McLean — When student is selected, fetch their existing signups to show slot count and already-chosen list
+function onStudentChange() {
+    var name = document.getElementById('studentSelect').value;
+    var slotBadge = document.getElementById('slotBadge');
+    var alreadyChosen = document.getElementById('alreadyChosen');
+    var chosenList = document.getElementById('chosenList');
+    var btn = document.getElementById('modalSubmit');
+    var msgEl = document.getElementById('modalMsg');
+
+    msgEl.textContent = '';
+    msgEl.className = 'modal-msg';
+
+    if (!name) {
+        slotBadge.style.display = 'none';
+        alreadyChosen.style.display = 'none';
+        btn.disabled = false;
+        return;
+    }
+
+    fetch('/api/committee-signups')
+        .then(function(r) { return r.json(); })
+        .then(function(rows) {
+            var mine = rows.filter(function(r) { return r.student_name === name; });
+            var count = mine.length;
+            var spotsLeft = 3 - count;
+
+            // Slot badge
+            slotBadge.style.display = 'inline-block';
+            if (spotsLeft <= 0) {
+                slotBadge.style.background = '#ffe0de';
+                slotBadge.style.color = '#d93025';
+                slotBadge.textContent = '3/3 choices used — no spots left';
+                btn.disabled = true;
+                btn.textContent = 'No Spots Left';
+            } else {
+                slotBadge.style.background = '#e8f5d3';
+                slotBadge.style.color = '#5a9a20';
+                slotBadge.textContent = count + '/3 choices used — ' + spotsLeft + ' spot' + (spotsLeft === 1 ? '' : 's') + ' left';
+                btn.disabled = false;
+                btn.textContent = 'Add to My Choices →';
+            }
+
+            // Already chosen list — each row has a × remove button so students can change their mind
+            if (mine.length > 0) {
+                alreadyChosen.style.display = 'block';
+                chosenList.innerHTML = '';
+                mine.forEach(function(r) {
+                    var li = document.createElement('li');
+                    li.style.cssText = 'display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:600; color:#555; background:#f5f5f5; padding:6px 10px; border-radius:7px;';
+                    li.innerHTML =
+                        '<span>' + r.committee_name + '</span>' +
+                        '<button onclick="removeChoice(' + r.id + ', this)" title="Remove this choice" ' +
+                        'style="background:none; border:none; color:#bbb; font-size:16px; line-height:1; cursor:pointer; padding:0 2px; flex-shrink:0; transition:color 0.2s;" ' +
+                        'onmouseover="this.style.color=\'#ff3b30\'" onmouseout="this.style.color=\'#bbb\'">×</button>';
+                    chosenList.appendChild(li);
+                });
+                // If this committee is already chosen, disable the add button
+                var alreadyThis = mine.find(function(r) { return r.committee_name === currentCommittee; });
+                if (alreadyThis) {
+                    btn.disabled = true;
+                    btn.textContent = 'Already Selected';
+                    slotBadge.style.background = '#fff3cd';
+                    slotBadge.style.color = '#856404';
+                    slotBadge.textContent = 'You already selected this committee';
+                }
+            } else {
+                alreadyChosen.style.display = 'none';
+            }
+        })
+        .catch(function() {});
+}
+
+// Isabelle McLean — Removes a single committee preference for a student; re-runs onStudentChange to refresh the list and slot count
+function removeChoice(signupId, btn) {
+    btn.disabled = true;
+    fetch('/api/committee-signups/' + signupId, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function() {
+            // Refresh the list in place — same as if the student re-selected their name
+            onStudentChange();
+        })
+        .catch(function() {
+            btn.disabled = false;
+        });
 }
 
 function closeModal() {
@@ -677,9 +737,10 @@ function submitSignup() {
             btn.textContent = 'Join Committee →';
             btn.disabled = false;
         } else {
+            var remaining = 3 - (data.count || 1);
             msgEl.className = 'modal-msg success';
-            msgEl.textContent = 'You\'re signed up for ' + currentCommittee + '!';
-            btn.textContent = 'Done!';
+            msgEl.textContent = currentCommittee + ' added! ' + (remaining > 0 ? remaining + ' choice' + (remaining === 1 ? '' : 's') + ' left.' : 'All 3 choices submitted.');
+            btn.textContent = 'Added ✓';
             setTimeout(function() { closeModal(); }, 1800);
         }
     })
@@ -731,23 +792,20 @@ function committeeEmoji(name, type, description) {
     for (var i = 0; i < map.length; i++) {
         if (text.indexOf(map[i][0]) !== -1) return map[i][1];
     }
-    return (type && type.toLowerCase() === 'sports') ? '🏅' : '🧠';
+    return '🧠';
 }
 
 function renderCommitteeCard(c) {
-    var typeClass = (c.type === 'Sports') ? 'sports-card' : 'project-card';
     var card = document.createElement('div');
-    card.className = 'committee-card ' + typeClass;
+    card.className = 'committee-card';
     card.setAttribute('data-name', c.name);
-    card.setAttribute('data-type', c.type || 'Project');
     card.innerHTML =
-        '<div class="committee-emoji">' + committeeEmoji(c.name, c.type, c.description) + '</div>' +
-        '<div class="card-type">' + escHtmlCommittee(c.type || 'Project') + '</div>' +
+        '<div class="committee-emoji">' + committeeEmoji(c.name, '', c.description) + '</div>' +
         '<h4>' + escHtmlCommittee(c.name) + '</h4>' +
         '<p>' + escHtmlCommittee(c.description || '') + '</p>' +
         '<button class="join-btn">Join</button>';
     card.addEventListener('click', function() {
-        openModal(card.getAttribute('data-name'), card.getAttribute('data-type'));
+        openModal(card.getAttribute('data-name'), '');
     });
     return card;
 }
@@ -757,22 +815,14 @@ function loadCommitteeOptions() {
         .then(function(r) { return r.json(); })
         .then(function(committees) {
             if (committees && committees.length > 0) {
-                var sportsGrid = document.getElementById('sportsGrid');
-                var projectsGrid = document.getElementById('projectsGrid');
-                sportsGrid.innerHTML = '';
-                projectsGrid.innerHTML = '';
+                var grid = document.getElementById('committeesGrid');
+                grid.innerHTML = '';
                 committees.forEach(function(c) {
-                    var card = renderCommitteeCard(c);
-                    if ((c.type || '').toLowerCase() === 'sports') {
-                        sportsGrid.appendChild(card);
-                    } else {
-                        projectsGrid.appendChild(card);
-                    }
+                    grid.appendChild(renderCommitteeCard(c));
                 });
             } else {
                 decoratePlaceholderEmojis();
             }
-            // Isabelle McLean — Apply enrollment-window state after the committee cards are in the DOM
             updateEnrollmentStatus();
         })
         .catch(function() { decoratePlaceholderEmojis(); updateEnrollmentStatus(); });
@@ -787,10 +837,9 @@ function decoratePlaceholderEmojis() {
         var descEl = card.querySelector('p');
         var name = nameEl ? nameEl.textContent : '';
         var desc = descEl ? descEl.textContent : '';
-        var type = card.classList.contains('sports-card') ? 'Sports' : 'Project';
         var em = document.createElement('div');
         em.className = 'committee-emoji';
-        em.textContent = committeeEmoji(name, type, desc);
+        em.textContent = committeeEmoji(name, '', desc);
         card.insertBefore(em, card.firstChild);
     });
 }

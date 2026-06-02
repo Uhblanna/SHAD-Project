@@ -617,6 +617,7 @@ app.get("/api/morning-rec", (req, res) => {
 });
 
 // Isabelle McLean — POST stores the active rec date as signup_date (today before 10 AM, tomorrow after the 10 AM reset)
+// Also enforces the staff-set capacity (staff_count * 8); rejects if session is full.
 app.post("/api/morning-rec", (req, res) => {
     const { student_name } = req.body;
     if (!student_name || !student_name.trim()) return res.status(400).json({ error: "Student name is required." });
@@ -624,13 +625,28 @@ app.post("/api/morning-rec", (req, res) => {
     const recDate = recDateKey();
     const name = student_name.trim();
 
+    // Check for duplicate first, then check capacity
     db.get("SELECT id FROM morning_rec_signups WHERE student_name = ? AND signup_date = ?", [name, recDate], (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
         if (row) return res.status(409).json({ error: "You're already signed up for the next rec!" });
 
-        db.run("INSERT INTO morning_rec_signups (student_name, signup_date) VALUES (?, ?)", [name, recDate], function(err2) {
+        // Get the staff count config for this date (default to 1 staff = 8 spots)
+        db.get("SELECT staff_count FROM morning_rec_config WHERE config_date = ?", [recDate], (err2, configRow) => {
             if (err2) return res.status(500).json({ error: err2.message });
-            res.json({ id: this.lastID, student_name: name, signup_date: recDate });
+            const capacity = (configRow ? configRow.staff_count : 1) * 8;
+
+            // Count current signups for this date
+            db.get("SELECT COUNT(*) AS cnt FROM morning_rec_signups WHERE signup_date = ?", [recDate], (err3, countRow) => {
+                if (err3) return res.status(500).json({ error: err3.message });
+                if (countRow.cnt >= capacity) {
+                    return res.status(409).json({ error: "Sorry, this session is full! No spots remaining." });
+                }
+
+                db.run("INSERT INTO morning_rec_signups (student_name, signup_date) VALUES (?, ?)", [name, recDate], function(err4) {
+                    if (err4) return res.status(500).json({ error: err4.message });
+                    res.json({ id: this.lastID, student_name: name, signup_date: recDate });
+                });
+            });
         });
     });
 });
@@ -651,6 +667,31 @@ app.delete("/api/morning-rec/:id", (req, res) => {
     });
 });
 
+// Isabelle McLean — Morning rec config: GET returns the staff count + calculated capacity for the active session date
+app.get("/api/morning-rec/config", (req, res) => {
+    const recDate = recDateKey();
+    db.get("SELECT staff_count FROM morning_rec_config WHERE config_date = ?", [recDate], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const staffCount = row ? row.staff_count : 1;
+        res.json({ config_date: recDate, staff_count: staffCount, capacity: staffCount * 8 });
+    });
+});
+
+// Isabelle McLean — Morning rec config: PUT lets staff set the number of staff working that morning; capacity = staff_count * 8
+app.put("/api/morning-rec/config", (req, res) => {
+    const staffCount = parseInt(req.body.staff_count, 10);
+    if (!staffCount || staffCount < 1) return res.status(400).json({ error: "staff_count must be a positive integer." });
+    const recDate = recDateKey();
+    db.run(
+        "INSERT INTO morning_rec_config (config_date, staff_count) VALUES (?, ?) ON CONFLICT(config_date) DO UPDATE SET staff_count = excluded.staff_count",
+        [recDate, staffCount],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ config_date: recDate, staff_count: staffCount, capacity: staffCount * 8 });
+        }
+    );
+});
+
 // Isabelle McLean — Committee options API: GET list of committees students can sign up for, POST to replace the whole list (uploaded via admin CSV)
 app.get("/api/committee-options", (req, res) => {
     db.all("SELECT * FROM committee_options ORDER BY type ASC, name ASC", [], (err, rows) => {
@@ -661,20 +702,34 @@ app.get("/api/committee-options", (req, res) => {
 
 // Isabelle McLean — Delete a single committee option by ID (used by the "Remove a Committee" button on the admin page)
 app.delete("/api/committee-options/:id", (req, res) => {
-    db.run("DELETE FROM committee_options WHERE id = ?", [req.params.id], function(err) {
+    db.get("SELECT name FROM committee_options WHERE id = ?", [req.params.id], (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ deleted: this.changes });
+        const committeeName = row ? row.name : null;
+
+        db.run("DELETE FROM committee_options WHERE id = ?", [req.params.id], function(delErr) {
+            if (delErr) return res.status(500).json({ error: delErr.message });
+
+            if (!committeeName) return res.json({ deleted: this.changes });
+
+            // Clear any signups and assignments referencing this committee
+            db.run("DELETE FROM committee_signups WHERE committee_name = ?", [committeeName]);
+            db.run("DELETE FROM committee_assignments WHERE committee_name = ?", [committeeName]);
+            res.json({ deleted: 1 });
+        });
     });
 });
 
+// Isabelle McLean — Replace all committee options atomically; also wipes all student signups and assignments so stale choices don't carry over to new committees
 app.post("/api/committee-options/replace", (req, res) => {
     const committees = Array.isArray(req.body.committees) ? req.body.committees : [];
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run("DELETE FROM committee_options");
+        db.run("DELETE FROM committee_signups");
+        db.run("DELETE FROM committee_assignments");
         const stmt = db.prepare("INSERT INTO committee_options (name, type, description) VALUES (?, ?, ?)");
         committees.forEach(c => {
-            stmt.run([c.name, c.type || "Project", c.description || ""]);
+            stmt.run([c.name, c.type || "", c.description || ""]);
         });
         stmt.finalize(err => {
             if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
@@ -699,23 +754,75 @@ app.post("/api/committee-signups", (req, res) => {
     const { student_name, committee_name, committee_type } = req.body;
     if (!student_name || !committee_name) return res.status(400).json({ error: "Name and committee are required." });
 
+    const name = student_name.trim();
+
+    // Isabelle McLean — Enforce max 3 committee preferences per student before inserting
+    db.get("SELECT COUNT(*) AS cnt FROM committee_signups WHERE student_name = ?", [name], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (row.cnt >= 3) return res.status(409).json({ error: "You've already selected 3 committees. That's the maximum!" });
+
+        db.run(
+            "INSERT INTO committee_signups (student_name, committee_name, committee_type) VALUES (?, ?, ?)",
+            [name, committee_name, committee_type || ""],
+            function(err2) {
+                if (err2) {
+                    if (err2.message.includes("UNIQUE")) {
+                        return res.status(409).json({ error: "You've already selected this committee!" });
+                    }
+                    return res.status(500).json({ error: err2.message });
+                }
+                res.json({ id: this.lastID, student_name: name, committee_name, committee_type, count: row.cnt + 1 });
+            }
+        );
+    });
+});
+
+// Isabelle McLean — Delete one committee preference by ID; if the student has no preferences left afterwards, their assignment is also cleared
+app.delete("/api/committee-signups/:id", (req, res) => {
+    // Find the student name before deleting so we can cascade to assignments if needed
+    db.get("SELECT student_name FROM committee_signups WHERE id = ?", [req.params.id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const studentName = row ? row.student_name : null;
+
+        db.run("DELETE FROM committee_signups WHERE id = ?", [req.params.id], function(delErr) {
+            if (delErr) return res.status(500).json({ error: delErr.message });
+
+            if (!studentName) return res.json({ deleted: this.changes });
+
+            // If the student now has no preferences left, clear their assignment too
+            db.get("SELECT COUNT(*) AS cnt FROM committee_signups WHERE student_name = ?", [studentName], (cntErr, cntRow) => {
+                if (!cntErr && cntRow && cntRow.cnt === 0) {
+                    db.run("DELETE FROM committee_assignments WHERE student_name = ?", [studentName]);
+                }
+                res.json({ deleted: 1 });
+            });
+        });
+    });
+});
+
+// Isabelle McLean — Committee assignments: GET all staff-assigned placements, PUT to assign/update a student's final committee
+app.get("/api/committee-assignments", (req, res) => {
+    db.all("SELECT * FROM committee_assignments ORDER BY committee_type ASC, committee_name ASC, student_name ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.put("/api/committee-assignments", (req, res) => {
+    const { student_name, committee_name, committee_type } = req.body;
+    if (!student_name || !committee_name) return res.status(400).json({ error: "student_name and committee_name are required." });
     db.run(
-        "INSERT INTO committee_signups (student_name, committee_name, committee_type) VALUES (?, ?, ?)",
+        "INSERT INTO committee_assignments (student_name, committee_name, committee_type) VALUES (?, ?, ?) ON CONFLICT(student_name) DO UPDATE SET committee_name = excluded.committee_name, committee_type = excluded.committee_type, assigned_at = CURRENT_TIMESTAMP",
         [student_name.trim(), committee_name, committee_type || ""],
         function(err) {
-            if (err) {
-                if (err.message.includes("UNIQUE")) {
-                    return res.status(409).json({ error: "You're already signed up for this committee!" });
-                }
-                return res.status(500).json({ error: err.message });
-            }
-            res.json({ id: this.lastID, student_name: student_name.trim(), committee_name, committee_type });
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ student_name: student_name.trim(), committee_name, committee_type });
         }
     );
 });
 
-app.delete("/api/committee-signups/:id", (req, res) => {
-    db.run("DELETE FROM committee_signups WHERE id = ?", [req.params.id], function(err) {
+app.delete("/api/committee-assignments/:student_name", (req, res) => {
+    db.run("DELETE FROM committee_assignments WHERE student_name = ?", [decodeURIComponent(req.params.student_name)], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ deleted: this.changes });
     });
@@ -827,6 +934,84 @@ app.post("/api/medkits/reset-checkins", (req, res) => {
 
 app.delete("/api/medkits/:id", (req, res) => {
     db.run("DELETE FROM medkits WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+// Isabelle McLean — Daily to-do list routes: GET all tasks, POST a new task, PATCH to check off with staff name, DELETE one or all
+app.get("/api/todos", (req, res) => {
+    db.all("SELECT * FROM daily_todos ORDER BY created_at ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/todos", (req, res) => {
+    const task = (req.body.task || "").trim();
+    if (!task) return res.status(400).json({ error: "Task text is required." });
+    db.run("INSERT INTO daily_todos (task) VALUES (?)", [task], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID, task, completed: 0, completed_by: "" });
+    });
+});
+
+app.patch("/api/todos/:id", (req, res) => {
+    const { completed, completed_by } = req.body;
+    const id = req.params.id;
+    const now = completed ? new Date().toISOString() : "";
+    const name = completed ? (completed_by || "").trim() : "";
+
+    db.run(
+        "UPDATE daily_todos SET completed = ?, completed_by = ?, completed_at = ? WHERE id = ?",
+        [completed ? 1 : 0, name, now, id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+
+            if (completed) {
+                // Write a permanent history record when a task is checked off
+                db.get("SELECT task FROM daily_todos WHERE id = ?", [id], (err2, row) => {
+                    if (!err2 && row) {
+                        db.run(
+                            "INSERT INTO task_history (todo_id, task, completed_by, completed_at) VALUES (?, ?, ?, ?)",
+                            [id, row.task, name, now]
+                        );
+                    }
+                });
+            } else {
+                // Remove the history record if the staff member undoes the completion
+                db.run("DELETE FROM task_history WHERE todo_id = ?", [id]);
+            }
+
+            res.json({ id, completed: completed ? 1 : 0, completed_by: name, completed_at: now });
+        }
+    );
+});
+
+// Isabelle McLean — Permanent task history log: all completions across all days, survives daily list clears
+app.get("/api/task-history", (req, res) => {
+    db.all("SELECT * FROM task_history ORDER BY completed_at DESC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.delete("/api/task-history/all", (req, res) => {
+    db.run("DELETE FROM task_history", [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ cleared: this.changes });
+    });
+});
+
+app.delete("/api/todos/all", (req, res) => {
+    db.run("DELETE FROM daily_todos", [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ cleared: this.changes });
+    });
+});
+
+app.delete("/api/todos/:id", (req, res) => {
+    db.run("DELETE FROM daily_todos WHERE id = ?", [req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ deleted: this.changes });
     });

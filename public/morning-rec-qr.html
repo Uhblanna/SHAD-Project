@@ -247,6 +247,63 @@ nav a:hover { color: #146ff8; }
 }
 .qr-close-btn:hover { background: rgba(255,255,255,0.3); }
 
+/* Isabelle — Staff count control: lets staff enter how many staff are working; capacity = staff count × 8 */
+/* STAFF COUNT CONTROL */
+.staff-count-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    background: #f8f8f8;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+.staff-count-row label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #555;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.staff-count-input {
+    width: 64px;
+    padding: 7px 10px;
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    color: #111;
+    outline: none;
+    transition: border-color 0.2s;
+    flex-shrink: 0;
+}
+.staff-count-input:focus { border-color: #146ff8; }
+.staff-save-btn {
+    padding: 7px 16px;
+    background: #146ff8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.staff-save-btn:hover { opacity: 0.85; }
+.capacity-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
 /* SIGNUPS PANEL */
 .count-badge {
     display: inline-flex;
@@ -260,6 +317,11 @@ nav a:hover { color: #146ff8; }
     padding: 6px 14px;
     border-radius: 20px;
     margin-bottom: 20px;
+}
+/* Isabelle — .full turns the sign-up count badge red when the session has reached capacity */
+.count-badge.full {
+    background: #ffe0de;
+    color: #d93025;
 }
 
 /* Sign-up card stretches to match the QR card; let the list area fill the
@@ -381,7 +443,7 @@ nav a:hover { color: #146ff8; }
     <nav>
         <a href="/public/dashboard.html">Dashboard</a>
         <a href="/public/students.html">Student Hub</a>
-        <a href="/public/morning-rec-qr.html">Morning Rec</a>
+        <a href="/public/tools.html">Tools</a>
         <a href="/public/contact.html">Contact Staff</a>
         <a href="/public/issues.html">System Issues</a>
         <a href="/public/admin.html" style="color:#146ff8;font-weight:800;">Admin</a>
@@ -429,8 +491,16 @@ nav a:hover { color: #146ff8; }
         <h2>Sign-Up List</h2>
         <p class="card-sub" id="dateDisplay"></p>
 
-        <div class="count-badge">
-            <span id="countEl">0 students</span> signed up
+        <!-- Staff count control — sets how many staff are working, capacity = staff × 8 -->
+        <div class="staff-count-row">
+            <label for="staffCountInput">Staff working:</label>
+            <input class="staff-count-input" type="number" id="staffCountInput" min="1" max="50" value="1">
+            <button class="staff-save-btn" onclick="saveStaffCount()">Save</button>
+            <span class="capacity-label">Max: <strong id="capacityEl">8</strong> students</span>
+        </div>
+
+        <div class="count-badge" id="countBadge">
+            <span id="countEl">0</span> / <span id="capacityBadgeEl">8</span> signed up
         </div>
 
         <ul class="signups-list" id="signupsList">
@@ -512,13 +582,71 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeQRDisplay();
 });
 
+// Isabelle — currentCapacity is set by loadConfig on page load; used by updateBadge to colour the count red when full
+var currentCapacity = 8; // default until config loads
+
+// Isabelle — Fetches the saved staff count and capacity for today's session from /api/morning-rec/config
+function loadConfig() {
+    fetch('/api/morning-rec/config')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            currentCapacity = data.capacity || 8;
+            document.getElementById('staffCountInput').value = data.staff_count || 1;
+            document.getElementById('capacityEl').textContent = currentCapacity;
+            document.getElementById('capacityBadgeEl').textContent = currentCapacity;
+            updateBadge(parseInt(document.getElementById('countEl').textContent, 10) || 0);
+        })
+        .catch(function() {});
+}
+
+// Isabelle — Saves the staff count to /api/morning-rec/config and updates the capacity display and badge
+function saveStaffCount() {
+    var staffCount = parseInt(document.getElementById('staffCountInput').value, 10);
+    if (!staffCount || staffCount < 1) {
+        alert('Please enter a valid number of staff (minimum 1).');
+        return;
+    }
+    var btn = document.querySelector('.staff-save-btn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    fetch('/api/morning-rec/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff_count: staffCount })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        currentCapacity = data.capacity;
+        document.getElementById('capacityEl').textContent = currentCapacity;
+        document.getElementById('capacityBadgeEl').textContent = currentCapacity;
+        updateBadge(parseInt(document.getElementById('countEl').textContent, 10) || 0);
+        btn.textContent = 'Saved ✓';
+        setTimeout(function() { btn.textContent = 'Save'; btn.disabled = false; }, 1800);
+    })
+    .catch(function() {
+        btn.textContent = 'Save';
+        btn.disabled = false;
+        alert('Failed to save. Please try again.');
+    });
+}
+
+function updateBadge(count) {
+    var badge = document.getElementById('countBadge');
+    document.getElementById('countEl').textContent = count;
+    document.getElementById('capacityBadgeEl').textContent = currentCapacity;
+    if (count >= currentCapacity) {
+        badge.classList.add('full');
+    } else {
+        badge.classList.remove('full');
+    }
+}
+
 function loadSignups() {
     fetch('/api/morning-rec')
         .then(function(r) { return r.json(); })
         .then(function(rows) {
             var list = document.getElementById('signupsList');
-            var countEl = document.getElementById('countEl');
-            countEl.textContent = rows.length + (rows.length === 1 ? ' student' : ' students');
+            updateBadge(rows.length);
 
             if (rows.length === 0) {
                 list.innerHTML = '<li class="empty-state">No sign-ups yet for tomorrow.</li>';
@@ -560,6 +688,7 @@ function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+loadConfig();
 loadSignups();
 setInterval(loadSignups, 15000);
 </script>

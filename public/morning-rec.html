@@ -221,7 +221,7 @@ nav a:hover { color: #00d084; }
 <main class="page-main">
     <div class="signup-card">
 
-        <!-- Isabelle McLean — Sign-up form: dropdown populated from /api/students; blocks same-day duplicate submissions -->
+        <!-- Isabelle McLean — Sign-up form: dropdown populated from /api/students; blocks same-day duplicate submissions; respects capacity set by staff -->
         <!-- Sign-up form -->
         <div id="formState">
             <div class="rec-icon">🌅</div>
@@ -229,7 +229,13 @@ nav a:hover { color: #00d084; }
             <!-- Isabelle McLean — Sign-up is for the NEXT day's morning rec; date label below shows tomorrow's date -->
             <h2>Sign Up for Tomorrow</h2>
             <p class="date-line" id="dateDisplay"></p>
-            <p class="sub">Select your name below to sign up for tomorrow morning's recreation activities.</p>
+            <p class="sub" id="spotsLine">Select your name below to sign up for tomorrow morning's recreation activities.</p>
+
+            <!-- Isabelle — fullState banner shown when sign-up session is at capacity; hides the form so no more names can be submitted -->
+            <div id="fullState" style="display:none; background:#fff0ef; border-radius:12px; padding:16px; margin-bottom:16px; text-align:center;">
+                <p style="font-size:15px; font-weight:700; color:#d93025; margin:0;">🚫 This session is full.</p>
+                <p style="font-size:13px; color:#888; margin-top:6px; font-weight:600;">All spots have been filled for tomorrow's morning rec.</p>
+            </div>
 
             <select class="form-select" id="studentSelect">
                 <option value="">Loading names...</option>
@@ -261,6 +267,49 @@ var tomorrow = new Date();
 tomorrow.setDate(tomorrow.getDate() + 1);
 var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
 document.getElementById('dateDisplay').textContent = tomorrow.toLocaleDateString('en-CA', options);
+
+var currentCapacity = null; // loaded from config
+var currentSignupCount = 0;
+
+// Isabelle McLean — Load staff-set capacity and current signup count; block the form if session is full
+function loadCapacityAndStatus() {
+    Promise.all([
+        fetch('/api/morning-rec/config').then(function(r) { return r.json(); }),
+        fetch('/api/morning-rec').then(function(r) { return r.json(); })
+    ]).then(function(results) {
+        var config = results[0];
+        var signups = results[1];
+        currentCapacity = config.capacity;
+        currentSignupCount = signups.length;
+
+        var spotsLeft = currentCapacity - currentSignupCount;
+        var spotsLine = document.getElementById('spotsLine');
+        var fullState = document.getElementById('fullState');
+        var submitBtn = document.getElementById('submitBtn');
+        var studentSelect = document.getElementById('studentSelect');
+
+        if (spotsLeft <= 0) {
+            // Session is full — hide the form controls, show full message
+            fullState.style.display = 'block';
+            studentSelect.style.display = 'none';
+            submitBtn.style.display = 'none';
+            spotsLine.style.display = 'none';
+        } else {
+            fullState.style.display = 'none';
+            studentSelect.style.display = '';
+            submitBtn.style.display = '';
+            if (spotsLeft <= 5) {
+                spotsLine.textContent = 'Only ' + spotsLeft + ' spot' + (spotsLeft === 1 ? '' : 's') + ' left! Select your name to sign up.';
+                spotsLine.style.color = '#d93025';
+                spotsLine.style.fontWeight = '700';
+            } else {
+                spotsLine.textContent = spotsLeft + ' of ' + currentCapacity + ' spots remaining. Select your name to sign up.';
+                spotsLine.style.color = '';
+                spotsLine.style.fontWeight = '';
+            }
+        }
+    }).catch(function() {});
+}
 
 function loadStudents() {
     fetch('/api/students')
@@ -313,6 +362,8 @@ function submitSignup() {
             msgEl.textContent = data.error;
             btn.textContent = 'Sign Me Up →';
             btn.disabled = false;
+            // Re-check capacity in case it just filled up
+            loadCapacityAndStatus();
         } else {
             document.getElementById('formState').style.display = 'none';
             document.getElementById('successName').textContent = name + ' — see you at morning rec tomorrow!';
@@ -334,9 +385,11 @@ function resetForm() {
     document.getElementById('msgEl').textContent = '';
     document.getElementById('submitBtn').textContent = 'Sign Me Up →';
     document.getElementById('submitBtn').disabled = false;
+    loadCapacityAndStatus();
 }
 
 loadStudents();
+loadCapacityAndStatus();
 </script>
 
 </body>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/public/js/auth-check.js"></script>
+<title>SHAD Portal | Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/css/shad-base.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Archivo', sans-serif;
+    background: #f7fafc;
+    color: #111;
+    min-height: 100vh;
+}
+
+.tools-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 6%;
+}
+
+.page-header { margin-bottom: 32px; }
+.mini-title {
+    font-size: 13px;
+    letter-spacing: 2px;
+    font-weight: 700;
+    color: #146ff8;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+.page-header h2 {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    margin-bottom: 10px;
+}
+.subtext { color: #666; font-size: 16px; line-height: 1.7; }
+
+/* PROGRESS BAR */
+.progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    background: white;
+    border-radius: 14px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+.progress-row span { font-size: 13px; font-weight: 700; color: #555; }
+.progress-row strong { font-size: 20px; font-weight: 800; color: #111; }
+.progress-track {
+    flex: 1;
+    height: 6px;
+    background: #f0f0f0;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-left: 4px;
+}
+.progress-fill {
+    height: 100%;
+    background: #146ff8;
+    border-radius: 99px;
+    transition: width 0.4s;
+    width: 0%;
+}
+
+/* TODO CARD */
+.todo-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+
+.todo-card-header {
+    padding: 22px 26px 18px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.todo-card-header h3 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #111;
+}
+.todo-date {
+    font-size: 12px;
+    font-weight: 700;
+    color: #aaa;
+    letter-spacing: 0.5px;
+}
+
+.todo-list {
+    list-style: none;
+}
+
+.todo-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 26px;
+    border-bottom: 1px solid #f8f8f8;
+    transition: background 0.15s;
+}
+.todo-item:last-child { border-bottom: none; }
+.todo-item.done { background: #fafffe; }
+
+/* Custom checkbox */
+.todo-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 2px solid #ddd;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+.todo-check:hover { border-color: #146ff8; }
+.todo-check.checked {
+    background: #146ff8;
+    border-color: #146ff8;
+}
+.todo-check.checked::after {
+    content: '';
+    width: 6px;
+    height: 10px;
+    border: 2.5px solid white;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) translate(-1px, -1px);
+    display: block;
+}
+
+.todo-body { flex: 1; min-width: 0; }
+.todo-task {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+    line-height: 1.4;
+    transition: color 0.2s;
+}
+.todo-item.done .todo-task {
+    color: #bbb;
+    text-decoration: line-through;
+}
+.todo-done-by {
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a9a20;
+    margin-top: 3px;
+}
+
+/* Staff dropdown — hidden until item is checked */
+.todo-staff-wrap {
+    flex-shrink: 0;
+    display: none;
+}
+.todo-item.checking .todo-staff-wrap { display: flex; align-items: center; gap: 8px; }
+
+.staff-select {
+    padding: 7px 10px;
+    border: 2px solid #e5e5e5;
+    border-radius: 9px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #111;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    background: white;
+}
+.staff-select:focus { border-color: #146ff8; }
+
+.confirm-btn {
+    padding: 7px 14px;
+    background: #146ff8;
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+}
+.confirm-btn:hover { opacity: 0.85; }
+
+.undo-btn {
+    padding: 7px 12px;
+    background: transparent;
+    color: #aaa;
+    border: 2px solid #e5e5e5;
+    border-radius: 9px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: 0.2s;
+    display: none;
+}
+.todo-item.done .undo-btn { display: block; }
+.undo-btn:hover { border-color: #aaa; color: #555; }
+
+/* Empty / all done states */
+.empty-state {
+    text-align: center;
+    padding: 56px 20px;
+    color: #ccc;
+    font-size: 14px;
+    font-weight: 600;
+}
+.all-done-state {
+    text-align: center;
+    padding: 48px 20px;
+}
+.all-done-state .checkmark {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #00d084, #5a9a20);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin: 0 auto 16px;
+}
+.all-done-state h4 { font-size: 20px; font-weight: 800; color: #111; margin-bottom: 6px; }
+.all-done-state p  { font-size: 14px; color: #aaa; font-weight: 600; }
+
+.bottom-bar {
+    text-align: center;
+    padding: 32px 20px;
+    color: #ccc;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* TABS */
+.tab-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+.tab-btn {
+    padding: 9px 20px;
+    border-radius: 10px;
+    border: 2px solid #e5e5e5;
+    background: white;
+    color: #555;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.15s;
+}
+.tab-btn.active {
+    background: #146ff8;
+    border-color: #146ff8;
+    color: white;
+}
+
+/* HISTORY LIST */
+.history-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 26px;
+    border-bottom: 1px solid #f8f8f8;
+}
+.history-item:last-child { border-bottom: none; }
+.history-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: #146ff8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.history-check::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    border: 2.5px solid white;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) translate(-1px, -1px);
+    display: block;
+}
+.history-body { flex: 1; min-width: 0; }
+.history-task {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111;
+    line-height: 1.4;
+}
+.history-meta {
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a9a20;
+    margin-top: 3px;
+}
+.history-time {
+    font-size: 12px;
+    font-weight: 600;
+    color: #bbb;
+    flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+    .page-header h2 { font-size: 30px; }
+    .todo-item { flex-wrap: wrap; gap: 12px; }
+    .todo-staff-wrap { width: 100%; }
+    .history-item { flex-wrap: wrap; gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+        <nav>
+            <span style="color:#ddd; font-weight:400;">|</span>
+            <a href="/public/index.html">Home</a>
+        </nav>
+    </div>
+    <nav>
+        <a href="/public/dashboard.html">Dashboard</a>
+        <a href="/public/students.html">Student Hub</a>
+        <a href="/public/tools.html" style="font-weight:700;">Tools</a>
+        <a href="/public/contact.html">Contact Staff</a>
+        <a href="/public/issues.html">System Issues</a>
+        <a href="/public/admin.html" style="color:#146ff8;font-weight:800;">Admin</a>
+    </nav>
+</header>
+
+<div class="tools-page">
+
+    <div class="page-header">
+        <p class="mini-title">STAFF TOOLS</p>
+        <h2>Daily To-Do List</h2>
+        <p class="subtext">Check off each task when it's done and select your name from the dropdown.</p>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="tab-row">
+        <button class="tab-btn active" id="tabTodo" onclick="switchTab('todo')">Today's Tasks</button>
+        <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">Completion History</button>
+    </div>
+
+    <!-- ── TO-DO TAB ── -->
+    <div id="todoTab">
+        <!-- Progress summary -->
+        <div class="progress-row">
+            <span>Completed:</span>
+            <strong id="doneCount">0</strong>
+            <span style="color:#aaa; font-weight:600;">of</span>
+            <strong id="totalCount">0</strong>
+            <span>tasks</span>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="todo-card">
+            <div class="todo-card-header">
+                <h3>Tasks</h3>
+                <span class="todo-date" id="todayDate"></span>
+            </div>
+            <ul class="todo-list" id="todoList">
+                <li class="empty-state">Loading...</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ── HISTORY TAB ── -->
+    <div id="historyTab" style="display:none;">
+        <div class="history-card">
+            <div class="todo-card-header">
+                <h3>Completion History</h3>
+                <span class="todo-date">All completed tasks</span>
+            </div>
+            <ul class="todo-list" id="historyList">
+                <li class="empty-state">Loading...</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+<div class="bottom-bar">SHAD 2026 &nbsp;·&nbsp; Staff Tools</div>
+
+<script>
+var staffNames = [];
+
+// Isabelle — Switches between the Today's Tasks tab and the Completion History tab; history only loads when first opened
+function switchTab(tab) {
+    var isTodo = tab === 'todo';
+    document.getElementById('todoTab').style.display     = isTodo ? 'block' : 'none';
+    document.getElementById('historyTab').style.display  = isTodo ? 'none'  : 'block';
+    document.getElementById('tabTodo').classList.toggle('active', isTodo);
+    document.getElementById('tabHistory').classList.toggle('active', !isTodo);
+    if (!isTodo) loadHistory();
+}
+
+// Today's date label
+(function() {
+    var opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-CA', opts);
+})();
+
+function escH(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Load staff names for the dropdown
+function loadStaff() {
+    fetch('/api/staff')
+        .then(function(r) { return r.json(); })
+        .then(function(staff) {
+            staffNames = staff.map(function(s) { return s.name; });
+        })
+        .catch(function() {});
+}
+
+function buildStaffOptions(selectedName) {
+    var html = '<option value="">Select your name...</option>';
+    staffNames.forEach(function(name) {
+        html += '<option value="' + escH(name) + '"' + (name === selectedName ? ' selected' : '') + '>' + escH(name) + '</option>';
+    });
+    return html;
+}
+
+function updateProgress(todos) {
+    var done = todos.filter(function(t) { return t.completed; }).length;
+    var total = todos.length;
+    document.getElementById('doneCount').textContent = done;
+    document.getElementById('totalCount').textContent = total;
+    var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function loadTodos() {
+    fetch('/api/todos')
+        .then(function(r) { return r.json(); })
+        .then(function(todos) {
+            updateProgress(todos);
+            var list = document.getElementById('todoList');
+
+            if (todos.length === 0) {
+                list.innerHTML = '<li class="empty-state">No tasks posted yet. Check back later.</li>';
+                return;
+            }
+
+            var allDone = todos.every(function(t) { return t.completed; });
+            if (allDone && todos.length > 0) {
+                list.innerHTML =
+                    '<li class="all-done-state">' +
+                    '<div class="checkmark">✓</div>' +
+                    '<h4>All done for today!</h4>' +
+                    '<p>Every task has been completed. Great work!</p>' +
+                    '</li>';
+                // Still render the completed items below so staff can undo if needed
+            }
+
+            list.innerHTML = '';
+            todos.forEach(function(t) {
+                var li = document.createElement('li');
+                li.className = 'todo-item' + (t.completed ? ' done' : '');
+                li.dataset.id = t.id;
+
+                li.innerHTML =
+                    '<div class="todo-check' + (t.completed ? ' checked' : '') + '" onclick="onCheckClick(' + t.id + ', this)"></div>' +
+                    '<div class="todo-body">' +
+                        '<div class="todo-task">' + escH(t.task) + '</div>' +
+                        (t.completed && t.completed_by ? '<div class="todo-done-by">✓ Done by ' + escH(t.completed_by) + '</div>' : '') +
+                    '</div>' +
+                    '<div class="todo-staff-wrap">' +
+                        '<select class="staff-select" id="staffSel_' + t.id + '">' + buildStaffOptions() + '</select>' +
+                        '<button class="confirm-btn" onclick="confirmCheck(' + t.id + ')">Confirm</button>' +
+                    '</div>' +
+                    '<button class="undo-btn" onclick="undoCheck(' + t.id + ')">Undo</button>';
+
+                list.appendChild(li);
+            });
+
+            if (allDone && todos.length > 0) {
+                // Insert "all done" banner at the top
+                var banner = document.createElement('li');
+                banner.className = 'all-done-state';
+                banner.innerHTML =
+                    '<div class="checkmark">✓</div>' +
+                    '<h4>All done for today!</h4>' +
+                    '<p>Every task has been completed. Great work!</p>';
+                list.insertBefore(banner, list.firstChild);
+            }
+        })
+        .catch(function() {
+            document.getElementById('todoList').innerHTML = '<li class="empty-state">Could not load tasks. Please refresh.</li>';
+        });
+}
+
+// Clicking the checkbox puts the item into "checking" mode — shows the staff dropdown
+function onCheckClick(id, checkEl) {
+    var li = checkEl.closest('.todo-item');
+    if (li.classList.contains('done')) return; // already done — use undo button instead
+    if (li.classList.contains('checking')) {
+        // Toggle off if they click again
+        li.classList.remove('checking');
+        checkEl.classList.remove('checked');
+        return;
+    }
+    li.classList.add('checking');
+    checkEl.classList.add('checked');
+}
+
+function confirmCheck(id) {
+    var sel = document.getElementById('staffSel_' + id);
+    var staffName = sel ? sel.value : '';
+    if (!staffName) {
+        sel.style.borderColor = '#ff3b30';
+        setTimeout(function() { sel.style.borderColor = ''; }, 1200);
+        return;
+    }
+    fetch('/api/todos/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: true, completed_by: staffName })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { loadTodos(); })
+    .catch(function() { alert('Could not save. Please try again.'); });
+}
+
+function undoCheck(id) {
+    fetch('/api/todos/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: false, completed_by: '' })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { loadTodos(); })
+    .catch(function() { alert('Could not undo. Please try again.'); });
+}
+
+// Isabelle — Fetches permanent task history from /api/task-history; shows each completed task with who did it, the date, and time
+function loadHistory() {
+    fetch('/api/task-history')
+        .then(function(r) { return r.json(); })
+        .then(function(rows) {
+            var list = document.getElementById('historyList');
+
+            if (rows.length === 0) {
+                list.innerHTML = '<li class="empty-state">No completed tasks yet.</li>';
+                return;
+            }
+
+            list.innerHTML = '';
+            rows.forEach(function(t) {
+                var timeStr = '';
+                var dateStr = '';
+                if (t.completed_at) {
+                    var d = new Date(t.completed_at);
+                    timeStr = d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+                    dateStr = d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+                }
+
+                var li = document.createElement('li');
+                li.className = 'history-item';
+                li.innerHTML =
+                    '<div class="history-check"></div>' +
+                    '<div class="history-body">' +
+                        '<div class="history-task">' + escH(t.task) + '</div>' +
+                        '<div class="history-meta">✓ Done by ' + escH(t.completed_by) + '</div>' +
+                    '</div>' +
+                    (timeStr ? '<div class="history-time">' + (dateStr ? dateStr + ' · ' : '') + timeStr + '</div>' : '');
+                list.appendChild(li);
+            });
+        })
+        .catch(function() {
+            document.getElementById('historyList').innerHTML = '<li class="empty-state">Could not load history.</li>';
+        });
+}
+
+loadStaff();
+loadTodos();
+</script>
+
+</body>
+</html>

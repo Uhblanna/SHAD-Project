@@ -31,7 +31,7 @@
     <nav>
         <a href="/public/dashboard.html">Dashboard</a>
         <a href="/public/students.html">Student Hub</a>
-        <a href="/public/morning-rec-qr.html">Morning Rec</a>
+        <a href="/public/tools.html">Tools</a>
         <a href="/public/contact.html">Contact Staff</a>
         <a href="/public/issues.html">System Issues</a>
         <a href="/public/admin.html" style="color:#146ff8;font-weight:800;">Admin</a>
@@ -77,6 +77,20 @@
             <span class="nav-emoji nav-emoji-stack"><span class="emoji-base">🥜</span><span class="emoji-over">🚫</span></span>
             <span class="nav-divider">|</span>
             <span class="nav-text">Dietary Restrictions</span>
+        </button>
+
+        <!-- Isabelle — Morning Rec moved from top nav into Student Hub; links to session setup, QR code, and sign-up list -->
+        <button class="hub-nav" data-screen="morningRecScreen" data-preview="Morning Rec">
+            <span class="nav-emoji">🌅</span>
+            <span class="nav-divider">|</span>
+            <span class="nav-text">Morning Rec</span>
+        </button>
+
+        <!-- Isabelle — Committees tab: staff review student preferences and assign each student to their final committee -->
+        <button class="hub-nav" data-screen="committeesScreen" data-preview="Committees">
+            <span class="nav-emoji">🏅</span>
+            <span class="nav-divider">|</span>
+            <span class="nav-text">Committees</span>
         </button>
     </aside>
 
@@ -388,9 +402,507 @@
             </div>
         </section>
 
+        <!-- Isabelle — Morning Rec section: staff set the number of staff working, QR code is generated inline, and sign-up list polls every 15s -->
+        <!-- MORNING REC SECTION -->
+        <section id="morningRecScreen" class="hub-screen">
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">ACTIVITY</p>
+                    <h2>Morning Rec</h2>
+                    <p class="subtext">Set the number of staff working tomorrow, then display the QR code for students to sign up.</p>
+                </div>
+            </div>
+
+            <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
+
+                <!-- Staff count + QR card -->
+                <div class="student-panel">
+                    <div class="card-header">
+                        <h3>Session Setup</h3>
+                    </div>
+                    <div class="panel-body" style="padding: 20px;">
+
+                        <p style="font-size:13px; color:#888; font-weight:600; margin-bottom:14px;">
+                            Enter how many staff will be working tomorrow morning. Students will be able to sign up up to <strong>8 per staff member</strong>.
+                        </p>
+
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap;">
+                            <label style="font-size:13px; font-weight:700; color:#555; white-space:nowrap;">Staff working tomorrow:</label>
+                            <input type="number" id="recStaffInput" min="1" max="50" value="1"
+                                style="width:64px; padding:7px 10px; border:2px solid #e5e5e5; border-radius:8px; font-family:'Archivo',sans-serif; font-size:15px; font-weight:700; text-align:center; color:#111; outline:none;">
+                            <button onclick="recSaveStaff()"
+                                style="padding:7px 16px; background:#146ff8; color:white; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">
+                                Save
+                            </button>
+                        </div>
+
+                        <div id="recCapacityBadge" style="display:inline-flex; align-items:center; gap:8px; background:#e8f5d3; color:#5a9a20; font-size:13px; font-weight:700; padding:6px 14px; border-radius:20px; margin-bottom:20px;">
+                            Max sign-ups: <strong id="recCapacityNum">8</strong>
+                        </div>
+
+                        <div style="margin-bottom:16px;">
+                            <p style="font-size:12px; font-weight:700; color:#aaa; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px;">QR Code for Students</p>
+                            <div id="recQrWrap" style="display:inline-block; padding:14px; background:white; border:3px solid #e5e5e5; border-radius:14px;">
+                                <div id="recQrCode"></div>
+                            </div>
+                        </div>
+
+                        <button onclick="recOpenFullscreen()"
+                            style="width:100%; padding:12px; background:#146ff8; color:white; font-family:'Archivo',sans-serif; font-size:14px; font-weight:700; border:none; border-radius:11px; cursor:pointer; margin-bottom:8px;">
+                            📺 Display QR Fullscreen
+                        </button>
+                        <button onclick="window.print()"
+                            style="width:100%; padding:12px; background:#f0f0f0; color:#333; font-family:'Archivo',sans-serif; font-size:14px; font-weight:700; border:none; border-radius:11px; cursor:pointer;">
+                            🖨 Print QR
+                        </button>
+
+                    </div>
+                </div>
+
+                <!-- Sign-up list card -->
+                <div class="student-panel">
+                    <div class="card-header">
+                        <h3>Tomorrow's Sign-Ups</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="panel-body" style="padding:20px;">
+
+                        <p style="font-size:13px; color:#888; font-weight:600; margin-bottom:14px;" id="recDateLabel"></p>
+
+                        <div id="recCountBadge" style="display:inline-flex; align-items:center; gap:6px; background:#e8f5d3; color:#5a9a20; font-size:13px; font-weight:700; padding:6px 14px; border-radius:20px; margin-bottom:16px;">
+                            <span id="recCountNum">0</span> / <span id="recCountCap">8</span> signed up
+                        </div>
+
+                        <ul id="recSignupsList" style="list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+                            <li style="text-align:center; padding:24px 0; color:#ccc; font-size:14px; font-weight:600;">No sign-ups yet for tomorrow.</li>
+                        </ul>
+
+                        <button onclick="recClearSignups()"
+                            style="width:100%; padding:11px; background:transparent; color:#ff3b30; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; border:2px solid #f0d0d0; border-radius:10px; cursor:pointer;">
+                            Clear Tomorrow's Sign-Ups
+                        </button>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Fullscreen QR overlay (shared, appended to body) -->
+        <div id="recQrOverlay" style="display:none; position:fixed; inset:0; background:rgba(17,17,17,0.92); z-index:9999; flex-direction:column; align-items:center; justify-content:center; gap:24px; padding:40px;">
+            <button onclick="recCloseFullscreen()" style="position:absolute; top:24px; right:28px; width:46px; height:46px; border:none; border-radius:12px; background:rgba(255,255,255,0.15); color:white; font-size:24px; font-weight:800; cursor:pointer;">×</button>
+            <h2 style="color:white; font-size:30px; font-weight:800; text-align:center; font-family:'Archivo',sans-serif;">Scan to Sign Up for Morning Rec</h2>
+            <div style="background:white; padding:28px; border-radius:24px;">
+                <div id="recQrLarge"></div>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+        <script>
+        (function() {
+            var recUrl = window.location.origin + '/public/morning-rec.html';
+            var capacity = 8;
+            var qrBuilt = false;
+            var qrLargeBuilt = false;
+
+            // Build the small QR on load
+            new QRCode(document.getElementById('recQrCode'), {
+                text: recUrl, width: 180, height: 180,
+                colorDark: '#111111', colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            qrBuilt = true;
+
+            // Tomorrow's date label
+            var tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            var opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+            document.getElementById('recDateLabel').textContent = tomorrow.toLocaleDateString('en-CA', opts);
+
+            // Load saved staff count + capacity
+            function loadConfig() {
+                fetch('/api/morning-rec/config')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        capacity = data.capacity || 8;
+                        document.getElementById('recStaffInput').value = data.staff_count || 1;
+                        document.getElementById('recCapacityNum').textContent = capacity;
+                        document.getElementById('recCountCap').textContent = capacity;
+                        refreshBadge();
+                    }).catch(function(){});
+            }
+
+            window.recSaveStaff = function() {
+                var n = parseInt(document.getElementById('recStaffInput').value, 10);
+                if (!n || n < 1) { alert('Enter a valid number of staff (minimum 1).'); return; }
+                fetch('/api/morning-rec/config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ staff_count: n })
+                }).then(function(r) { return r.json(); })
+                .then(function(data) {
+                    capacity = data.capacity;
+                    document.getElementById('recCapacityNum').textContent = capacity;
+                    document.getElementById('recCountCap').textContent = capacity;
+                    refreshBadge();
+                }).catch(function() { alert('Failed to save. Please try again.'); });
+            };
+
+            function refreshBadge() {
+                var count = parseInt(document.getElementById('recCountNum').textContent, 10) || 0;
+                var badge = document.getElementById('recCountBadge');
+                document.getElementById('recCountCap').textContent = capacity;
+                if (count >= capacity) {
+                    badge.style.background = '#ffe0de';
+                    badge.style.color = '#d93025';
+                } else {
+                    badge.style.background = '#e8f5d3';
+                    badge.style.color = '#5a9a20';
+                }
+            }
+
+            function escHtml(s) {
+                return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+
+            function loadSignups() {
+                fetch('/api/morning-rec')
+                    .then(function(r) { return r.json(); })
+                    .then(function(rows) {
+                        document.getElementById('recCountNum').textContent = rows.length;
+                        document.getElementById('recCountCap').textContent = capacity;
+                        refreshBadge();
+                        var list = document.getElementById('recSignupsList');
+                        if (rows.length === 0) {
+                            list.innerHTML = '<li style="text-align:center;padding:24px 0;color:#ccc;font-size:14px;font-weight:600;">No sign-ups yet for tomorrow.</li>';
+                            return;
+                        }
+                        list.innerHTML = '';
+                        rows.forEach(function(row) {
+                            var time = row.created_at ? row.created_at.slice(11,16) : '';
+                            var li = document.createElement('li');
+                            li.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#f8f8f8;border-radius:10px;padding:12px 14px;';
+                            li.innerHTML =
+                                '<div>' +
+                                '<div style="font-size:14px;font-weight:700;color:#111;">' + escHtml(row.student_name) + '</div>' +
+                                (time ? '<div style="font-size:12px;color:#aaa;font-weight:600;">' + time + '</div>' : '') +
+                                '</div>' +
+                                '<button onclick="recRemove(' + row.id + ',this)" style="background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;padding:0 2px;" title="Remove">×</button>';
+                            list.appendChild(li);
+                        });
+                    }).catch(function(){});
+            }
+
+            window.recRemove = function(id, btn) {
+                btn.disabled = true;
+                fetch('/api/morning-rec/' + id, { method: 'DELETE' })
+                    .then(function() { loadSignups(); })
+                    .catch(function() { btn.disabled = false; });
+            };
+
+            window.recClearSignups = function() {
+                if (!confirm('Clear all sign-ups for tomorrow\'s morning rec?')) return;
+                fetch('/api/morning-rec/today', { method: 'DELETE' })
+                    .then(function() { loadSignups(); }).catch(function(){});
+            };
+
+            window.recOpenFullscreen = function() {
+                if (!qrLargeBuilt) {
+                    new QRCode(document.getElementById('recQrLarge'), {
+                        text: recUrl, width: 400, height: 400,
+                        colorDark: '#111111', colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    qrLargeBuilt = true;
+                }
+                var overlay = document.getElementById('recQrOverlay');
+                overlay.style.display = 'flex';
+            };
+
+            window.recCloseFullscreen = function() {
+                document.getElementById('recQrOverlay').style.display = 'none';
+            };
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') window.recCloseFullscreen();
+            });
+
+            loadConfig();
+            loadSignups();
+            setInterval(loadSignups, 15000);
+        })();
+        </script>
+
+        <!-- Isabelle — Committees section: two views — Assign Students (one card per student, preference pills, assign dropdown) and View by Committee (grouped list of assigned students) -->
+        <!-- COMMITTEES SECTION -->
+        <section id="committeesScreen" class="hub-screen">
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">PLACEMENT</p>
+                    <h2>Committees</h2>
+                    <p class="subtext">Review each student's 3 committee preferences and assign them to their final committee.</p>
+                </div>
+                <!-- Toggle between Assign view and By-Committee view -->
+                <div style="display:flex; gap:8px;">
+                    <button id="viewAssignBtn" onclick="cmSetView('assign')"
+                        style="padding:9px 18px; border-radius:10px; border:2px solid #146ff8; background:#146ff8; color:white; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">
+                        Assign Students
+                    </button>
+                    <button id="viewGroupBtn" onclick="cmSetView('group')"
+                        style="padding:9px 18px; border-radius:10px; border:2px solid #e5e5e5; background:white; color:#555; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">
+                        View by Committee
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress summary bar -->
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px; background:white; border-radius:14px; padding:16px 20px; box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+                <span style="font-size:13px; font-weight:700; color:#555;">Assigned:</span>
+                <span id="cmAssignedCount" style="font-size:20px; font-weight:800; color:#111;">0</span>
+                <span style="font-size:13px; color:#aaa; font-weight:600;">of</span>
+                <span id="cmTotalCount" style="font-size:20px; font-weight:800; color:#111;">0</span>
+                <span style="font-size:13px; font-weight:700; color:#555;">students with preferences</span>
+                <div style="flex:1; height:6px; background:#f0f0f0; border-radius:99px; overflow:hidden; margin-left:8px;">
+                    <div id="cmProgressBar" style="height:100%; width:0%; background:#146ff8; border-radius:99px; transition:width 0.4s;"></div>
+                </div>
+            </div>
+
+            <!-- ASSIGN VIEW: one card per student -->
+            <div id="cmAssignView">
+                <div id="cmStudentCards" style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="text-align:center; padding:40px; color:#ccc; font-size:14px; font-weight:600;">Loading student preferences...</div>
+                </div>
+            </div>
+
+            <!-- GROUP VIEW: committees with assigned students listed under each -->
+            <div id="cmGroupView" style="display:none;">
+                <div id="cmGroupCards" style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="text-align:center; padding:40px; color:#ccc; font-size:14px; font-weight:600;">Loading...</div>
+                </div>
+            </div>
+
+        </section>
+
     </main>
 
 </section>
+
+<script>
+// Isabelle — Committees staff panel: loads preferences + assignments, renders assign view and group view, handles assign/unassign actions
+// ── COMMITTEES STAFF PANEL ──────────────────────────────────────────────────
+(function() {
+
+    var currentView = 'assign';
+    var allSignups = [];       // all student preferences from /api/committee-signups
+    var allAssignments = {};   // map of student_name → assigned committee
+    var allStudentNames = [];  // Isabelle — full roster from /api/students so students with no signups still appear
+
+    function escH(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    window.cmSetView = function(view) {
+        currentView = view;
+        document.getElementById('cmAssignView').style.display = view === 'assign' ? 'block' : 'none';
+        document.getElementById('cmGroupView').style.display  = view === 'group'  ? 'block' : 'none';
+        var ab = document.getElementById('viewAssignBtn');
+        var gb = document.getElementById('viewGroupBtn');
+        if (view === 'assign') {
+            ab.style.background = '#146ff8'; ab.style.color = 'white'; ab.style.borderColor = '#146ff8';
+            gb.style.background = 'white';   gb.style.color = '#555';  gb.style.borderColor = '#e5e5e5';
+        } else {
+            gb.style.background = '#146ff8'; gb.style.color = 'white'; gb.style.borderColor = '#146ff8';
+            ab.style.background = 'white';   ab.style.color = '#555';  ab.style.borderColor = '#e5e5e5';
+            renderGroupView();
+        }
+    };
+
+    function loadAll() {
+        Promise.all([
+            fetch('/api/committee-signups').then(function(r) { return r.json(); }),
+            fetch('/api/committee-assignments').then(function(r) { return r.json(); }),
+            fetch('/api/students').then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            allSignups = results[0];
+            allAssignments = {};
+            results[1].forEach(function(a) { allAssignments[a.student_name] = a; });
+            allStudentNames = results[2].map(function(s) { return s.name; });
+            renderAssignView();
+            if (currentView === 'group') renderGroupView();
+            updateProgress();
+        }).catch(function() {});
+    }
+
+    function updateProgress() {
+        var total = allStudentNames.length;
+        var assigned = Object.keys(allAssignments).length;
+        document.getElementById('cmAssignedCount').textContent = assigned;
+        document.getElementById('cmTotalCount').textContent = total;
+        var pct = total > 0 ? Math.round((assigned / total) * 100) : 0;
+        document.getElementById('cmProgressBar').style.width = pct + '%';
+    }
+
+    function renderAssignView() {
+        // Group preferences by student
+        var students = {};
+        allSignups.forEach(function(s) {
+            if (!students[s.student_name]) students[s.student_name] = [];
+            students[s.student_name].push(s);
+        });
+
+        var container = document.getElementById('cmStudentCards');
+        var names = Object.keys(students).sort();
+        var noPrefs = allStudentNames.filter(function(n) { return !students[n]; }).sort();
+
+        if (names.length === 0 && noPrefs.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#ccc;font-size:14px;font-weight:600;">No committee preferences submitted yet.</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        names.forEach(function(name) {
+            var prefs = students[name]; // up to 3
+            var assignment = allAssignments[name];
+            var isAssigned = !!assignment;
+
+            var card = document.createElement('div');
+            card.style.cssText = 'background:white; border-radius:16px; padding:20px 24px; box-shadow:0 2px 12px rgba(0,0,0,0.05); display:flex; align-items:center; gap:20px; flex-wrap:wrap;';
+
+            // Status dot
+            var dot = isAssigned ? '<span style="width:10px;height:10px;border-radius:50%;background:#00d084;display:inline-block;flex-shrink:0;"></span>' :
+                                   '<span style="width:10px;height:10px;border-radius:50%;background:#e5e5e5;display:inline-block;flex-shrink:0;"></span>';
+
+            // Student name
+            var nameEl = '<div style="min-width:160px;"><div style="font-size:15px;font-weight:800;color:#111;">' + escH(name) + '</div>' +
+                '<div style="font-size:12px;font-weight:600;color:' + (isAssigned ? '#00d084' : '#aaa') + ';">' +
+                (isAssigned ? '✓ Assigned: ' + escH(assignment.committee_name) : 'Not yet assigned') + '</div></div>';
+
+            // Preference pills
+            var pillsHtml = '<div style="display:flex;gap:8px;flex-wrap:wrap;flex:1;">';
+            prefs.forEach(function(p) {
+                var isCurrent = isAssigned && assignment.committee_name === p.committee_name;
+                pillsHtml += '<span style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;background:' +
+                    (isCurrent ? '#dff0d8' : '#f5f5f5') + ';color:' + (isCurrent ? '#3a7a1e' : '#555') + ';">' +
+                    escH(p.committee_name) + '</span>';
+            });
+            pillsHtml += '</div>';
+
+            // Assign dropdown
+            var selectHtml = '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">';
+            selectHtml += '<select id="cmSel_' + escH(name) + '" style="padding:8px 12px;border:2px solid #e5e5e5;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;color:#111;outline:none;cursor:pointer;">';
+            selectHtml += '<option value="">Assign to...</option>';
+            prefs.forEach(function(p) {
+                var sel = isAssigned && assignment.committee_name === p.committee_name ? ' selected' : '';
+                selectHtml += '<option value="' + escH(p.committee_name) + '"' + sel + '>' + escH(p.committee_name) + '</option>';
+            });
+            selectHtml += '</select>';
+            selectHtml += '<button onclick="cmAssign(\'' + escH(name).replace(/'/g, "\\'") + '\')" style="padding:8px 16px;background:#146ff8;color:white;border:none;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Assign</button>';
+            if (isAssigned) {
+                selectHtml += '<button onclick="cmUnassign(\'' + escH(name).replace(/'/g, "\\'") + '\')" style="padding:8px 12px;background:transparent;color:#ff3b30;border:2px solid #f0d0d0;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">Remove</button>';
+            }
+            selectHtml += '</div>';
+
+            card.innerHTML = dot + nameEl + pillsHtml + selectHtml;
+            container.appendChild(card);
+        });
+
+        // Students who haven't submitted any preferences
+        if (noPrefs.length > 0) {
+            var divider = document.createElement('div');
+            divider.style.cssText = 'margin:24px 0 12px; font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#ffb347;';
+            divider.textContent = 'No preferences submitted (' + noPrefs.length + ')';
+            container.appendChild(divider);
+
+            noPrefs.forEach(function(name) {
+                var card = document.createElement('div');
+                card.style.cssText = 'background:white; border-radius:16px; padding:20px 24px; box-shadow:0 2px 12px rgba(0,0,0,0.05); display:flex; align-items:center; gap:20px; flex-wrap:wrap; border:2px solid #fff3e0;';
+
+                var dot = '<span style="width:10px;height:10px;border-radius:50%;background:#ffb347;display:inline-block;flex-shrink:0;"></span>';
+                var nameEl = '<div style="min-width:160px;"><div style="font-size:15px;font-weight:800;color:#111;">' + escH(name) + '</div>' +
+                    '<div style="font-size:12px;font-weight:600;color:#ffb347;">No choices submitted</div></div>';
+                var msg = '<div style="font-size:13px;color:#bbb;font-weight:600;flex:1;">This student hasn\'t selected any committee preferences yet.</div>';
+
+                card.innerHTML = dot + nameEl + msg;
+                container.appendChild(card);
+            });
+        }
+    }
+
+    function renderGroupView() {
+        // Build a map of committee → assigned students
+        var groups = {};
+        Object.values(allAssignments).forEach(function(a) {
+            var key = a.committee_name;
+            if (!groups[key]) groups[key] = { type: a.committee_type, students: [] };
+            groups[key].students.push(a.student_name);
+        });
+
+        var container = document.getElementById('cmGroupCards');
+        var keys = Object.keys(groups).sort();
+
+        if (keys.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#ccc;font-size:14px;font-weight:600;">No students have been assigned yet.</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        keys.forEach(function(committeeName) {
+            var g = groups[committeeName];
+            var card = document.createElement('div');
+            card.style.cssText = 'background:white; border-radius:16px; padding:20px 24px; box-shadow:0 2px 12px rgba(0,0,0,0.05);';
+
+            var header = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">' +
+                '<div style="font-size:18px;font-weight:800;color:#111;">' + escH(committeeName) + '</div>' +
+                '<span style="margin-left:auto;font-size:13px;font-weight:700;color:#aaa;">' + g.students.length + ' student' + (g.students.length === 1 ? '' : 's') + '</span>' +
+                '</div>';
+
+            var studentList = '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+            g.students.sort().forEach(function(s) {
+                studentList += '<span style="padding:6px 14px;background:#f5f5f5;border-radius:20px;font-size:13px;font-weight:700;color:#333;">' + escH(s) + '</span>';
+            });
+            studentList += '</div>';
+
+            card.innerHTML = header + studentList;
+            container.appendChild(card);
+        });
+    }
+
+    window.cmAssign = function(studentName) {
+        var sel = document.getElementById('cmSel_' + studentName);
+        if (!sel) return;
+        var committeeName = sel.value;
+        var selectedOpt = sel.options[sel.selectedIndex];
+        if (!committeeName) { alert('Please select a committee from the dropdown first.'); return; }
+
+        fetch('/api/committee-assignments', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_name: studentName, committee_name: committeeName, committee_type: '' })
+        }).then(function(r) { return r.json(); })
+        .then(function() { loadAll(); })
+        .catch(function() { alert('Failed to save assignment. Please try again.'); });
+    };
+
+    window.cmUnassign = function(studentName) {
+        if (!confirm('Remove assignment for ' + studentName + '?')) return;
+        fetch('/api/committee-assignments/' + encodeURIComponent(studentName), { method: 'DELETE' })
+            .then(function() { loadAll(); })
+            .catch(function() { alert('Failed to remove assignment.'); });
+    };
+
+    // Load when the Committees tab is opened
+    var cmLoaded = false;
+    document.querySelectorAll('.hub-nav').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (this.dataset.screen === 'committeesScreen' && !cmLoaded) {
+                cmLoaded = true;
+                loadAll();
+            }
+        });
+    });
+
+})();
+</script>
 
 <div id="acknowledgeModal" class="ack-modal hidden">
     <div class="ack-card">

@@ -280,7 +280,7 @@ function parseCSVLine(line) {
     return fields;
 }
 
-// Isabelle McLean — Parses committee CSV (Name, Type, Description) and replaces the full committee options list via the API
+// Isabelle McLean — Parses committee CSV (Name, Description) and replaces the full committee options list via the API
 function uploadCommitteeOptionsCSV() {
     const input = document.getElementById("committeeCsvInput");
     const file = input.files[0];
@@ -293,13 +293,15 @@ function uploadCommitteeOptionsCSV() {
     readCSV(file).then(rows => {
         const committees = rows.map(row => ({
             name: row.Name || row.name || "",
-            type: row.Type || row.type || "Project",
+            type: "",
             description: row.Description || row.description || row.Details || row.details || ""
         })).filter(c => c.name);
 
+        if (!confirm("Uploading new committees will reset ALL existing student selections and assignments. Continue?")) return;
+
         apiRequest("POST", "/api/committee-options/replace", { committees })
             .then(() => {
-                alert(committees.length + " committee option(s) uploaded.");
+                alert(committees.length + " committee option(s) uploaded. All previous student selections have been cleared.");
                 input.value = "";
             });
     });
@@ -348,7 +350,7 @@ function confirmRemoveCommittee() {
 
 // Isabelle McLean — Clears every committee option (replaces the list with an empty one)
 function clearAllCommittees() {
-    if (!confirm("Clear ALL committees? This removes every committee option students can sign up for.")) return;
+    if (!confirm("Clear ALL committees? This will remove every committee option AND reset all student selections and assignments.")) return;
 
     apiRequest("POST", "/api/committee-options/replace", { committees: [] })
         .then(() => {

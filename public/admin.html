@@ -34,7 +34,7 @@
     <nav>
         <a href="/public/dashboard.html">Dashboard</a>
         <a href="/public/students.html">Student Hub</a>
-        <a href="/public/morning-rec-qr.html">Morning Rec</a>
+        <a href="/public/tools.html">Tools</a>
         <a href="/public/contact.html">Contact Staff</a>
         <a href="/public/issues.html">System Issues</a>
         <a href="/public/admin.html" style="color:#146ff8;font-weight:800;">Admin</a>
@@ -52,6 +52,45 @@
     </div>
 
     <div class="admin-grid">
+
+        <!-- Daily To-Do List management — only accessible from admin -->
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Daily Staff To-Do List</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Add tasks for staff to complete today. Staff will see this list in the <strong>Tools</strong> section and can check off items with their name.</p>
+
+                <div class="button-row" style="margin-bottom:12px;">
+                    <input id="todoInput" type="text" placeholder="E.g. Place masking tape on floor before 10am"
+                        style="flex:1; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none;"
+                        onkeydown="if(event.key==='Enter') addTodoItem()">
+                    <button onclick="addTodoItem()">Add Task</button>
+                </div>
+
+                <div id="adminTodoList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; min-height:32px;">
+                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                </div>
+
+                <button class="danger-btn" onclick="clearAllTodos()">Clear Entire To-Do List</button>
+            </div>
+        </div>
+
+        <!-- Staff task completion breakdown — shows how many tasks each person has done -->
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Staff Task Completion</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>A breakdown of completed tasks by staff member across all days.</p>
+                <div id="staffBreakdown" style="display:flex; flex-direction:column; gap:10px; margin-top:14px; margin-bottom:16px;">
+                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                </div>
+                <button class="danger-btn" onclick="clearTaskHistory()">Clear Completion History</button>
+            </div>
+        </div>
 
         <div class="admin-card admin-card-wide">
             <div class="admin-card-head">
@@ -74,7 +113,7 @@
                 <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
             <div class="admin-card-body">
-                <p>CSV columns required: <strong>Name, Type, Description</strong></p>
+                <p>CSV columns required: <strong>Name, Description</strong></p>
 
                 <input id="committeeCsvInput" type="file" accept=".csv">
 
@@ -94,8 +133,7 @@
 
                 <button id="clearCommitteesBtn" class="danger-btn">Clear All Committees</button>
 
-                <p class="example">Example: Basketball,Sports,Pickup games every weekend morning</p>
-                <p class="example">Type must be either <strong>Sports</strong> or <strong>Project</strong>.</p>
+                <p class="example">Example: Shad Red Deer News,Daily news and announcements for the cohort</p>
             </div>
         </div>
 
@@ -171,6 +209,133 @@
     </div>
 
 </section>
+
+<script>
+// ── ADMIN DAILY TO-DO ────────────────────────────────────────────────────────
+function escH(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadAdminTodos() {
+    fetch('/api/todos')
+        .then(function(r) { return r.json(); })
+        .then(function(todos) {
+            var container = document.getElementById('adminTodoList');
+            if (todos.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">No tasks yet. Add one above.</p>';
+                return;
+            }
+            container.innerHTML = '';
+            todos.forEach(function(t) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 14px; background:' + (t.completed ? '#f0faf0' : '#f8f8f8') + '; border-radius:10px;';
+                row.innerHTML =
+                    '<span style="flex:1; font-size:14px; font-weight:600; color:' + (t.completed ? '#aaa' : '#111') + '; text-decoration:' + (t.completed ? 'line-through' : 'none') + ';">' +
+                        escH(t.task) +
+                    '</span>' +
+                    (t.completed && t.completed_by ? '<span style="font-size:12px; font-weight:700; color:#5a9a20;">✓ ' + escH(t.completed_by) + '</span>' : '') +
+                    '<button onclick="deleteTodoItem(' + t.id + ', this)" title="Delete task" ' +
+                    'style="background:none; border:none; color:#ccc; font-size:18px; cursor:pointer; padding:0 2px; transition:color 0.2s;" ' +
+                    'onmouseover="this.style.color=\'#ff3b30\'" onmouseout="this.style.color=\'#ccc\'">×</button>';
+                container.appendChild(row);
+            });
+        })
+        .catch(function() {});
+}
+
+// Isabelle — Posts a new task to /api/todos; also supports Enter key to submit
+function addTodoItem() {
+    var input = document.getElementById('todoInput');
+    var task = input.value.trim();
+    if (!task) { input.focus(); return; }
+    fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: task })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.error) { alert(data.error); return; }
+        input.value = '';
+        input.focus();
+        loadAdminTodos();
+    })
+    .catch(function() { alert('Failed to add task. Please try again.'); });
+}
+
+function deleteTodoItem(id, btn) {
+    btn.disabled = true;
+    fetch('/api/todos/' + id, { method: 'DELETE' })
+        .then(function() { loadAdminTodos(); })
+        .catch(function() { btn.disabled = false; });
+}
+
+// Isabelle — Wipes the entire daily to-do list; permanent history in task_history is unaffected
+function clearAllTodos() {
+    if (!confirm('Clear the entire to-do list? This cannot be undone.')) return;
+    fetch('/api/todos/all', { method: 'DELETE' })
+        .then(function() { loadAdminTodos(); })
+        .catch(function() { alert('Failed to clear list.'); });
+}
+
+function loadStaffBreakdown() {
+    fetch('/api/task-history')
+        .then(function(r) { return r.json(); })
+        .then(function(rows) {
+            var container = document.getElementById('staffBreakdown');
+
+            if (rows.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">No completed tasks yet.</p>';
+                return;
+            }
+
+            // Tally completions per staff member across all time
+            var counts = {};
+            rows.forEach(function(t) {
+                counts[t.completed_by] = (counts[t.completed_by] || 0) + 1;
+            });
+
+            var max = Math.max.apply(null, Object.values(counts));
+            var sorted = Object.keys(counts).sort(function(a, b) { return counts[b] - counts[a]; });
+
+            container.innerHTML = '';
+
+            // Total line
+            var totalEl = document.createElement('p');
+            totalEl.style.cssText = 'font-size:12px; font-weight:700; color:#aaa; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;';
+            totalEl.textContent = rows.length + ' total task' + (rows.length === 1 ? '' : 's') + ' completed across all days';
+            container.appendChild(totalEl);
+
+            sorted.forEach(function(name) {
+                var count = counts[name];
+                var pct = Math.round((count / max) * 100);
+
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex; align-items:center; gap:12px;';
+                row.innerHTML =
+                    '<div style="min-width:140px; font-size:14px; font-weight:700; color:#111;">' + escH(name) + '</div>' +
+                    '<div style="flex:1; height:8px; background:#f0f0f0; border-radius:99px; overflow:hidden;">' +
+                        '<div style="height:100%; width:' + pct + '%; background:#146ff8; border-radius:99px; transition:width 0.4s;"></div>' +
+                    '</div>' +
+                    '<div style="font-size:13px; font-weight:700; color:#555; white-space:nowrap;">' + count + ' task' + (count === 1 ? '' : 's') + '</div>';
+                container.appendChild(row);
+            });
+        })
+        .catch(function() {});
+}
+
+// Isabelle — Clears the permanent task history log; used by management to reset the staff accountability record
+function clearTaskHistory() {
+    if (!confirm('Clear the entire completion history? This cannot be undone.')) return;
+    fetch('/api/task-history/all', { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function() { loadStaffBreakdown(); })
+        .catch(function() { alert('Failed to clear history. Please try again.'); });
+}
+
+loadAdminTodos();
+loadStaffBreakdown();
+</script>
 
 </body>
 </html>

@@ -143,6 +143,14 @@ db.serialize(() => {
         )
     `);
 
+    // Isabelle McLean — Morning rec config table: stores the staff count set by staff before each session; capacity = staff_count * 8
+    db.run(`
+        CREATE TABLE IF NOT EXISTS morning_rec_config (
+            config_date TEXT PRIMARY KEY,
+            staff_count INTEGER NOT NULL DEFAULT 1
+        )
+    `);
+
     // Isabelle McLean — Committee options table: list of committees students can sign up for; populated via admin CSV upload
     db.run(`
         CREATE TABLE IF NOT EXISTS committee_options (
@@ -153,7 +161,7 @@ db.serialize(() => {
         )
     `);
 
-    // Isabelle McLean — Committee signups table: stores student committee registrations; unique constraint blocks duplicate entries
+    // Isabelle McLean — Committee signups table: stores up to 3 committee preferences per student; unique constraint blocks duplicate entries
     db.run(`
         CREATE TABLE IF NOT EXISTS committee_signups (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,6 +170,42 @@ db.serialize(() => {
             committee_type TEXT NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(student_name, committee_name)
+        )
+    `);
+
+    // Isabelle McLean — Daily to-do list: tasks posted by admin; staff check them off with their name; cleared manually by admin
+    db.run(`
+        CREATE TABLE IF NOT EXISTS daily_todos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task TEXT NOT NULL,
+            completed INTEGER NOT NULL DEFAULT 0,
+            completed_by TEXT NOT NULL DEFAULT '',
+            completed_at TEXT NOT NULL DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+    // Migrate existing databases that pre-date the completed_at column
+    db.run(`ALTER TABLE daily_todos ADD COLUMN completed_at TEXT NOT NULL DEFAULT ''`, function() {});
+
+    // Isabelle McLean — Permanent task history log: written on completion, row removed on undo; never cleared with the daily list
+    db.run(`
+        CREATE TABLE IF NOT EXISTS task_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            todo_id INTEGER NOT NULL,
+            task TEXT NOT NULL,
+            completed_by TEXT NOT NULL,
+            completed_at TEXT NOT NULL
+        )
+    `);
+
+    // Isabelle McLean — Committee assignments table: staff places each student into exactly one final committee from their 3 preferences
+    db.run(`
+        CREATE TABLE IF NOT EXISTS committee_assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_name TEXT NOT NULL UNIQUE,
+            committee_name TEXT NOT NULL,
+            committee_type TEXT NOT NULL DEFAULT '',
+            assigned_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     `);
 });
