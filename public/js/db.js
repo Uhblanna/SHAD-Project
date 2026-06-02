@@ -233,37 +233,45 @@ function getDashboardStats() {
 
 // ── PARSE CSV TEXT ───────────────────────────────────────
 function parseCSV(text) {
-    const lines = text.trim().split(/\r?\n/);
+    const lines = text.trim().split(/\r?\n/).filter(line => line.trim() !== "");
     if (lines.length < 2) return [];
 
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const delimiter = lines[0].includes("\t") ? "\t" : ",";
 
-    return lines.slice(1).map(line => {
+    function parseLine(line) {
         const fields = [];
-        let current = '';
+        let current = "";
         let inQuotes = false;
 
         for (let i = 0; i < line.length; i++) {
             const ch = line[i];
+
             if (ch === '"') {
                 inQuotes = !inQuotes;
-            } else if (ch === ',' && !inQuotes) {
-                fields.push(current.trim());
-                current = '';
+            } else if (ch === delimiter && !inQuotes) {
+                fields.push(current.trim().replace(/^"|"$/g, ""));
+                current = "";
             } else {
                 current += ch;
             }
         }
 
-        fields.push(current.trim());
+        fields.push(current.trim().replace(/^"|"$/g, ""));
+        return fields;
+    }
 
+    const headers = parseLine(lines[0]);
+
+    return lines.slice(1).map(line => {
+        const fields = parseLine(line);
         const row = {};
+
         headers.forEach((h, i) => {
-            row[h] = (fields[i] || '').replace(/^"|"$/g, '').trim();
+            row[h] = fields[i] || "";
         });
 
         return row;
-    }).filter(row => Object.values(row).some(v => v !== ''));
+    }).filter(row => Object.values(row).some(v => v !== ""));
 }
 
 window.ShadDB = {
