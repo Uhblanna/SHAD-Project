@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Isabelle McLean — Wires up the Remove a Committee button + confirm remove button
     document.getElementById("removeCommitteeBtn").addEventListener("click", openRemoveCommitteePanel);
     document.getElementById("confirmRemoveCommitteeBtn").addEventListener("click", confirmRemoveCommittee);
+    document.getElementById("clearCommitteeSignupsBtn").addEventListener("click", clearCommitteeSignups);
     document.getElementById("clearCommitteesBtn").addEventListener("click", clearAllCommittees);
     document.getElementById("uploadMedkitsBtn").addEventListener("click", uploadMedkitsCSV);
     document.getElementById("clearMedkitsBtn").addEventListener("click", clearMedkits);
@@ -353,6 +354,14 @@ function confirmRemoveCommittee() {
             alert("Committee removed.");
             document.getElementById("removeCommitteePanel").style.display = "none";
         });
+}
+
+// Isabelle McLean — Clears only student committee selections and assignments without removing the committee options themselves
+function clearCommitteeSignups() {
+    if (!confirm("Clear all student committee selections and assignments? The committee list itself will not be affected. This cannot be undone.")) return;
+    apiRequest("DELETE", "/api/committee-signups/all")
+        .then(() => alert("All student selections and assignments cleared."))
+        .catch(() => alert("Failed to clear. Please try again."));
 }
 
 // Isabelle McLean — Clears every committee option (replaces the list with an empty one)

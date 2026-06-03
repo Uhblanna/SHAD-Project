@@ -759,6 +759,17 @@ app.delete("/api/committee-options/:id", (req, res) => {
     });
 });
 
+// Isabelle McLean — Clear only committee signups and assignments without touching the committee options list itself
+app.delete("/api/committee-signups/all", (req, res) => {
+    db.serialize(() => {
+        db.run("DELETE FROM committee_signups");
+        db.run("DELETE FROM committee_assignments", [], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ ok: true });
+        });
+    });
+});
+
 // Isabelle McLean — Replace all committee options atomically; also wipes all student signups and assignments so stale choices don't carry over to new committees
 app.post("/api/committee-options/replace", (req, res) => {
     const committees = Array.isArray(req.body.committees) ? req.body.committees : [];
