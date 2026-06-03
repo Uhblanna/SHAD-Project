@@ -224,6 +224,9 @@ app.post("/api/students/replace", (req, res) => {
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run("DELETE FROM students");
+        db.run("DELETE FROM committee_signups");
+        db.run("DELETE FROM committee_assignments");
+        db.run("DELETE FROM morning_rec_signups");
         const stmt = db.prepare(`
             INSERT INTO students (name, pronouns, group_name, age, instrument, medication, medication_taken, dietary, note)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)

@@ -118,9 +118,10 @@ function uploadStudentsReplace() {
     }
 
     readCSV(file).then(rows => {
+        if (!confirm("Replacing students will also reset all committee selections, assignments, and morning rec signups. Continue?")) return;
         const formattedRows = formatShadStudentRows(rows);
         const count = ShadDB.clearAndImportStudents(formattedRows);
-        alert(count + " student(s) uploaded. Previous students were replaced.");
+        alert(count + " student(s) uploaded. Previous students and all related data have been cleared.");
         input.value = "";
     });
 }
@@ -143,7 +144,7 @@ function uploadStudentsAdd() {
 }
 
 function clearStudentsFromAdmin() {
-    const confirmClear = confirm("Clear all students? This cannot be undone.");
+    const confirmClear = confirm("Clear all students? This will also reset all committee selections, assignments, and morning rec signups. This cannot be undone.");
     if (!confirmClear) return;
 
     ShadDB.setStudents([]);
