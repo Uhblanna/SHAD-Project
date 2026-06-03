@@ -526,6 +526,22 @@ app.post("/api/schedule/replace", (req, res) => {
     });
 });
 
+// Isabelle McLean — Clear all staff records
+app.delete("/api/staff/all", (req, res) => {
+    db.run("DELETE FROM staff", [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+// Isabelle McLean — Clear all schedule records
+app.delete("/api/schedule/all", (req, res) => {
+    db.run("DELETE FROM schedule", [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
 // SWAP REQUESTS
 app.get("/api/swap-requests", (req, res) => {
     db.all("SELECT * FROM swap_requests ORDER BY datetime(created_at) DESC", [], (err, rows) => {
@@ -688,6 +704,27 @@ app.put("/api/morning-rec/config", (req, res) => {
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ config_date: recDate, staff_count: staffCount, capacity: staffCount * 8 });
+        }
+    );
+});
+
+// Isabelle McLean — Committee enrollment config: GET returns the open/close dates, PUT lets admin update them
+app.get("/api/committee-enrollment-config", (req, res) => {
+    db.get("SELECT open_date, close_date FROM committee_enrollment_config WHERE id = 1", [], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row || { open_date: '2026-01-01T00:00:00', close_date: '2026-07-01T23:59:00' });
+    });
+});
+
+app.put("/api/committee-enrollment-config", (req, res) => {
+    const { open_date, close_date } = req.body;
+    if (!open_date || !close_date) return res.status(400).json({ error: "Both open_date and close_date are required." });
+    db.run(
+        "UPDATE committee_enrollment_config SET open_date = ?, close_date = ? WHERE id = 1",
+        [open_date, close_date],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ open_date, close_date });
         }
     );
 });
@@ -892,6 +929,14 @@ app.post("/api/medkits/replace", (req, res) => {
                 res.json({ inserted: medkits.length });
             });
         });
+    });
+});
+
+// Isabelle McLean — Clear all med kit records
+app.delete("/api/medkits/all", (req, res) => {
+    db.run("DELETE FROM medkits", [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
     });
 });
 

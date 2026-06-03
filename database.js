@@ -198,6 +198,16 @@ db.serialize(() => {
         )
     `);
 
+    // Isabelle McLean — Committee enrollment window: stores the open and close datetimes set by admin; student portal reads these instead of hardcoded values
+    db.run(`
+        CREATE TABLE IF NOT EXISTS committee_enrollment_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            open_date TEXT NOT NULL DEFAULT '2026-01-01T00:00:00',
+            close_date TEXT NOT NULL DEFAULT '2026-07-01T23:59:00'
+        )
+    `);
+    db.run(`INSERT OR IGNORE INTO committee_enrollment_config (id, open_date, close_date) VALUES (1, '2026-01-01T00:00:00', '2026-07-01T23:59:00')`);
+
     // Isabelle McLean — Committee assignments table: staff places each student into exactly one final committee from their 3 preferences
     db.run(`
         CREATE TABLE IF NOT EXISTS committee_assignments (

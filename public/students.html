@@ -535,6 +535,7 @@
             window.recSaveStaff = function() {
                 var n = parseInt(document.getElementById('recStaffInput').value, 10);
                 if (!n || n < 1) { alert('Enter a valid number of staff (minimum 1).'); return; }
+                var btn = document.querySelector('button[onclick="recSaveStaff()"]');
                 fetch('/api/morning-rec/config', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -545,6 +546,14 @@
                     document.getElementById('recCapacityNum').textContent = capacity;
                     document.getElementById('recCountCap').textContent = capacity;
                     refreshBadge();
+                    if (btn) {
+                        btn.textContent = 'Saved ✓';
+                        btn.style.background = '#00d084';
+                        setTimeout(function() {
+                            btn.textContent = 'Save';
+                            btn.style.background = '#146ff8';
+                        }, 2000);
+                    }
                 }).catch(function() { alert('Failed to save. Please try again.'); });
             };
 
@@ -579,7 +588,12 @@
                         }
                         list.innerHTML = '';
                         rows.forEach(function(row) {
-                            var time = row.created_at ? row.created_at.slice(11,16) : '';
+                            var time = '';
+                            if (row.created_at) {
+                                // created_at is stored as UTC by SQLite — append Z so the browser converts to local time
+                                var d = new Date(row.created_at.replace(' ', 'T') + 'Z');
+                                time = isNaN(d) ? '' : d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true });
+                            }
                             var li = document.createElement('li');
                             li.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:#f8f8f8;border-radius:10px;padding:12px 14px;';
                             li.innerHTML =
@@ -696,6 +710,7 @@
     var allSignups = [];       // all student preferences from /api/committee-signups
     var allAssignments = {};   // map of student_name → assigned committee
     var allStudentNames = [];  // Isabelle — full roster from /api/students so students with no signups still appear
+    var allCommitteeOptions = []; // Isabelle — full committee list so no-prefs students can still be directly assigned
 
     function escH(s) {
         return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -721,12 +736,14 @@
         Promise.all([
             fetch('/api/committee-signups').then(function(r) { return r.json(); }),
             fetch('/api/committee-assignments').then(function(r) { return r.json(); }),
-            fetch('/api/students').then(function(r) { return r.json(); })
+            fetch('/api/students').then(function(r) { return r.json(); }),
+            fetch('/api/committee-options').then(function(r) { return r.json(); })
         ]).then(function(results) {
             allSignups = results[0];
             allAssignments = {};
             results[1].forEach(function(a) { allAssignments[a.student_name] = a; });
             allStudentNames = results[2].map(function(s) { return s.name; });
+            allCommitteeOptions = results[3];
             renderAssignView();
             if (currentView === 'group') renderGroupView();
             updateProgress();
@@ -814,15 +831,37 @@
             container.appendChild(divider);
 
             noPrefs.forEach(function(name) {
+                var isAssigned = !!allAssignments[name];
+                var assignment = allAssignments[name];
+
                 var card = document.createElement('div');
                 card.style.cssText = 'background:white; border-radius:16px; padding:20px 24px; box-shadow:0 2px 12px rgba(0,0,0,0.05); display:flex; align-items:center; gap:20px; flex-wrap:wrap; border:2px solid #fff3e0;';
 
-                var dot = '<span style="width:10px;height:10px;border-radius:50%;background:#ffb347;display:inline-block;flex-shrink:0;"></span>';
-                var nameEl = '<div style="min-width:160px;"><div style="font-size:15px;font-weight:800;color:#111;">' + escH(name) + '</div>' +
-                    '<div style="font-size:12px;font-weight:600;color:#ffb347;">No choices submitted</div></div>';
-                var msg = '<div style="font-size:13px;color:#bbb;font-weight:600;flex:1;">This student hasn\'t selected any committee preferences yet.</div>';
+                var dot = isAssigned
+                    ? '<span style="width:10px;height:10px;border-radius:50%;background:#00d084;display:inline-block;flex-shrink:0;"></span>'
+                    : '<span style="width:10px;height:10px;border-radius:50%;background:#ffb347;display:inline-block;flex-shrink:0;"></span>';
 
-                card.innerHTML = dot + nameEl + msg;
+                var nameEl = '<div style="min-width:160px;"><div style="font-size:15px;font-weight:800;color:#111;">' + escH(name) + '</div>' +
+                    '<div style="font-size:12px;font-weight:600;color:' + (isAssigned ? '#00d084' : '#ffb347') + ';">' +
+                    (isAssigned ? '✓ Assigned: ' + escH(assignment.committee_name) : 'No choices submitted') + '</div></div>';
+
+                // Build assign dropdown from full committee list
+                var safeId = 'cmSel_noprefs_' + escH(name);
+                var selectHtml = '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto;">';
+                selectHtml += '<select id="' + safeId + '" style="padding:8px 12px;border:2px solid #e5e5e5;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;color:#111;outline:none;cursor:pointer;">';
+                selectHtml += '<option value="">Assign to...</option>';
+                allCommitteeOptions.forEach(function(c) {
+                    var sel = isAssigned && assignment.committee_name === c.name ? ' selected' : '';
+                    selectHtml += '<option value="' + escH(c.name) + '"' + sel + '>' + escH(c.name) + '</option>';
+                });
+                selectHtml += '</select>';
+                selectHtml += '<button onclick="cmAssignDirect(\'' + escH(name).replace(/'/g, "\\'") + '\',\'' + safeId + '\')" style="padding:8px 16px;background:#146ff8;color:white;border:none;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Assign</button>';
+                if (isAssigned) {
+                    selectHtml += '<button onclick="cmUnassign(\'' + escH(name).replace(/'/g, "\\'") + '\')" style="padding:8px 12px;background:transparent;color:#ff3b30;border:2px solid #f0d0d0;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">Remove</button>';
+                }
+                selectHtml += '</div>';
+
+                card.innerHTML = dot + nameEl + selectHtml;
                 container.appendChild(card);
             });
         }
@@ -872,6 +911,22 @@
         if (!sel) return;
         var committeeName = sel.value;
         var selectedOpt = sel.options[sel.selectedIndex];
+        if (!committeeName) { alert('Please select a committee from the dropdown first.'); return; }
+
+        fetch('/api/committee-assignments', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_name: studentName, committee_name: committeeName, committee_type: '' })
+        }).then(function(r) { return r.json(); })
+        .then(function() { loadAll(); })
+        .catch(function() { alert('Failed to save assignment. Please try again.'); });
+    };
+
+    // Isabelle — Direct assign for students with no preferences; uses the full committee list dropdown instead of a preference pill dropdown
+    window.cmAssignDirect = function(studentName, selectId) {
+        var sel = document.getElementById(selectId);
+        if (!sel) return;
+        var committeeName = sel.value;
         if (!committeeName) { alert('Please select a committee from the dropdown first.'); return; }
 
         fetch('/api/committee-assignments', {

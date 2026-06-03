@@ -32,7 +32,7 @@ function injectLogout() {
     divider.textContent = "|";
 
     var btn = document.createElement("a");
-    btn.href = "#";
+    btn.href = "javascript:void(0)";
     btn.textContent = "Log Out";
     btn.style.cssText = "color:#d12c2c; font-weight:700;";
 

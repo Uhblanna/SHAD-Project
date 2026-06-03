@@ -106,6 +106,39 @@
             </div>
         </div>
 
+        <!-- Isabelle McLean — Committee enrollment window: admin sets the open and close dates here; student portal reads them from the API -->
+        <div class="admin-card">
+            <div class="admin-card-head">
+                <h3>Committee Sign-Up Window</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Set when students can sign up for committees. The student portal enforces these dates automatically.</p>
+
+                <div style="display:flex; flex-direction:column; gap:14px; margin:16px 0;">
+                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <label style="font-size:13px; font-weight:700; color:#555; min-width:80px;">Opens:</label>
+                        <input type="date" id="enrollOpenDate"
+                            style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none;">
+                        <input type="time" id="enrollOpenTime"
+                            style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; width:130px;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <label style="font-size:13px; font-weight:700; color:#555; min-width:80px;">Closes:</label>
+                        <input type="date" id="enrollCloseDate"
+                            style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none;">
+                        <input type="time" id="enrollCloseTime"
+                            style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; width:130px;">
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button id="saveEnrollmentWindowBtn">Save Sign-Up Window</button>
+                </div>
+                <p class="example">Students will not be able to sign up before the open date or after the close date.</p>
+            </div>
+        </div>
+
         <!-- Isabelle McLean — Upload Committee Options CSV: populates the committees students can sign up for on the student portal -->
         <div class="admin-card">
             <div class="admin-card-head">
@@ -149,9 +182,12 @@
                     followed by <strong>Time Block, Activity, PA1, PA2...</strong>
                 </p>
                 <input id="scheduleCsvInput" type="file" accept=".csv">
-                <button id="uploadScheduleBtn">Upload Schedule</button>
-
-                <p class="example">Example format: Week 1 Schedule, then Sunday 2026-07-05, then Time Block, Activity, PA1, PA2...</p>            </div>
+                <div class="button-row">
+                    <button id="uploadScheduleBtn">Upload Schedule</button>
+                </div>
+                <button id="clearScheduleBtn" class="danger-btn">Clear Schedule</button>
+                <p class="example">Example format: Week 1 Schedule, then Sunday 2026-07-05, then Time Block, Activity, PA1, PA2...</p>
+            </div>
         </div>
 
         <div class="admin-card">
@@ -163,8 +199,10 @@
                 <p>CSV columns required: <strong>Name, Email, Slack</strong></p>
 
                 <input id="staffCsvInput" type="file" accept=".csv">
-                <button id="uploadStaffBtn">Upload Staff</button>
-
+                <div class="button-row">
+                    <button id="uploadStaffBtn">Upload Staff</button>
+                </div>
+                <button id="clearStaffBtn" class="danger-btn">Clear Staff</button>
                 <p class="example">Example: Sarah Kim,sarah@email.com,https://slack.com/...</p>
             </div>
         </div>
@@ -184,7 +222,10 @@
                     <button id="uploadStudentsAddBtn">Add Students</button>
                 </div>
 
-                <button id="clearStudentsAdminBtn" class="danger-btn">Clear All Students</button>
+                <div class="button-row">
+                    <button id="exportStudentsBtn">Export Students CSV</button>
+                    <button id="clearStudentsAdminBtn" class="danger-btn">Clear All Students</button>
+                </div>
 
                 <p class="example">Example: Jane Smith,she/her,Group 1,16,Violin,None,Vegetarian,Quiet student</p>
             </div>
@@ -200,9 +241,10 @@
                 <p>CSV columns required: <strong>QRCode, Name, AssignedStaff, Location, Status, Supplies</strong></p>
 
                 <input id="medkitCsvInput" type="file" accept=".csv">
-
-                <button id="uploadMedkitsBtn">Upload Med Kits</button>
-
+                <div class="button-row">
+                    <button id="uploadMedkitsBtn">Upload Med Kits</button>
+                </div>
+                <button id="clearMedkitsBtn" class="danger-btn">Clear Med Kits</button>
                 <p class="example">Example: MEDKIT-001,Main Med Kit,Sarah Kim,Lecture Hall,Ready,Fully stocked</p>
             </div>
         </div>

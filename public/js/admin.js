@@ -14,7 +14,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("confirmRemoveCommitteeBtn").addEventListener("click", confirmRemoveCommittee);
     document.getElementById("clearCommitteesBtn").addEventListener("click", clearAllCommittees);
     document.getElementById("uploadMedkitsBtn").addEventListener("click", uploadMedkitsCSV);
+    document.getElementById("clearMedkitsBtn").addEventListener("click", clearMedkits);
+    document.getElementById("clearScheduleBtn").addEventListener("click", clearSchedule);
+    document.getElementById("clearStaffBtn").addEventListener("click", clearStaff);
+    document.getElementById("exportStudentsBtn").addEventListener("click", exportStudentsCSV);
+    document.getElementById("saveEnrollmentWindowBtn").addEventListener("click", saveEnrollmentWindow);
 
+    loadEnrollmentWindow();
     setupPanelToggles();
 });
 
@@ -323,7 +329,7 @@ function openRemoveCommitteePanel() {
             committees.forEach(c => {
                 const opt = document.createElement("option");
                 opt.value = c.id;
-                opt.textContent = c.name + " (" + (c.type || "Project") + ")";
+                opt.textContent = c.name;
                 select.appendChild(opt);
             });
             panel.style.display = "block";
@@ -397,6 +403,120 @@ function uploadMedkitsCSV() {
                 input.value = "";
             });
     });
+}
+
+// Isabelle McLean — Loads the current enrollment window from the server and populates the split date/time inputs in the admin panel
+function loadEnrollmentWindow() {
+    fetch("/api/committee-enrollment-config")
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.open_date) {
+                document.getElementById("enrollOpenDate").value = data.open_date.slice(0, 10);
+                document.getElementById("enrollOpenTime").value = data.open_date.slice(11, 16);
+            }
+            if (data.close_date) {
+                document.getElementById("enrollCloseDate").value = data.close_date.slice(0, 10);
+                document.getElementById("enrollCloseTime").value = data.close_date.slice(11, 16);
+            }
+        })
+        .catch(function() {});
+}
+
+// Isabelle McLean — Combines the split date/time inputs and saves the enrollment window to the server; student portal reads these on every load
+function saveEnrollmentWindow() {
+    var openDate  = document.getElementById("enrollOpenDate").value;
+    var openTime  = document.getElementById("enrollOpenTime").value;
+    var closeDate = document.getElementById("enrollCloseDate").value;
+    var closeTime = document.getElementById("enrollCloseTime").value;
+
+    if (!openDate || !openTime || !closeDate || !closeTime) {
+        alert("Please set both a date and time for the open and close.");
+        return;
+    }
+
+    var openVal  = openDate  + "T" + openTime;
+    var closeVal = closeDate + "T" + closeTime;
+
+    if (new Date(openVal) >= new Date(closeVal)) {
+        alert("The close date must be after the open date.");
+        return;
+    }
+
+    var btn = document.getElementById("saveEnrollmentWindowBtn");
+    apiRequest("PUT", "/api/committee-enrollment-config", { open_date: openVal, close_date: closeVal })
+        .then(function() {
+            btn.textContent = "Saved ✓";
+            btn.style.background = "#00d084";
+            setTimeout(function() {
+                btn.textContent = "Save Sign-Up Window";
+                btn.style.background = "";
+            }, 2000);
+        })
+        .catch(function() { alert("Failed to save. Please try again."); });
+}
+
+// Isabelle McLean — Clear all schedule entries
+function clearSchedule() {
+    if (!confirm("Clear the entire schedule? This cannot be undone.")) return;
+    apiRequest("DELETE", "/api/schedule/all")
+        .then(() => alert("Schedule cleared."))
+        .catch(() => alert("Failed to clear schedule. Please try again."));
+}
+
+// Isabelle McLean — Clear all staff contacts
+function clearStaff() {
+    if (!confirm("Clear all staff contacts? This cannot be undone.")) return;
+    apiRequest("DELETE", "/api/staff/all")
+        .then(() => alert("Staff contacts cleared."))
+        .catch(() => alert("Failed to clear staff. Please try again."));
+}
+
+// Isabelle McLean — Clear all med kit records
+function clearMedkits() {
+    if (!confirm("Clear all med kits? This cannot be undone.")) return;
+    apiRequest("DELETE", "/api/medkits/all")
+        .then(() => alert("Med kits cleared."))
+        .catch(() => alert("Failed to clear med kits. Please try again."));
+}
+
+// Isabelle McLean — Export current student roster as a downloadable CSV backup
+function exportStudentsCSV() {
+    fetch("/api/students")
+        .then(function(r) { return r.json(); })
+        .then(function(students) {
+            if (!students || students.length === 0) {
+                alert("No students to export.");
+                return;
+            }
+            var headers = ["Name", "Pronouns", "Group", "Age", "Instrument", "Medication", "Dietary", "Note"];
+            var rows = students.map(function(s) {
+                return [
+                    s.name || "",
+                    s.pronouns || "",
+                    s.group || "",
+                    s.age || "",
+                    s.instrument || "",
+                    s.medication || "",
+                    s.dietary || "",
+                    s.note || ""
+                ].map(function(v) {
+                    // Wrap in quotes if value contains a comma or quote
+                    var str = String(v).replace(/"/g, '""');
+                    return str.includes(",") || str.includes('"') || str.includes("\n") ? '"' + str + '"' : str;
+                }).join(",");
+            });
+            var csv = [headers.join(",")].concat(rows).join("\n");
+            var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = "shad_students_backup_" + new Date().toISOString().slice(0, 10) + ".csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        })
+        .catch(function() { alert("Failed to export students. Please try again."); });
 }
 
 function formatShadStudentRows(rows) {
