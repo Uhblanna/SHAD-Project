@@ -25,6 +25,27 @@ document.addEventListener("DOMContentLoaded", () => {
     setupPanelToggles();
 });
 
+// Isabelle McLean — Expand or collapse all admin cards at once; individual toggles still work independently
+function expandAllPanels() {
+    document.querySelectorAll(".panel-toggle").forEach(function(btn) {
+        const body = btn.closest(".admin-card-head").nextElementSibling;
+        body.classList.remove("collapsed");
+        btn.textContent = "−";
+        btn.setAttribute("aria-expanded", "true");
+        btn.title = "Collapse";
+    });
+}
+
+function collapseAllPanels() {
+    document.querySelectorAll(".panel-toggle").forEach(function(btn) {
+        const body = btn.closest(".admin-card-head").nextElementSibling;
+        body.classList.add("collapsed");
+        btn.textContent = "+";
+        btn.setAttribute("aria-expanded", "false");
+        btn.title = "Expand";
+    });
+}
+
 // Collapse/expand each admin card. Clicking the toggle hides the card body
 // and swaps the −/+ glyph.
 function setupPanelToggles() {

@@ -45,7 +45,13 @@
 
     <div class="page-header">
         <p class="mini-title">ADMIN TOOLS</p>
-        <h2>Admin Panel</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+            <h2>Admin Panel</h2>
+            <div style="display:flex; gap:10px;">
+                <button onclick="expandAllPanels()" style="padding:9px 18px; background:#f0f0f0; color:#333; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">Expand All</button>
+                <button onclick="collapseAllPanels()" style="padding:9px 18px; background:#f0f0f0; color:#333; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">Collapse All</button>
+            </div>
+        </div>
         <p class="subtext">
             Clear system issue tickets, upload staff contacts, and upload the staff schedule.
         </p>
