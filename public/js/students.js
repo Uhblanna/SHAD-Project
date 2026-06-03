@@ -78,7 +78,9 @@ const SCREEN_HASHES = {
     medicationsScreen:  'medications',
     attendanceScreen:   'attendance',
     observationsScreen: 'observations',
-    dietaryScreen:      'dietary'
+    dietaryScreen:      'dietary',
+    morningRecScreen:   'morning-rec',
+    committeesScreen:   'committees'
 };
 
 function activateScreen(screenId) {

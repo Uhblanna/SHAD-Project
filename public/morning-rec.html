@@ -237,9 +237,13 @@ nav a:hover { color: #00d084; }
                 <p style="font-size:13px; color:#888; margin-top:6px; font-weight:600;">All spots have been filled for tomorrow's morning rec.</p>
             </div>
 
-            <select class="form-select" id="studentSelect">
-                <option value="">Loading names...</option>
-            </select>
+            <!-- Isabelle McLean — Replaced dropdown with typeahead: students type to filter the list, then click their name to select it -->
+            <div style="position:relative; margin-bottom:16px;" id="recNamePickerWrap">
+                <input type="text" class="form-select" id="recNameSearch" style="margin-bottom:0; cursor:text;"
+                    placeholder="Type your name..." autocomplete="off" oninput="filterRecNames()" onfocus="showRecNameList()">
+                <div id="recNameDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:2px solid #e5e5e5; border-top:none; border-radius:0 0 12px 12px; max-height:220px; overflow-y:auto; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,0.1);"></div>
+            </div>
+            <input type="hidden" id="studentSelect">
 
             <p class="msg" id="msgEl"></p>
             <button class="submit-btn" id="submitBtn" onclick="submitSignup()">Sign Me Up →</button>
@@ -286,17 +290,17 @@ function loadCapacityAndStatus() {
         var spotsLine = document.getElementById('spotsLine');
         var fullState = document.getElementById('fullState');
         var submitBtn = document.getElementById('submitBtn');
-        var studentSelect = document.getElementById('studentSelect');
+        var namePickerWrap = document.getElementById('recNamePickerWrap');
 
         if (spotsLeft <= 0) {
             // Session is full — hide the form controls, show full message
             fullState.style.display = 'block';
-            studentSelect.style.display = 'none';
+            namePickerWrap.style.display = 'none';
             submitBtn.style.display = 'none';
             spotsLine.style.display = 'none';
         } else {
             fullState.style.display = 'none';
-            studentSelect.style.display = '';
+            namePickerWrap.style.display = '';
             submitBtn.style.display = '';
             if (spotsLeft <= 5) {
                 spotsLine.textContent = 'Only ' + spotsLeft + ' spot' + (spotsLeft === 1 ? '' : 's') + ' left! Select your name to sign up.';
@@ -311,27 +315,66 @@ function loadCapacityAndStatus() {
     }).catch(function() {});
 }
 
+var allRecStudentNames = [];
+
 function loadStudents() {
     fetch('/api/students')
         .then(function(r) { return r.json(); })
         .then(function(students) {
-            var sel = document.getElementById('studentSelect');
-            sel.innerHTML = '<option value="">Select your name...</option>';
-            students.forEach(function(s) {
-                var opt = document.createElement('option');
-                opt.value = s.name;
-                opt.textContent = s.name;
-                sel.appendChild(opt);
-            });
-            if (students.length === 0) {
-                sel.innerHTML = '<option value="">No students loaded yet</option>';
-            }
+            allRecStudentNames = students.map(function(s) { return s.name; }).sort();
+            document.getElementById('recNameSearch').placeholder = allRecStudentNames.length === 0
+                ? 'No students loaded yet'
+                : 'Type your name...';
         })
         .catch(function() {
-            var sel = document.getElementById('studentSelect');
-            sel.innerHTML = '<option value="">Could not load names</option>';
+            document.getElementById('recNameSearch').placeholder = 'Could not load names';
         });
 }
+
+function showRecNameList() {
+    filterRecNames();
+}
+
+function filterRecNames() {
+    var query = document.getElementById('recNameSearch').value.toLowerCase().trim();
+    var dropdown = document.getElementById('recNameDropdown');
+    var matches = query
+        ? allRecStudentNames.filter(function(n) { return n.toLowerCase().indexOf(query) !== -1; })
+        : allRecStudentNames;
+
+    if (matches.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    dropdown.innerHTML = '';
+    matches.forEach(function(name) {
+        var item = document.createElement('div');
+        item.textContent = name;
+        item.style.cssText = 'padding:12px 16px; font-size:15px; font-weight:600; color:#111; cursor:pointer; transition:background 0.15s;';
+        item.addEventListener('mouseenter', function() { this.style.background = '#f0fff8'; });
+        item.addEventListener('mouseleave', function() { this.style.background = 'white'; });
+        item.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            selectRecStudent(name);
+        });
+        dropdown.appendChild(item);
+    });
+    dropdown.style.display = 'block';
+}
+
+function selectRecStudent(name) {
+    document.getElementById('recNameSearch').value = name;
+    document.getElementById('studentSelect').value = name;
+    document.getElementById('recNameDropdown').style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('recNamePickerWrap');
+    if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('recNameDropdown').style.display = 'none';
+    }
+});
 
 function submitSignup() {
     var name = document.getElementById('studentSelect').value;
@@ -382,6 +425,8 @@ function resetForm() {
     document.getElementById('successState').style.display = 'none';
     document.getElementById('formState').style.display = 'block';
     document.getElementById('studentSelect').value = '';
+    document.getElementById('recNameSearch').value = '';
+    document.getElementById('recNameDropdown').style.display = 'none';
     document.getElementById('msgEl').textContent = '';
     document.getElementById('submitBtn').textContent = 'Sign Me Up →';
     document.getElementById('submitBtn').disabled = false;
