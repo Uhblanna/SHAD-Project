@@ -847,8 +847,8 @@
 
                 // Build assign dropdown from full committee list
                 var safeId = 'cmSel_noprefs_' + escH(name);
-                var selectHtml = '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto;">';
-                selectHtml += '<select id="' + safeId + '" style="padding:8px 12px;border:2px solid #e5e5e5;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;color:#111;outline:none;cursor:pointer;">';
+                var selectHtml = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;min-width:0;">';
+                selectHtml += '<select id="' + safeId + '" style="padding:8px 12px;border:2px solid #e5e5e5;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;color:#111;outline:none;cursor:pointer;flex:1;min-width:0;">';
                 selectHtml += '<option value="">Assign to...</option>';
                 allCommitteeOptions.forEach(function(c) {
                     var sel = isAssigned && assignment.committee_name === c.name ? ' selected' : '';

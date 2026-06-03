@@ -90,6 +90,13 @@ nav a:hover{
     .admin-grid{
         grid-template-columns:1fr;
     }
+    .enroll-row {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    .enroll-row input {
+        width: 100%;
+    }
 }
 
 .admin-card{
