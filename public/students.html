@@ -413,7 +413,7 @@
                 </div>
             </div>
 
-            <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
+            <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; align-items: stretch;">
 
                 <!-- Staff count + QR card -->
                 <div class="student-panel">
@@ -460,12 +460,11 @@
                 </div>
 
                 <!-- Sign-up list card -->
-                <div class="student-panel">
+                <div class="student-panel" style="display:flex; flex-direction:column;">
                     <div class="card-header">
                         <h3>Tomorrow's Sign-Ups</h3>
-                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                     </div>
-                    <div class="panel-body" style="padding:20px;">
+                    <div class="panel-body" style="padding:20px; display:flex; flex-direction:column; flex:1;">
 
                         <p style="font-size:13px; color:#888; font-weight:600; margin-bottom:14px;" id="recDateLabel"></p>
 
@@ -473,7 +472,7 @@
                             <span id="recCountNum">0</span> / <span id="recCountCap">8</span> signed up
                         </div>
 
-                        <ul id="recSignupsList" style="list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+                        <ul id="recSignupsList" style="list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:18px; flex:1; overflow-y:auto; max-height:320px; padding-right:4px;">
                             <li style="text-align:center; padding:24px 0; color:#ccc; font-size:14px; font-weight:600;">No sign-ups yet for tomorrow.</li>
                         </ul>
 
