@@ -1312,3 +1312,303 @@ header nav a:hover{
 }
 
 .delete-student-btn:hover { background: #fecaca; }
+
+/* ── Attendance Session Bar ─────────────────────────────── */
+.att-session-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: white;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+
+.att-session-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.att-tab {
+    padding: 9px 18px;
+    border: 2px solid #e5e5e5;
+    border-radius: 10px;
+    background: white;
+    color: #555;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.att-tab.active {
+    background: #146ff8;
+    color: white;
+    border-color: #146ff8;
+}
+
+.att-session-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.att-session-info span:first-child {
+    font-size: 15px;
+    font-weight: 800;
+    color: #111;
+}
+
+.att-session-date {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #aaa !important;
+}
+
+.att-start-btn {
+    padding: 10px 20px;
+    background: #146ff8;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.att-submit-btn {
+    padding: 10px 20px;
+    background: #00c87a;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.att-no-session {
+    text-align: center;
+    padding: 48px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+
+.att-no-session-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.att-no-session p {
+    font-size: 15px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.att-no-session-sub {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #aaa !important;
+}
+
+.att-history-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin-top: 20px;
+    overflow: hidden;
+}
+
+.att-history-card .card-header {
+    padding: 16px 20px;
+}
+
+.att-history-card .panel-body {
+    padding: 0 20px 16px;
+}
+
+/* ── Activity Roll Call ─────────────────────────────────── */
+.rc-active-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    background: white;
+    border-radius: 16px;
+    padding: 18px 22px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.rc-active-header .mini-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #146ff8;
+    text-transform: uppercase;
+}
+
+.rc-active-header h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #111;
+    margin-top: 4px;
+}
+
+.rc-progress-badge {
+    background: #e8f5d3;
+    color: #5a9a20;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+/* ── MEDICATION LOG SECTION ───────────────────────────────────────────────── */
+
+/* Form inputs — match the student edit form */
+#medLogStudent,
+#medLogMedication,
+#medLogStaff,
+#medLogDateTime {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    background: #f7fafc;
+    font-family: 'Archivo', sans-serif;
+    font-size: 15px;
+    color: #111;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+#medLogStudent:focus,
+#medLogMedication:focus,
+#medLogStaff:focus,
+#medLogDateTime:focus,
+#medLogNotes:focus {
+    border-color: #146ff8;
+    background: #fff;
+}
+
+#medLogNotes {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    background: #f7fafc;
+    font-family: 'Archivo', sans-serif;
+    font-size: 15px;
+    color: #111;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Panel body spacing */
+.med-log-panel-body {
+    padding-top: 6px;
+}
+
+/* Search wrapper above the log */
+.med-log-search-wrap {
+    margin-bottom: 20px;
+}
+
+/* Search bar — same as #studentSearch */
+#medLogSearch {
+    width: 100%;
+    max-width: 420px;
+    padding: 14px 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    background: #f7fafc;
+    font-family: 'Archivo', sans-serif;
+    font-size: 15px;
+    color: #111;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#medLogSearch:focus {
+    border-color: #146ff8;
+    background: #fff;
+}
+
+/* Save button — matches #saveStudentEditBtn */
+#saveMedLogBtn {
+    margin-top: 18px;
+    background: #146ff8;
+    color: white;
+    border: none;
+    padding: 16px 28px;
+    border-radius: 18px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.25s;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+}
+
+#saveMedLogBtn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+}
+
+/* Log list — grid like #studentList */
+#medicationLogList {
+    display: grid;
+    gap: 14px;
+}
+
+/* Individual log entry — slightly richer than a plain student-row */
+#medicationLogList .student-row {
+    background: white;
+    border: 1px solid #f0f0f0;
+    border-radius: 18px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.2s;
+}
+
+#medicationLogList .student-row:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Timestamp + delete aligned right */
+#medicationLogList .student-actions {
+    flex-shrink: 0;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+/* Medication name — slightly accented */
+#medicationLogList .student-info:first-of-type {
+    color: #146ff8;
+    font-weight: 700;
+}
+
+/* "Given by" line */
+#medicationLogList .student-info strong {
+    color: #111;
+}
+
+@media (max-width: 700px) {
+    #medLogSearch {
+        max-width: 100%;
+    }
+}
