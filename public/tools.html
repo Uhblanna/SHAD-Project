@@ -438,14 +438,15 @@ function escH(s) {
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Load staff names for the dropdown
+// Load staff names first, then render todos so dropdowns are populated
 function loadStaff() {
     fetch('/api/staff')
         .then(function(r) { return r.json(); })
         .then(function(staff) {
             staffNames = staff.map(function(s) { return s.name; });
+            loadTodos();
         })
-        .catch(function() {});
+        .catch(function() { loadTodos(); }); // still show tasks even if staff fetch fails
 }
 
 function buildStaffOptions(selectedName) {
@@ -466,7 +467,8 @@ function updateProgress(todos) {
 }
 
 function loadTodos() {
-    fetch('/api/todos')
+    var today = new Date().toISOString().slice(0, 10);
+    fetch('/api/todos?date=' + today)
         .then(function(r) { return r.json(); })
         .then(function(todos) {
             updateProgress(todos);
@@ -608,7 +610,6 @@ function loadHistory() {
 }
 
 loadStaff();
-loadTodos();
 </script>
 
 </body>

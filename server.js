@@ -1000,18 +1000,28 @@ app.delete("/api/medkits/:id", (req, res) => {
 
 // Isabelle McLean — Daily to-do list routes: GET all tasks, POST a new task, PATCH to check off with staff name, DELETE one or all
 app.get("/api/todos", (req, res) => {
-    db.all("SELECT * FROM daily_todos ORDER BY created_at ASC", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
+    // Optional ?date=YYYY-MM-DD filter; omitting returns all tasks (used by staff history)
+    const date = (req.query.date || "").trim();
+    if (date) {
+        db.all("SELECT * FROM daily_todos WHERE date = ? ORDER BY created_at ASC", [date], (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(rows);
+        });
+    } else {
+        db.all("SELECT * FROM daily_todos ORDER BY created_at ASC", [], (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(rows);
+        });
+    }
 });
 
 app.post("/api/todos", (req, res) => {
     const task = (req.body.task || "").trim();
     if (!task) return res.status(400).json({ error: "Task text is required." });
-    db.run("INSERT INTO daily_todos (task) VALUES (?)", [task], function(err) {
+    const today = new Date().toISOString().slice(0, 10);
+    db.run("INSERT INTO daily_todos (task, date) VALUES (?, ?)", [task, today], function(err) {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, task, completed: 0, completed_by: "" });
+        res.json({ id: this.lastID, task, date: today, completed: 0, completed_by: "" });
     });
 });
 
@@ -1063,7 +1073,8 @@ app.delete("/api/task-history/all", (req, res) => {
 });
 
 app.delete("/api/todos/all", (req, res) => {
-    db.run("DELETE FROM daily_todos", [], function(err) {
+    const today = new Date().toISOString().slice(0, 10);
+    db.run("DELETE FROM daily_todos WHERE date = ?", [today], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ cleared: this.changes });
     });

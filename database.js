@@ -186,6 +186,10 @@ db.serialize(() => {
     `);
     // Migrate existing databases that pre-date the completed_at column
     db.run(`ALTER TABLE daily_todos ADD COLUMN completed_at TEXT NOT NULL DEFAULT ''`, function() {});
+    // Migrate existing databases that pre-date the date column; backfill with today so old tasks don't disappear
+    db.run(`ALTER TABLE daily_todos ADD COLUMN date TEXT NOT NULL DEFAULT ''`, function() {
+        db.run(`UPDATE daily_todos SET date = date('now') WHERE date = ''`);
+    });
 
     // Isabelle McLean — Permanent task history log: written on completion, row removed on undo; never cleared with the daily list
     db.run(`

@@ -268,7 +268,8 @@ function escH(s) {
 }
 
 function loadAdminTodos() {
-    fetch('/api/todos')
+    var today = new Date().toISOString().slice(0, 10);
+    fetch('/api/todos?date=' + today)
         .then(function(r) { return r.json(); })
         .then(function(todos) {
             var container = document.getElementById('adminTodoList');
@@ -321,9 +322,9 @@ function deleteTodoItem(id, btn) {
         .catch(function() { btn.disabled = false; });
 }
 
-// Isabelle — Wipes the entire daily to-do list; permanent history in task_history is unaffected
+// Isabelle — Wipes today's to-do list only; tasks from other days and task_history are unaffected
 function clearAllTodos() {
-    if (!confirm('Clear the entire to-do list? This cannot be undone.')) return;
+    if (!confirm("Clear today's entire to-do list? This cannot be undone.")) return;
     fetch('/api/todos/all', { method: 'DELETE' })
         .then(function() { loadAdminTodos(); })
         .catch(function() { alert('Failed to clear list.'); });
