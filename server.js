@@ -1,10 +1,19 @@
 const express = require("express");
+const nodemailer = require("nodemailer");
 const path = require("path");
 const cors = require("cors");
 const session = require("express-session");
 const db = require("./database");
 
 const app = express();
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+
+    auth: {
+        user: "stephanie.powers@reddeer.shad.ca",
+        pass: "YOUR_GMAIL_APP_PASSWORD"
+    }
+});
 const PORT = process.env.PORT || 3000;
 
 // ── Change this to your actual staff password ──────────────────────────────
@@ -238,6 +247,59 @@ app.post("/api/students/replace", (req, res) => {
             if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
             db.run("COMMIT", err2 => {
                 if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ inserted: students.length });
+            });
+        });
+    });
+});
+
+app.post("/api/students/add", (req, res) => {
+    const students = Array.isArray(req.body.students) ? req.body.students : [];
+
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+
+        const stmt = db.prepare(`
+            INSERT INTO students (
+                name,
+                pronouns,
+                group_name,
+                age,
+                instrument,
+                medication,
+                medication_taken,
+                dietary,
+                note
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        students.forEach(s => {
+            stmt.run([
+                s.name,
+                s.pronouns || "",
+                s.group || "Group 1",
+                s.age || null,
+                s.instrument || "",
+                s.medication || "None",
+                s.medicationTaken ? 1 : 0,
+                s.dietary || "None",
+                s.note || ""
+            ]);
+        });
+
+        stmt.finalize(err => {
+            if (err) {
+                return db.run("ROLLBACK", () =>
+                    res.status(500).json({ error: err.message })
+                );
+            }
+
+            db.run("COMMIT", err2 => {
+                if (err2) {
+                    return res.status(500).json({ error: err2.message });
+                }
+
                 res.json({ inserted: students.length });
             });
         });
@@ -554,16 +616,81 @@ app.get("/api/swap-requests", (req, res) => {
 });
 
 app.post("/api/swap-requests", (req, res) => {
+
     const r = req.body;
+
     db.run(`
-        INSERT INTO swap_requests (requester_name, requester_role, shift_date, shift_time, reason, status)
-        VALUES (?, ?, ?, ?, ?, 'Pending')
-    `, [r.requesterName, r.requesterRole || "", r.shiftDate, r.shiftTime, r.reason || ""], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        db.get("SELECT * FROM swap_requests WHERE id = ?", [this.lastID], (err2, row) => {
-            if (err2) return res.status(500).json({ error: err2.message });
-            res.json(row);
+        INSERT INTO swap_requests (
+            requester_name,
+            requester_role,
+            swap_with,
+            shift_date,
+            shift_time,
+            reason,
+            status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, 'Pending')
+    `,
+    [
+        r.requesterName,
+        r.requesterRole || "",
+        r.swapWith || "",
+        r.shiftDate,
+        r.shiftTime,
+        r.reason || ""
+    ],
+    function(err) {
+
+        if (err) {
+            return res.status(500).json({
+                error: err.message
+            });
+        }
+
+        transporter.sendMail({
+            from: "stephanie.powers@reddeer.shad.ca",
+
+            to: "stephanie.powers@reddeer.shad.ca",
+
+            subject: "New Shift Swap Request",
+
+            text:
+`New shift swap request submitted.
+
+Requester:
+${r.requesterName}
+
+Swap With:
+${r.swapWith || "Not specified"}
+
+Role:
+${r.requesterRole || "N/A"}
+
+Date:
+${r.shiftDate}
+
+Shift:
+${r.shiftTime}
+
+Reason:
+${r.reason || "No reason provided"}
+`
         });
+
+        db.get(
+            "SELECT * FROM swap_requests WHERE id = ?",
+            [this.lastID],
+            (err2, row) => {
+
+                if (err2) {
+                    return res.status(500).json({
+                        error: err2.message
+                    });
+                }
+
+                res.json(row);
+            }
+        );
     });
 });
 
@@ -1071,6 +1198,233 @@ app.delete("/api/todos/all", (req, res) => {
 
 app.delete("/api/todos/:id", (req, res) => {
     db.run("DELETE FROM daily_todos WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+
+// ── ATTENDANCE SESSIONS (Morning / Evening) ─────────────────────────────────
+
+// GET all sessions, or filter by ?date=YYYY-MM-DD and/or ?type=morning|evening
+app.get("/api/attendance-sessions", (req, res) => {
+    let sql = "SELECT * FROM attendance_sessions";
+    const params = [];
+    const filters = [];
+    if (req.query.date) { filters.push("session_date = ?"); params.push(req.query.date); }
+    if (req.query.type) { filters.push("session_type = ?"); params.push(req.query.type); }
+    if (filters.length) sql += " WHERE " + filters.join(" AND ");
+    sql += " ORDER BY session_date DESC, submitted_at DESC";
+    db.all(sql, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(r => ({ ...r, students_json: JSON.parse(r.students_json || "{}") })));
+    });
+});
+
+// POST — save or overwrite a session snapshot (upsert by date + type)
+app.post("/api/attendance-sessions", (req, res) => {
+    const { session_date, session_type, students_json } = req.body;
+    if (!session_date || !session_type) return res.status(400).json({ error: "session_date and session_type required" });
+    const json = JSON.stringify(students_json || {});
+    const checkedIn = Object.values(students_json || {}).filter(v => v && v.checkedIn).length;
+    const total = Object.keys(students_json || {}).length;
+    db.run(`
+        INSERT INTO attendance_sessions (session_date, session_type, checked_in_count, total_count, students_json, submitted_at)
+        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(session_date, session_type) DO UPDATE SET
+            checked_in_count = excluded.checked_in_count,
+            total_count = excluded.total_count,
+            students_json = excluded.students_json,
+            submitted_at = excluded.submitted_at
+    `, [session_date, session_type, checkedIn, total, json], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get("SELECT * FROM attendance_sessions WHERE session_date = ? AND session_type = ?", [session_date, session_type], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ ...row, students_json: JSON.parse(row.students_json || "{}") });
+        });
+    });
+});
+
+// ── ACTIVITY ROLL CALL ────────────────────────────────────────────────────────
+
+// GET today's roll call sessions (or all if ?all=1, or by ?date=)
+app.get("/api/activity-rollcall", (req, res) => {
+    let sql, params = [];
+    if (req.query.all === "1") {
+        sql = "SELECT * FROM activity_rollcall ORDER BY checkin_date DESC, checkin_number ASC";
+    } else {
+        const date = req.query.date || todayKey();
+        sql = "SELECT * FROM activity_rollcall WHERE checkin_date = ? ORDER BY checkin_number ASC";
+        params.push(date);
+    }
+    db.all(sql, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(r => ({ ...r, students_json: JSON.parse(r.students_json || "{}") })));
+    });
+});
+
+// POST — start a new roll call for today (assigns next available checkin_number 1-6)
+app.post("/api/activity-rollcall/start", (req, res) => {
+    const date = todayKey();
+    const label = req.body.label || "";
+    db.get("SELECT MAX(checkin_number) AS maxNum FROM activity_rollcall WHERE checkin_date = ?", [date], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const nextNum = (row && row.maxNum ? row.maxNum : 0) + 1;
+        if (nextNum > 6) return res.status(409).json({ error: "Maximum of 6 roll calls per day reached." });
+        db.run(
+            "INSERT INTO activity_rollcall (checkin_date, checkin_number, checkin_label, students_json) VALUES (?, ?, ?, '{}')",
+            [date, nextNum, label],
+            function(err2) {
+                if (err2) return res.status(500).json({ error: err2.message });
+                db.get("SELECT * FROM activity_rollcall WHERE id = ?", [this.lastID], (err3, r) => {
+                    if (err3) return res.status(500).json({ error: err3.message });
+                    res.json({ ...r, students_json: {} });
+                });
+            }
+        );
+    });
+});
+
+// PUT — update students_json for a roll call (live check-ins) and optionally submit
+app.put("/api/activity-rollcall/:id", (req, res) => {
+    const { students_json, submitted } = req.body;
+    const json = JSON.stringify(students_json || {});
+    const submittedAt = submitted ? new Date().toISOString() : null;
+    db.run(
+        "UPDATE activity_rollcall SET students_json = ?, submitted_at = COALESCE(?, submitted_at) WHERE id = ?",
+        [json, submittedAt, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            db.get("SELECT * FROM activity_rollcall WHERE id = ?", [req.params.id], (err2, r) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ ...r, students_json: JSON.parse(r.students_json || "{}") });
+            });
+        }
+    );
+});
+
+// DELETE a roll call session
+app.delete("/api/activity-rollcall/:id", (req, res) => {
+    db.run("DELETE FROM activity_rollcall WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+// ── Midnight auto-clear for approved swap requests ─────────────────────────
+// Deletes swap_requests with status = 'Approved' once per day at midnight.
+// Also exposed as a POST endpoint so the admin page can trigger it manually.
+function scheduleApprovedSwapsClear() {
+    const now = new Date();
+    const msUntilMidnight =
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0) - now;
+    setTimeout(() => {
+        db.run("DELETE FROM swap_requests WHERE status = 'Approved'", [], function(err) {
+            if (err) console.error("Auto-clear approved swaps error:", err.message);
+            else console.log(`[midnight] Cleared ${this.changes} approved swap request(s).`);
+        });
+        scheduleApprovedSwapsClear(); // re-schedule for next midnight
+    }, msUntilMidnight);
+}
+scheduleApprovedSwapsClear();
+
+// Manual trigger endpoint (called from admin page)
+app.post("/api/swap-requests/clear-approved", (req, res) => {
+    db.run("DELETE FROM swap_requests WHERE status = 'Approved'", [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ cleared: this.changes });
+    });
+});
+
+// ── SHAD 2026 PROGRAM SCHEDULE ────────────────────────────────────────────────
+// GET — all weeks ordered by week_num
+app.get("/api/shad-schedule", (req, res) => {
+    db.all("SELECT * FROM shad_schedule ORDER BY week_num ASC, week_label ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// POST — upsert a week (insert or replace by week_label)
+app.post("/api/shad-schedule", (req, res) => {
+    const { week_label, week_num, schedule_data } = req.body;
+    if (!week_label || !schedule_data) {
+        return res.status(400).json({ error: "week_label and schedule_data are required." });
+    }
+    const num = typeof week_num === "number" ? week_num : parseInt(week_num, 10) || 0;
+    db.run(
+        `INSERT INTO shad_schedule (week_label, week_num, schedule_data)
+         VALUES (?, ?, ?)
+         ON CONFLICT(week_label) DO UPDATE SET
+             week_num = excluded.week_num,
+             schedule_data = excluded.schedule_data,
+             uploaded_at = CURRENT_TIMESTAMP`,
+        [week_label.trim(), num, schedule_data],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            db.get("SELECT * FROM shad_schedule WHERE week_label = ?", [week_label.trim()], (err2, row) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json(row);
+            });
+        }
+    );
+});
+
+// DELETE — remove one week
+app.delete("/api/shad-schedule/:id", (req, res) => {
+    db.run("DELETE FROM shad_schedule WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+// DELETE — clear all weeks
+app.delete("/api/shad-schedule/all", (req, res) => {
+    db.run("DELETE FROM shad_schedule", [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ cleared: this.changes });
+    });
+});
+
+// ── MEDICATION LOGS ───────────────────────────────────────────────────────────
+// GET all logs, optionally filtered by student name substring (?student=)
+app.get("/api/medication-logs", (req, res) => {
+    const { student } = req.query;
+    let sql = "SELECT * FROM medication_logs";
+    const params = [];
+    if (student) {
+        sql += " WHERE student_name LIKE ?";
+        params.push("%" + student + "%");
+    }
+    sql += " ORDER BY administered_at DESC, id DESC";
+    db.all(sql, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// POST — add a new medication administration log entry
+app.post("/api/medication-logs", (req, res) => {
+    const { student_name, medication, administered_by, administered_at, notes } = req.body;
+    if (!student_name || !medication || !administered_by || !administered_at) {
+        return res.status(400).json({ error: "student_name, medication, administered_by, and administered_at are required." });
+    }
+    db.run(
+        "INSERT INTO medication_logs (student_name, medication, administered_by, administered_at, notes) VALUES (?, ?, ?, ?, ?)",
+        [student_name.trim(), medication.trim(), administered_by.trim(), administered_at, (notes || "").trim()],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            db.get("SELECT * FROM medication_logs WHERE id = ?", [this.lastID], (err2, row) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json(row);
+            });
+        }
+    );
+});
+
+// DELETE — remove a single medication log entry by id
+app.delete("/api/medication-logs/:id", (req, res) => {
+    db.run("DELETE FROM medication_logs WHERE id = ?", [req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ deleted: this.changes });
     });
