@@ -109,13 +109,21 @@ db.serialize(() => {
     db.run(`
         CREATE TABLE IF NOT EXISTS swap_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
             requester_name TEXT NOT NULL,
             requester_role TEXT DEFAULT '',
+
+            swap_with TEXT DEFAULT '',
+
             shift_date TEXT NOT NULL,
             shift_time TEXT NOT NULL,
+
             reason TEXT DEFAULT '',
+
             status TEXT DEFAULT 'Pending',
+
             resolved_by TEXT DEFAULT '',
+
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     `);
@@ -218,6 +226,63 @@ db.serialize(() => {
             assigned_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    // ── Attendance sessions: morning + evening check-ins stored separately per session type + date
+    // Each row = one full session snapshot; students are stored as JSON in the `students_json` column
+    db.run(`
+        CREATE TABLE IF NOT EXISTS attendance_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_date TEXT NOT NULL,
+            session_type TEXT NOT NULL,
+            checked_in_count INTEGER DEFAULT 0,
+            total_count INTEGER DEFAULT 0,
+            students_json TEXT DEFAULT '{}',
+            submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(session_date, session_type)
+        )
+    `);
+
+    // ── Activity roll call: up to 6 check-ins per day, reset at midnight but historical rows kept
+    // checkin_number = 1–6 for that day; students_json = map of studentId → {checkedIn, time}
+    db.run(`
+        CREATE TABLE IF NOT EXISTS activity_rollcall (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            checkin_date TEXT NOT NULL,
+            checkin_number INTEGER NOT NULL,
+            checkin_label TEXT DEFAULT '',
+            started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            submitted_at TEXT,
+            students_json TEXT DEFAULT '{}',
+            UNIQUE(checkin_date, checkin_number)
+        )
+    `);
+
+    // ── SHAD 2026 Program Schedule: each row = one uploaded week, stored as a JSON blob
+    // schedule_data holds { headers, dates, timeSlots } parsed from the timetable-grid CSV
+    db.run(`
+        CREATE TABLE IF NOT EXISTS shad_schedule (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            week_label TEXT NOT NULL UNIQUE,
+            week_num   INTEGER DEFAULT 0,
+            schedule_data TEXT NOT NULL,
+            uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // ── Medication administration log: records every time a student takes a medication,
+    // who administered it, and when. Replaces the old binary medication_taken flag.
+    db.run(`
+        CREATE TABLE IF NOT EXISTS medication_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_name TEXT NOT NULL,
+            medication TEXT NOT NULL,
+            administered_by TEXT NOT NULL,
+            administered_at TEXT NOT NULL,
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
 });
 
 module.exports = db;
