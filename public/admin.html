@@ -94,7 +94,10 @@
                 <div id="staffBreakdown" style="display:flex; flex-direction:column; gap:10px; margin-top:14px; margin-bottom:16px;">
                     <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
                 </div>
-                <button class="danger-btn" onclick="clearTaskHistory()">Clear Completion History</button>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button onclick="exportTaskCompletion()" style="padding:10px 20px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer;">Export CSV</button>
+                    <button class="danger-btn" onclick="clearTaskHistory()">Clear Completion History</button>
+                </div>
             </div>
         </div>
 
@@ -384,6 +387,56 @@ function clearTaskHistory() {
         .then(function(r) { return r.json(); })
         .then(function() { loadStaffBreakdown(); })
         .catch(function() { alert('Failed to clear history. Please try again.'); });
+}
+
+// Isabelle — Exports the full task completion history as a CSV; summary totals at top, full task log below
+function exportTaskCompletion() {
+    fetch('/api/task-history')
+        .then(function(r) { return r.json(); })
+        .then(function(rows) {
+            if (rows.length === 0) { alert('No completion history to export.'); return; }
+
+            // Tally per staff member
+            var counts = {};
+            rows.forEach(function(t) {
+                counts[t.completed_by] = (counts[t.completed_by] || 0) + 1;
+            });
+            var sorted = Object.keys(counts).sort(function(a, b) { return counts[b] - counts[a]; });
+
+            var csv = [];
+
+            // Section 1 — summary totals
+            csv.push('STAFF TASK COMPLETION SUMMARY');
+            csv.push('Exported,' + new Date().toLocaleString('en-CA'));
+            csv.push('');
+            csv.push('Staff Member,Tasks Completed');
+            sorted.forEach(function(name) {
+                csv.push('"' + name.replace(/"/g, '""') + '",' + counts[name]);
+            });
+            csv.push('TOTAL,' + rows.length);
+
+            // Section 2 — full task log
+            csv.push('');
+            csv.push('FULL TASK LOG');
+            csv.push('Staff Member,Task,Completed At');
+            rows.forEach(function(t) {
+                var date = t.completed_at ? new Date(t.completed_at).toLocaleString('en-CA') : '';
+                csv.push(
+                    '"' + (t.completed_by || '').replace(/"/g, '""') + '",' +
+                    '"' + (t.task || '').replace(/"/g, '""') + '",' +
+                    '"' + date + '"'
+                );
+            });
+
+            var blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'staff-task-completion-' + new Date().toISOString().slice(0, 10) + '.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        })
+        .catch(function() { alert('Failed to export. Please try again.'); });
 }
 
 loadAdminTodos();
