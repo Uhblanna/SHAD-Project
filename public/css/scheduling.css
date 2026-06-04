@@ -430,3 +430,23 @@ nav a:hover { color:#146ff8; }
     background:lightcoral !important;
     color:#111;
 }
+
+.s-item-meta strong {
+    font-weight: 700;
+}
+
+.s-item-meta strong:contains("Approved") {
+    color: #1db954;
+}
+
+.s-item-meta strong:contains("Denied") {
+    color: #ff4d4d;
+}
+
+.s-item-meta strong:contains("Pending") {
+    color: #ffb347;
+}
+/* Swap status colour classes (JS-applied) */
+.status-approved { color: #1db954; }
+.status-denied   { color: #e74c3c; }
+.status-pending  { color: #f39c12; }
