@@ -316,6 +316,7 @@ function addTodoItem() {
 }
 
 function deleteTodoItem(id, btn) {
+    if (!confirm('Delete this task? This will also remove it from the completion log.')) return;
     btn.disabled = true;
     fetch('/api/todos/' + id, { method: 'DELETE' })
         .then(function() { loadAdminTodos(); })

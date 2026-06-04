@@ -1081,8 +1081,11 @@ app.delete("/api/todos/all", (req, res) => {
 });
 
 app.delete("/api/todos/:id", (req, res) => {
-    db.run("DELETE FROM daily_todos WHERE id = ?", [req.params.id], function(err) {
+    const id = req.params.id;
+    db.run("DELETE FROM daily_todos WHERE id = ?", [id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
+        // Also remove any completion history so deleted tasks don't linger in the log
+        db.run("DELETE FROM task_history WHERE todo_id = ?", [id]);
         res.json({ deleted: this.changes });
     });
 });
