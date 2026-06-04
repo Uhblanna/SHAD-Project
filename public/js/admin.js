@@ -20,8 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("clearStaffBtn").addEventListener("click", clearStaff);
     document.getElementById("exportStudentsBtn").addEventListener("click", exportStudentsCSV);
     document.getElementById("saveEnrollmentWindowBtn").addEventListener("click", saveEnrollmentWindow);
+    document.getElementById("uploadShadScheduleBtn").addEventListener("click", uploadShadScheduleCSV);
+    document.getElementById("clearShadScheduleBtn").addEventListener("click", clearShadSchedule);
 
     loadEnrollmentWindow();
+    loadSwapRequestsAdmin();
     setupPanelToggles();
 });
 
@@ -142,8 +145,13 @@ function uploadStudentsReplace() {
     readCSV(file).then(rows => {
         if (!confirm("Replacing students will also reset all committee selections, assignments, and morning rec signups. Continue?")) return;
         const formattedRows = formatShadStudentRows(rows);
-        const count = ShadDB.clearAndImportStudents(formattedRows);
-        alert(count + " student(s) uploaded. Previous students and all related data have been cleared.");
+        apiRequest("POST", "/api/students/replace", {
+            students: formattedRows
+        })
+        .then(() => {
+            alert(formattedRows.length + " student(s) uploaded. Previous students and all related data have been cleared.");
+            input.value = "";
+        });
         input.value = "";
     });
 }
@@ -159,9 +167,13 @@ function uploadStudentsAdd() {
 
     readCSV(file).then(rows => {
         const formattedRows = formatShadStudentRows(rows);
-        const count = ShadDB.importStudentsFromCSV(formattedRows);
-        alert(count + " student(s) added.");
-        input.value = "";
+        apiRequest("POST", "/api/students/add", {
+            students: formattedRows
+        })
+        .then(() => {
+            alert(formattedRows.length + " student(s) added.");
+            input.value = "";
+        });
     });
 }
 
@@ -585,4 +597,194 @@ function formatShadStudentRows(rows) {
             Note: row["Notes for PD to be aware of"] || ""
         };
     }).filter(student => student.Name);
+}
+
+// ── Shift Swap Requests — Admin approval ──────────────────────────────────
+function loadSwapRequestsAdmin() {
+    fetch("/api/swap-requests")
+        .then(r => r.json())
+        .then(swaps => {
+            renderSwapAdminList(swaps);
+        })
+        .catch(() => {
+            const list = document.getElementById("swapAdminList");
+            if (list) list.innerHTML = "<p style='color:#e74c3c;'>Failed to load swap requests.</p>";
+        });
+}
+
+function renderSwapAdminList(swaps) {
+    const list = document.getElementById("swapAdminList");
+    const badge = document.getElementById("swapAdminBadge");
+    if (!list) return;
+
+    const pending = swaps.filter(r => r.status === "Pending");
+
+    if (badge) {
+        badge.textContent = pending.length;
+        badge.style.display = pending.length > 0 ? "inline" : "none";
+    }
+
+    if (swaps.length === 0) {
+        list.innerHTML = "<p style='color:#aaa; font-size:13px; font-weight:600;'>No swap requests.</p>";
+        return;
+    }
+
+    list.innerHTML = "";
+    swaps.forEach(r => {
+        const card = document.createElement("div");
+        card.style.cssText = "background:#f8f9fa; border:2px solid #e5e5e5; border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:6px;";
+
+        const statusColor = r.status === "Approved" ? "#27ae60" : r.status === "Denied" ? "#e74c3c" : "#f39c12";
+
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <span style="font-size:15px; font-weight:800; color:#111;">${r.requester_name}</span>
+                <span style="font-size:12px; font-weight:700; color:${statusColor}; background:${statusColor}18; padding:3px 10px; border-radius:20px;">${r.status}</span>
+            </div>
+            <div style="font-size:13px; color:#555; font-weight:600;">
+                ${r.requester_role ? r.requester_role + " &middot; " : ""}${r.shift_date} &middot; ${r.shift_time}
+            </div>
+            <div style="font-size:13px; color:#555;">
+                Swapping with: <strong>${r.swap_with || "Not specified"}</strong>
+            </div>
+            ${r.reason ? `<div style="font-size:13px; color:#777; font-style:italic;">"${r.reason}"</div>` : ""}
+            ${r.status === "Pending" ? `
+            <div style="display:flex; gap:8px; margin-top:6px;">
+                <button onclick="adminResolveSwap(${r.id},'Approved')" style="padding:7px 16px; background:#27ae60; color:#fff; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">✓ Approve</button>
+                <button onclick="adminResolveSwap(${r.id},'Denied')" style="padding:7px 16px; background:#e74c3c; color:#fff; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">✕ Deny</button>
+                <button onclick="adminDeleteSwap(${r.id})" style="padding:7px 16px; background:#f0f0f0; color:#555; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">🗑 Delete</button>
+            </div>` : `
+            <div style="display:flex; gap:8px; margin-top:6px;">
+                <button onclick="adminDeleteSwap(${r.id})" style="padding:7px 16px; background:#f0f0f0; color:#555; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer;">🗑 Delete</button>
+            </div>`}
+        `;
+        list.appendChild(card);
+    });
+}
+
+function adminResolveSwap(id, status) {
+    fetch("/api/swap-requests/" + id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: status, resolvedBy: "Admin" })
+    })
+    .then(r => r.json())
+    .then(() => loadSwapRequestsAdmin())
+    .catch(() => alert("Failed to update swap request."));
+}
+
+function adminDeleteSwap(id) {
+    if (!confirm("Delete this swap request?")) return;
+    fetch("/api/swap-requests/" + id, { method: "DELETE" })
+        .then(() => loadSwapRequestsAdmin())
+        .catch(() => alert("Failed to delete swap request."));
+}
+
+// ── SHAD 2026 PROGRAM SCHEDULE ────────────────────────────────────────────────
+
+function uploadShadScheduleCSV() {
+    const labelInput = document.getElementById("shadScheduleWeekLabel");
+    const fileInput  = document.getElementById("shadScheduleCsvInput");
+    const weekLabel  = (labelInput.value || "").trim();
+    const file       = fileInput.files[0];
+
+    if (!weekLabel) { alert("Please enter a week label (e.g. Week 0)."); return; }
+    if (!file)      { alert("Please choose a CSV file."); return; }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        const parsed = parseShadScheduleCSV(e.target.result);
+        if (!parsed) { alert("Could not parse the CSV. Check that it matches the timetable grid format."); return; }
+
+        // Extract week number from label ("Week 0" → 0, "Week 1" → 1, etc.)
+        const numMatch = weekLabel.match(/\d+/);
+        const weekNum  = numMatch ? parseInt(numMatch[0], 10) : 0;
+
+        fetch("/api/shad-schedule", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                week_label:    weekLabel,
+                week_num:      weekNum,
+                schedule_data: JSON.stringify(parsed)
+            })
+        }).then(r => r.json()).then(data => {
+            if (data.error) { alert("Upload failed: " + data.error); return; }
+            alert(weekLabel + " uploaded successfully (" + parsed.timeSlots.length + " time slots).");
+            labelInput.value = "";
+            fileInput.value  = "";
+        }).catch(() => alert("Upload failed. Is the server running?"));
+    };
+    reader.readAsText(file);
+}
+
+function parseShadScheduleCSV(text) {
+    // Parse a single CSV field, respecting quoted values
+    function parseRow(line) {
+        const fields = [];
+        let cur = "", inQ = false;
+        for (const ch of line) {
+            if (ch === '"') { inQ = !inQ; }
+            else if (ch === "," && !inQ) { fields.push(cur.trim()); cur = ""; }
+            else { cur += ch; }
+        }
+        fields.push(cur.trim());
+        return fields;
+    }
+
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) return null;
+
+    // Row 0: ,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday
+    const headers = parseRow(lines[0]).slice(1).map(h => h.trim());
+    // Ensure exactly 7 day columns
+    while (headers.length < 7) headers.push("");
+
+    // Parse remaining rows into time slots
+    const timeSlots = [];
+    let currentSlot = null;
+
+    for (let i = 1; i < lines.length; i++) {
+        const row  = parseRow(lines[i]);
+        const time = (row[0] || "").trim();
+        const cells = row.slice(1).map(c => c.trim());
+        while (cells.length < 7) cells.push("");
+        const dayCells = cells.slice(0, 7);
+
+        if (time) {
+            currentSlot = { time, rows: [dayCells] };
+            timeSlots.push(currentSlot);
+        } else if (currentSlot) {
+            currentSlot.rows.push(dayCells);
+        }
+    }
+
+    // Detect date values (e.g. "Jun-30", "Jul-4") and extract them for column headers
+    const isDateVal = v => /^[A-Za-z]{3}-\d{1,2}$/.test(v);
+    const dates = Array(7).fill("");
+    for (const slot of timeSlots.slice(0, 4)) {
+        for (const row of slot.rows) {
+            row.forEach((val, i) => { if (isDateVal(val)) dates[i] = val; });
+        }
+    }
+
+    // Strip date-only sub-rows from time slots so they don't show as activities
+    for (const slot of timeSlots) {
+        slot.rows = slot.rows.filter(row => row.some(v => v && !isDateVal(v)));
+    }
+
+    // Drop time slots where every day is now empty
+    const filtered = timeSlots.filter(slot =>
+        slot.rows.some(row => row.some(v => v !== ""))
+    );
+
+    return { headers, dates, timeSlots: filtered };
+}
+
+function clearShadSchedule() {
+    if (!confirm("Clear ALL SHAD Schedule data? This cannot be undone.")) return;
+    fetch("/api/shad-schedule/all", { method: "DELETE" })
+        .then(r => r.json())
+        .then(d => alert("Cleared " + (d.cleared || 0) + " week(s)."))
+        .catch(() => alert("Failed to clear schedule."));
 }
