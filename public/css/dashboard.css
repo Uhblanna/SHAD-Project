@@ -195,3 +195,142 @@ nav a:hover{
     }
 
 }
+
+/* ── ATTENDANCE TRENDS CARD ─────────────────────────────────────────────── */
+.trends-card{
+    background:white;
+    border-radius:28px;
+    padding:36px 40px;
+    box-shadow:0 18px 35px rgba(0,0,0,.05);
+    margin-top:24px;
+}
+
+.trends-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+    margin-bottom:6px;
+}
+
+.trends-head h3{
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-0.5px;
+}
+
+.trends-sub{
+    font-size:14px;
+    color:#888;
+    font-weight:600;
+    margin-bottom:28px;
+}
+
+.concern-badge{
+    background:#fff3e0;
+    color:#e65100;
+    font-size:13px;
+    font-weight:800;
+    padding:6px 16px;
+    border-radius:20px;
+    white-space:nowrap;
+    flex-shrink:0;
+}
+
+/* Chart container */
+.chart-wrap{
+    position:relative;
+    width:100%;
+    margin-bottom:32px;
+}
+
+/* Session breakdown grid */
+.grid-section-label{
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:#aaa;
+    margin-bottom:14px;
+}
+
+.grid-scroll{
+    overflow-x:auto;
+    border-radius:14px;
+    border:1px solid #f0f0f0;
+}
+
+.att-grid{
+    border-collapse:collapse;
+    width:100%;
+    min-width:420px;
+    font-family:'Archivo',sans-serif;
+    font-size:13px;
+}
+
+.att-grid thead th{
+    padding:10px 12px;
+    font-weight:800;
+    font-size:11px;
+    color:#888;
+    background:#fafafa;
+    border-bottom:2px solid #f0f0f0;
+    white-space:nowrap;
+    text-align:center;
+}
+
+.att-grid thead th:first-child{ text-align:left; }
+
+.att-grid tbody tr:last-child td{ border-bottom:none; }
+
+.att-grid tbody td{
+    padding:10px 12px;
+    border-bottom:1px solid #f7f7f7;
+    text-align:center;
+    vertical-align:middle;
+}
+
+.att-name-cell{
+    text-align:left !important;
+    font-weight:700;
+    white-space:nowrap;
+    color:#111;
+}
+
+.att-name-cell small{
+    display:block;
+    font-size:11px;
+    color:#aaa;
+    font-weight:600;
+}
+
+.att-dot{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    font-size:11px;
+    font-weight:800;
+    line-height:1;
+}
+
+.att-dot.present{ background:#dcfce7; color:#16a34a; }
+.att-dot.absent{  background:#fee2e2; color:#dc2626; }
+
+.miss-total{
+    font-weight:800;
+    font-size:14px;
+    color:#e65100;
+}
+
+/* Empty state */
+.trends-ok{
+    text-align:center;
+    padding:48px 24px;
+    color:#888;
+}
+
+.trends-ok p{ font-size:15px; font-weight:600; margin-top:8px; }
+.trends-ok .big-check{ font-size:42px; }
