@@ -41,7 +41,7 @@ function renderShoppingList() {
                 '<span class="custom-box"></span>' +
             '</label>' +
             '<div class="item-info">' +
-                '<h4>' + item.name + (item.priority ? ' ⚡' : '') + '</h4>' +
+                '<h4' + (item.priority ? ' class="priority-item"' : '') + '>' + item.name + (item.priority ? '<span class="priority-label">Priority</span>' : '') + '</h4>' +
                 '<p>' + item.description + '</p>' +
             '</div>' +
             '<small>' + item.store + '</small>';
