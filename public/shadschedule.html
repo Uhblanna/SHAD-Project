@@ -359,50 +359,70 @@ function actChipClass(text) {
 // ── Format date string "Jun-30" → "Jun 30" ────────────────────────────────
 function fmtDate(d) { return (d || '').replace('-', ' '); }
 
-// ── Determine which day columns are active (have dates OR activities) ──────
+// ── Determine which day columns are active (have a date OR at least one activity) ──
 function getActiveDays(data) {
-    const { headers, dates, timeSlots } = data;
-    return headers.map((_, i) => i).filter(i =>
-        dates[i] ||
-        timeSlots.some(slot => slot.rows.some(row => row[i] && row[i].trim()))
-    );
+    var headers   = data.headers   || [];
+    var dates     = data.dates     || [];
+    var timeSlots = data.timeSlots || [];
+    return headers.map(function(_, i) { return i; }).filter(function(i) {
+        if (dates[i]) return true;
+        return timeSlots.some(function(slot) {
+            // Support both new flat format (slot.days) and legacy (slot.rows)
+            if (slot.days)  return (slot.days[i]  || []).length > 0;
+            if (slot.rows)  return slot.rows.some(function(row) { return (row[i] || '').trim(); });
+            return false;
+        });
+    });
+}
+
+// ── Collect activities for day i from a slot (handles both formats) ────────
+function slotActivities(slot, i) {
+    if (slot.days) {
+        // New flat format: slot.days[i] is already a deduplicated array
+        return (slot.days[i] || []).slice();
+    }
+    // Legacy format: slot.rows is an array of 7-element arrays
+    var acts = [];
+    (slot.rows || []).forEach(function(row) {
+        var v = (row[i] || '').trim();
+        if (v) acts.push(v);
+    });
+    return acts;
 }
 
 // ── Render the timetable for one week ─────────────────────────────────────
 function renderTimetable(week) {
     var data;
-    try { data = typeof week.schedule_data === 'string'
-            ? JSON.parse(week.schedule_data) : week.schedule_data; }
-    catch (e) { return '<p style="padding:40px;color:#e74c3c;">Failed to parse schedule data.</p>'; }
-
-    const { headers, dates, timeSlots } = data;
-    const activeDays = getActiveDays(data);
-
-    if (activeDays.length === 0) {
-        return '<div class="schedule-empty"><h3>No Events This Week</h3><p>No activities were found in the uploaded CSV.</p></div>';
+    try {
+        data = typeof week.schedule_data === 'string'
+            ? JSON.parse(week.schedule_data) : week.schedule_data;
+    } catch (e) {
+        return '<p style="padding:40px;color:#e74c3c;">Failed to parse schedule data.</p>';
     }
 
-    // ── Table header ──
+    var headers    = data.headers   || [];
+    var dates      = data.dates     || [];
+    var timeSlots  = data.timeSlots || [];
+    var activeDays = getActiveDays(data);
+
+    if (activeDays.length === 0) {
+        return '<div class="schedule-empty"><h3>No Events This Week</h3>' +
+               '<p>No activities were found in the uploaded CSV.</p></div>';
+    }
+
+    // ── Table header ──────────────────────────────────────────────────────
     var html = '<div class="timetable-scroll"><table class="sched-table"><thead><tr>';
     html += '<th>Time</th>';
     activeDays.forEach(function(i) {
-        var date = fmtDate(dates[i]);
+        var date = fmtDate(dates[i] || '');
         html += '<th><span class="th-day-name">' + esc(headers[i] || '') + '</span>' +
                 (date ? '<span class="th-day-date">' + esc(date) + '</span>' : '') + '</th>';
     });
     html += '</tr></thead><tbody>';
 
-    // ── Table rows ──
+    // ── Table body ────────────────────────────────────────────────────────
     timeSlots.forEach(function(slot) {
-        // Collect activities per day
-        var dayActs = activeDays.map(function(i) {
-            var acts = [];
-            slot.rows.forEach(function(row) {
-                var v = (row[i] || '').trim();
-                if (v) acts.push(v);
-            });
-            return acts;
-        });
+        var dayActs = activeDays.map(function(i) { return slotActivities(slot, i); });
 
         // Skip rows where every active day is empty
         if (dayActs.every(function(a) { return a.length === 0; })) return;
@@ -421,7 +441,7 @@ function renderTimetable(week) {
 
     html += '</tbody></table></div>';
 
-    // ── Legend ──
+    // ── Legend ────────────────────────────────────────────────────────────
     html += '<div class="legend">' +
         '<span class="legend-item"><span class="legend-dot" style="background:#eef4ff;border:2px solid #146ff8;"></span>Activity</span>' +
         '<span class="legend-item"><span class="legend-dot" style="background:#efffef;border:2px solid #00c87a;"></span>Meal</span>' +
