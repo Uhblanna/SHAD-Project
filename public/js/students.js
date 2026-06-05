@@ -71,14 +71,15 @@ function refreshAll() {
 // (e.g. students.html#observations) — lets other pages and the top nav fold
 // straight into a sub-page instead of needing separate standalone pages.
 const SCREEN_HASHES = {
-    hubHome:            'home',
-    studentsScreen:     'students',
-    medicationsScreen:  'medications',
-    attendanceScreen:   'attendance',
-    observationsScreen: 'observations',
-    dietaryScreen:      'dietary',
-    morningRecScreen:   'morning-rec',
-    committeesScreen:   'committees'
+    hubHome:                'home',
+    studentsScreen:         'students',
+    medicationsScreen:      'medications',
+    attendanceScreen:       'attendance',
+    activityRollCallScreen: 'activity-roll-call',
+    observationsScreen:     'observations',
+    dietaryScreen:          'dietary',
+    morningRecScreen:       'morning-rec',
+    committeesScreen:       'committees'
 };
 
 function activateScreen(screenId) {
