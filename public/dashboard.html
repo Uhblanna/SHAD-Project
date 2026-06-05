@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/public/css/shad-base.css">
 <link rel="stylesheet" href="/public/css/dashboard.css">
 <script src="/public/js/db.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 <header class="topbar">
@@ -67,18 +68,35 @@
             <h3>Alerts</h3>
             <div id="db-alerts">Loading...</div>
         </div>
-        <div class="panel">
-            <h3>Medications</h3>
-            <p id="db-meds-text" style="font-size:14px;line-height:1.6;color:#555;">Loading...</p>
-            <a href="/public/students.html#medications" style="display:inline-block;margin-top:12px;color:#146ff8;font-weight:700;font-size:13px;">Go to Medications →</a>
+    </div>
+
+    <!-- Attendance Trends -->
+    <div class="trends-card" id="trendsCard">
+        <div class="trends-head">
+            <div>
+                <h3>Attendance Concerns</h3>
+            </div>
+            <span class="concern-badge" id="concernBadge"></span>
         </div>
+        <p class="trends-sub">Students who have missed more than 2 check-ins across all recorded sessions.</p>
+
+        <!-- Bar chart -->
+        <div class="chart-wrap" id="chartWrap">
+            <canvas id="attendanceChart"></canvas>
+        </div>
+
+        <!-- Session-by-session breakdown -->
+        <p class="grid-section-label" id="gridLabel" style="display:none;">Session Breakdown</p>
+        <div id="trendsGrid"></div>
     </div>
 </section>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     renderDashboard();
+    loadTrends();
     setInterval(renderDashboard, 30000);
+    setInterval(loadTrends, 60000);
     window.addEventListener('storage', renderDashboard);
 });
 
@@ -149,10 +167,6 @@ function renderDashboard() {
         }
     }
 
-    var medsText = document.getElementById('db-meds-text');
-    medsText.textContent = stats.needsMedication === 0
-        ? 'All required medications marked as taken.'
-        : stats.needsMedication + ' student(s) still need their medication.';
 }
 
 function fmtTime(d) {
@@ -161,6 +175,139 @@ function fmtTime(d) {
     return h + ':' + m + ' ' + ampm;
 }
 function esc(s) { return !s ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── ATTENDANCE TRENDS ────────────────────────────────────────────────────────
+var _attChart = null;
+
+function loadTrends() {
+    fetch('/api/attendance-trends')
+        .then(function(r) { return r.json(); })
+        .then(function(data) { renderTrends(data); })
+        .catch(function() {});
+}
+
+function renderTrends(data) {
+    var card      = document.getElementById('trendsCard');
+    var chartWrap = document.getElementById('chartWrap');
+    var gridLabel = document.getElementById('gridLabel');
+    var badge     = document.getElementById('concernBadge');
+    var grid      = document.getElementById('trendsGrid');
+
+    if (!data.atRisk || data.atRisk.length === 0) {
+        badge.textContent   = '0 concerns';
+        chartWrap.style.display = 'none';
+        gridLabel.style.display = 'none';
+        grid.innerHTML =
+            '<div class="trends-ok">' +
+            '<div class="big-check">✅</div>' +
+            '<p>No attendance concerns — all students have missed 2 or fewer check-ins.</p>' +
+            '</div>';
+        return;
+    }
+
+    // Badge
+    badge.textContent = data.atRisk.length + (data.atRisk.length === 1 ? ' student' : ' students');
+    chartWrap.style.display = 'block';
+
+    // ── Bar chart ──────────────────────────────────────────────────────────
+    var canvas = document.getElementById('attendanceChart');
+    var numStudents = data.atRisk.length;
+    canvas.height = Math.max(180, numStudents * 46);
+
+    if (_attChart) { _attChart.destroy(); _attChart = null; }
+
+    var barColors = data.atRisk.map(function(s) {
+        if (s.missed >= 7) return '#dc2626';   // red
+        if (s.missed >= 5) return '#f58220';   // orange
+        return '#f59e0b';                       // amber
+    });
+
+    _attChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: data.atRisk.map(function(s) { return s.name; }),
+            datasets: [{
+                label: 'Missed Check-ins',
+                data:  data.atRisk.map(function(s) { return s.missed; }),
+                backgroundColor: barColors,
+                borderRadius: 8,
+                borderSkipped: false,
+                barThickness: 28
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return '  ' + ctx.parsed.x + ' missed check-in(s)';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        font: { family: 'Archivo', weight: '700', size: 12 },
+                        color: '#aaa'
+                    },
+                    grid:  { color: '#f5f5f5' },
+                    title: {
+                        display: true,
+                        text: 'Number of Missed Check-ins',
+                        font: { family: 'Archivo', weight: '700', size: 12 },
+                        color: '#aaa',
+                        padding: { top: 8 }
+                    }
+                },
+                y: {
+                    ticks: {
+                        font: { family: 'Archivo', weight: '700', size: 13 },
+                        color: '#111'
+                    },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // ── Session breakdown grid ─────────────────────────────────────────────
+    if (!data.sessions || data.sessions.length === 0) {
+        gridLabel.style.display = 'none';
+        grid.innerHTML = '';
+        return;
+    }
+
+    gridLabel.style.display = 'block';
+
+    var html = '<div class="grid-scroll"><table class="att-grid"><thead><tr>';
+    html += '<th>Student</th>';
+    data.sessions.forEach(function(s) {
+        var icon = s.type === 'morning' ? '🌅' : '🌙';
+        html += '<th>' + icon + ' ' + esc(s.label) + '</th>';
+    });
+    html += '<th>Missed</th></tr></thead><tbody>';
+
+    data.atRisk.forEach(function(student) {
+        html += '<tr><td class="att-name-cell">' + esc(student.name);
+        if (student.group) html += '<small>' + esc(student.group) + '</small>';
+        html += '</td>';
+        student.attendance.forEach(function(present) {
+            html += '<td><span class="att-dot ' + (present ? 'present' : 'absent') + '">' +
+                    (present ? '✓' : '✕') + '</span></td>';
+        });
+        html += '<td class="miss-total">' + student.missed + '</td></tr>';
+    });
+
+    html += '</tbody></table></div>';
+    grid.innerHTML = html;
+}
 </script>
 </body>
 </html>
