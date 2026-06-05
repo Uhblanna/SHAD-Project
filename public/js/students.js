@@ -62,7 +62,6 @@ function refreshAll() {
     displayAttendanceAlerts();
     displayObservations();
     loadObservationStudentDropdown();
-    displayRecentMedLogs();   // hub-home: recent medication entries
     displayDietaryList();
 }
 
@@ -849,38 +848,8 @@ document.querySelectorAll('.hub-nav').forEach(function(btn) {
 });
 
 
-// ── MEDICATION TRACKING ───────────────────────────────────
-// Hub-home panel: show the 5 most recent log entries
-function displayRecentMedLogs() {
-    var box = el('medicationAlerts');
-    if (!box) return;
-    box.innerHTML = '<p class="student-info" style="color:#aaa;font-size:13px;">Loading…</p>';
-    fetch('/api/medication-logs')
-        .then(function(r) { return r.json(); })
-        .then(function(logs) {
-            box.innerHTML = '';
-            if (logs.length === 0) {
-                box.innerHTML = '<p class="student-info">No medication entries recorded yet.</p>';
-                return;
-            }
-            logs.slice(0, 5).forEach(function(log) {
-                var row = document.createElement('div');
-                row.classList.add('observation-row');
-                var dateStr = log.administered_at ? fmtDateTime(log.administered_at) : '';
-                row.innerHTML =
-                    '<div class="observation-main-info">' +
-                        '<p class="student-name">' + esc(log.student_name) + '</p>' +
-                        '<p class="student-info">' + esc(log.medication) + ' — given by ' + esc(log.administered_by) + '</p>' +
-                    '</div>' +
-                    '<div class="observation-actions">' +
-                        '<span class="student-info" style="font-size:12px;color:#aaa;">' + esc(dateStr) + '</span>' +
-                    '</div>';
-                box.appendChild(row);
-            });
-        })
-        .catch(function() { box.innerHTML = '<p class="student-info">No medication entries recorded yet.</p>'; });
-}
 
+// ── MEDICATION TRACKING ───────────────────────────────────
 // Medications tab: full tracking UI
 function setupMedicationTracking() {
     var newBtn    = el('newMedLogBtn');
@@ -955,7 +924,7 @@ function medPopulateDatalist() {
 }
 
 function medClearForm() {
-    ['medLogStudent', 'medLogMedication', 'medLogStaff', 'medLogDateTime', 'medLogNotes'].forEach(function(id) {
+    ['medLogStudent', 'medLogMedication', 'medLogDateTime', 'medLogNotes'].forEach(function(id) {
         var e2 = el(id);
         if (e2) e2.value = '';
     });
@@ -964,12 +933,11 @@ function medClearForm() {
 function medSaveLog() {
     var student    = ((el('medLogStudent')    || {}).value || '').trim();
     var medication = ((el('medLogMedication') || {}).value || '').trim();
-    var staff      = ((el('medLogStaff')      || {}).value || '').trim();
     var dateTime   = ((el('medLogDateTime')   || {}).value || '');
     var notes      = ((el('medLogNotes')      || {}).value || '').trim();
 
-    if (!student || !medication || !staff || !dateTime) {
-        alert('Please fill in Student, Medication, Administered By, and Date & Time.');
+    if (!student || !medication || !dateTime) {
+        alert('Please fill in Student, Medication, and Date & Time.');
         return;
     }
 
@@ -979,7 +947,6 @@ function medSaveLog() {
         body: JSON.stringify({
             student_name:    student,
             medication:      medication,
-            administered_by: staff,
             administered_at: dateTime,
             notes:           notes
         })
@@ -989,7 +956,6 @@ function medSaveLog() {
         el('medLogFormCard').classList.add('hidden');
         medClearForm();
         medLoadLogs((el('medLogSearch') || {}).value || '');
-        displayRecentMedLogs();
         showMsg('Medication logged!', 'success');
     })
     .catch(function() { showMsg('Failed to save entry.', 'error'); });
@@ -1034,7 +1000,6 @@ function medDisplayLogs(logs) {
             '<div>' +
                 '<p class="student-name">' + esc(log.student_name) + '</p>' +
                 '<p class="student-info">' + esc(log.medication) + '</p>' +
-                '<p class="student-info">Given by: <strong>' + esc(log.administered_by) + '</strong></p>' +
                 (log.notes ? '<p class="student-info">' + esc(log.notes) + '</p>' : '') +
             '</div>' +
             '<div class="student-actions">' +
@@ -1046,7 +1011,6 @@ function medDisplayLogs(logs) {
                 fetch('/api/medication-logs/' + log.id, { method: 'DELETE' })
                     .then(function() {
                         medLoadLogs((el('medLogSearch') || {}).value || '');
-                        displayRecentMedLogs();
                         showMsg('Entry removed.', 'success');
                     })
                     .catch(function() { showMsg('Failed to remove entry.', 'error'); });
