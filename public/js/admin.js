@@ -801,7 +801,10 @@ function parseShadScheduleCSV(text) {
             const acts = [];
             for (let s = 0; s < colsPerDay; s++) {
                 const v = (row[pos + s] || "").trim();
-                if (v && !isJunk(v)) acts.push(v);
+                // Single-col format: keep date strings so they can be extracted below;
+                // multi-col format: strip all junk (day names, dates are never activities)
+                const keep = colsPerDay === 1 ? (v && !isDay(v)) : (v && !isJunk(v));
+                if (keep) acts.push(v);
             }
             rowDays.push(acts);
         }
@@ -826,14 +829,14 @@ function parseShadScheduleCSV(text) {
     }
 
     // ── Flatten: merge all csvRows + sub-columns into one deduplicated list ──
+    // Also strip out any date strings that were kept for extraction (Week-0 only)
     const timeSlots = rawSlots.map(slot => {
         const days = Array.from({ length: numDays }, (_, d) => {
             const seen = new Set();
             const out  = [];
             for (const csvRow of slot.csvRows) {
                 for (const v of (csvRow[d] || [])) {
-                    // Skip old-date values that slipped through
-                    if (OLD_DATE.test(v)) continue;
+                    if (isDate(v)) continue;   // drop date strings from activity list
                     if (!seen.has(v)) { seen.add(v); out.push(v); }
                 }
             }
