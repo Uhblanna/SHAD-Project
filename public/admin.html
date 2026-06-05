@@ -115,6 +115,20 @@
             </div>
         </div>
 
+        <!-- Shift Swap Requests — admin approval section -->
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Shift Swap Requests <span id="swapAdminBadge" style="display:none; background:#146ff8; color:#fff; font-size:11px; font-weight:800; padding:2px 8px; border-radius:20px; margin-left:8px;"></span></h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Review and approve or deny pending shift swap requests submitted by staff. Approved swaps auto-clear at midnight.</p>
+                <div id="swapAdminList" style="display:flex; flex-direction:column; gap:10px; margin-top:14px; margin-bottom:16px;">
+                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Isabelle McLean — Committee enrollment window: admin sets the open and close dates here; student portal reads them from the API -->
         <div class="admin-card">
             <div class="admin-card-head">
@@ -198,6 +212,29 @@
                 </div>
                 <button id="clearScheduleBtn" class="danger-btn">Clear Schedule</button>
                 <p class="example">Example format: Week 1 Schedule, then Sunday 2026-07-05, then Time Block, Activity, PA1, PA2...</p>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-head">
+                <h3>SHAD 2026 Program Schedule</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>
+                    Upload one CSV per week. The file should use the timetable grid format:
+                    first row is day names, first column is the time, cells contain activity names.
+                    Each upload replaces any existing data for that week label.
+                </p>
+                <label style="display:block;font-weight:700;margin-bottom:6px;">Week Label</label>
+                <input id="shadScheduleWeekLabel" type="text" placeholder="e.g. Week 0, Week 1…"
+                       style="width:100%;max-width:280px;padding:10px 14px;border:1px solid #e5e5e5;border-radius:10px;font-family:'Archivo',sans-serif;font-size:14px;margin-bottom:12px;">
+                <input id="shadScheduleCsvInput" type="file" accept=".csv">
+                <div class="button-row">
+                    <button id="uploadShadScheduleBtn">Upload Week</button>
+                </div>
+                <button id="clearShadScheduleBtn" class="danger-btn">Clear All SHAD Schedule Data</button>
+                <p class="example">CSV format: first row = day names (Sunday…Saturday), first column = time (6:00, 7:00…), cells = activity text.</p>
             </div>
         </div>
 

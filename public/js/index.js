@@ -24,9 +24,6 @@ function loadQuickDashboard() {
 
     document.getElementById("alertsStat").textContent =
         stats.unacknowledged;
-
-    document.getElementById("medicationStat").textContent =
-        stats.needsMedication;
 }
 function loadMedkitCheckins() {
     fetch("/api/medkits")

@@ -112,6 +112,13 @@ nav a:hover{
     justify-content:center;
 }
 
+/* Student Hub spans both columns so it's immediately prominent */
+.btn-wide{
+    grid-column:1 / -1;
+    font-size:22px;
+    padding:26px 20px;
+}
+
 .btn{
     padding:22px 20px;
     border-radius:35px;
@@ -150,6 +157,9 @@ nav a:hover{
 
 .blue{
     background:#0693e3;
+}
+.violet{
+    background:#6f2da8;
 }
 .gray{
     background:#666;

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/public/js/auth-check.js"></script>
+<title>SHAD 2026 Schedule</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/css/shad-base.css">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Archivo', sans-serif;
+    background: #f7fafc;
+    color: #111;
+    min-height: 100vh;
+}
+
+/* ── HEADER ── */
+header {
+    width: 100%;
+    padding: 20px 6%;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e5e5;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.logo-wrap { display: flex; align-items: center; gap: 14px; }
+.logo-box {
+    width: 28px; height: 28px;
+    background: url('/public/img/shad-logo.png') center/contain no-repeat;
+    border-radius: 6px;
+}
+.logo-wrap h1 { font-size: 22px; font-weight: 800; }
+header nav { display: flex; gap: 22px; align-items: center; }
+header nav a {
+    text-decoration: none; color: #222; font-weight: 600;
+    font-size: 14px; transition: color 0.2s;
+}
+header nav a:hover { color: #146ff8; }
+
+/* ── PAGE LAYOUT ── */
+.schedule-page {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 48px 5% 80px;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+    margin-bottom: 36px;
+}
+.mini-title {
+    font-size: 12px;
+    letter-spacing: 2.5px;
+    font-weight: 800;
+    color: #146ff8;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+.page-header h2 {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    margin-bottom: 10px;
+}
+.page-header .subtext {
+    font-size: 17px;
+    color: #666;
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+/* ── WEEK TABS ── */
+.week-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+.week-tab {
+    padding: 10px 22px;
+    border-radius: 30px;
+    border: 2px solid #e5e5e5;
+    background: white;
+    color: #555;
+    font-family: 'Archivo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.18s;
+}
+.week-tab:hover { border-color: #146ff8; color: #146ff8; }
+.week-tab.active {
+    background: #146ff8;
+    border-color: #146ff8;
+    color: white;
+    box-shadow: 0 6px 18px rgba(20, 111, 248, 0.28);
+}
+
+/* ── TIMETABLE CARD ── */
+.timetable-card {
+    background: white;
+    border-radius: 22px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.timetable-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ── TABLE ── */
+table.sched-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 600px;
+}
+
+/* Column header row */
+table.sched-table thead th {
+    padding: 16px 12px;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: center;
+    background: #146ff8;
+    color: white;
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+}
+table.sched-table thead th:first-child {
+    background: #0d52c4;
+    width: 72px;
+    min-width: 72px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+}
+
+.th-day-name {
+    display: block;
+    font-size: 13px;
+    font-weight: 800;
+}
+.th-day-date {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.75;
+    margin-top: 3px;
+}
+
+/* Time rows */
+table.sched-table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.15s;
+}
+table.sched-table tbody tr:hover {
+    background: #fafcff;
+}
+table.sched-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* Time cell (first column) */
+.time-cell {
+    padding: 14px 8px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 12px;
+    color: #888;
+    background: #f7fafc;
+    white-space: nowrap;
+    border-right: 2px solid #eee;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    letter-spacing: 0.3px;
+}
+
+/* Activity cell */
+.act-cell {
+    padding: 10px 10px;
+    vertical-align: top;
+    min-width: 130px;
+    border-right: 1px solid #f3f3f3;
+}
+.act-cell:last-child { border-right: none; }
+
+/* Activity chip */
+.act-chip {
+    display: block;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 5px;
+    border-left: 3px solid #146ff8;
+    background: #eef4ff;
+    color: #1a4ba8;
+    word-break: break-word;
+}
+.act-chip:last-child { margin-bottom: 0; }
+
+/* Colour variants */
+.act-chip.meal {
+    background: #efffef;
+    border-left-color: #00c87a;
+    color: #1a6b3f;
+}
+.act-chip.staff-only {
+    background: #fff8e8;
+    border-left-color: #f59e0b;
+    color: #7c5f00;
+}
+.act-chip.social {
+    background: #fdf0ff;
+    border-left-color: #9b59b6;
+    color: #5b2d7a;
+}
+.act-chip.excursion {
+    background: #fff4ef;
+    border-left-color: #f58220;
+    color: #8b3e00;
+}
+.act-chip.setup {
+    background: #f5f5f5;
+    border-left-color: #aaa;
+    color: #444;
+}
+
+/* Empty state */
+.schedule-empty {
+    text-align: center;
+    padding: 80px 24px;
+    color: #aaa;
+}
+.schedule-empty h3 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: #ccc;
+}
+.schedule-empty p {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Legend */
+.legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafafa;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #555;
+}
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+    .page-header h2 { font-size: 30px; }
+    header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    header nav { flex-wrap: wrap; gap: 14px; }
+    .schedule-page { padding: 30px 4% 60px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo-wrap">
+        <div class="logo-box"></div>
+        <h1>SHAD Portal</h1>
+        <nav>
+            <span style="color:#ddd;font-weight:400;">|</span>
+            <a href="/public/index.html">Home</a>
+        </nav>
+    </div>
+    <nav>
+        <a href="/public/dashboard.html">Dashboard</a>
+        <a href="/public/students.html">Student Hub</a>
+        <a href="/public/tools.html">Tools</a>
+        <a href="/public/contact.html">Contact Staff</a>
+        <a href="/public/issues.html">System Issues</a>
+        <a href="/public/admin.html" style="color:#146ff8;font-weight:800;">Admin</a>
+    </nav>
+</header>
+
+<div class="schedule-page">
+
+    <div class="page-header">
+        <p class="mini-title">SHAD Red Deer 2026</p>
+        <h2>Program Schedule</h2>
+        <p class="subtext">Full week-by-week schedule for the SHAD 2026 session. Upload weeks via the Admin page.</p>
+    </div>
+
+    <div class="week-tabs" id="weekTabs"></div>
+
+    <div class="timetable-card" id="timetableCard">
+        <div class="schedule-empty" id="emptyState">
+            <h3>No Schedule Uploaded Yet</h3>
+            <p>Ask an admin to upload the weekly CSV files.</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+var allWeeks = [];
+var selectedWeekId = null;
+
+function esc(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Activity colour classification ────────────────────────────────────────
+function actChipClass(text) {
+    const t = text.toLowerCase();
+    if (/breakfast|lunch|dinner|meal|snack/.test(t))        return 'meal';
+    if (/team only|staff only|team-only/.test(t))           return 'staff-only';
+    if (/excursion|field trip|tour|trip/.test(t))           return 'excursion';
+    if (/fireworks|social|dance|game night|movie/.test(t))  return 'social';
+    if (/setup|arrival|keys|logistic/.test(t))              return 'setup';
+    return '';
+}
+
+// ── Format date string "Jun-30" → "Jun 30" ────────────────────────────────
+function fmtDate(d) { return (d || '').replace('-', ' '); }
+
+// ── Determine which day columns are active (have a date OR at least one activity) ──
+function getActiveDays(data) {
+    var headers   = data.headers   || [];
+    var dates     = data.dates     || [];
+    var timeSlots = data.timeSlots || [];
+    return headers.map(function(_, i) { return i; }).filter(function(i) {
+        if (dates[i]) return true;
+        return timeSlots.some(function(slot) {
+            // Support both new flat format (slot.days) and legacy (slot.rows)
+            if (slot.days)  return (slot.days[i]  || []).length > 0;
+            if (slot.rows)  return slot.rows.some(function(row) { return (row[i] || '').trim(); });
+            return false;
+        });
+    });
+}
+
+// ── Collect activities for day i from a slot (handles both formats) ────────
+function slotActivities(slot, i) {
+    if (slot.days) {
+        // New flat format: slot.days[i] is already a deduplicated array
+        return (slot.days[i] || []).slice();
+    }
+    // Legacy format: slot.rows is an array of 7-element arrays
+    var acts = [];
+    (slot.rows || []).forEach(function(row) {
+        var v = (row[i] || '').trim();
+        if (v) acts.push(v);
+    });
+    return acts;
+}
+
+// ── Render the timetable for one week ─────────────────────────────────────
+function renderTimetable(week) {
+    var data;
+    try {
+        data = typeof week.schedule_data === 'string'
+            ? JSON.parse(week.schedule_data) : week.schedule_data;
+    } catch (e) {
+        return '<p style="padding:40px;color:#e74c3c;">Failed to parse schedule data.</p>';
+    }
+
+    var headers    = data.headers   || [];
+    var dates      = data.dates     || [];
+    var timeSlots  = data.timeSlots || [];
+    var activeDays = getActiveDays(data);
+
+    if (activeDays.length === 0) {
+        return '<div class="schedule-empty"><h3>No Events This Week</h3>' +
+               '<p>No activities were found in the uploaded CSV.</p></div>';
+    }
+
+    // ── Table header ──────────────────────────────────────────────────────
+    var html = '<div class="timetable-scroll"><table class="sched-table"><thead><tr>';
+    html += '<th>Time</th>';
+    activeDays.forEach(function(i) {
+        var date = fmtDate(dates[i] || '');
+        html += '<th><span class="th-day-name">' + esc(headers[i] || '') + '</span>' +
+                (date ? '<span class="th-day-date">' + esc(date) + '</span>' : '') + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+
+    // ── Table body ────────────────────────────────────────────────────────
+    timeSlots.forEach(function(slot) {
+        var dayActs = activeDays.map(function(i) { return slotActivities(slot, i); });
+
+        // Skip rows where every active day is empty
+        if (dayActs.every(function(a) { return a.length === 0; })) return;
+
+        html += '<tr><td class="time-cell">' + esc(slot.time) + '</td>';
+        dayActs.forEach(function(acts) {
+            html += '<td class="act-cell">';
+            acts.forEach(function(act) {
+                var cls = actChipClass(act);
+                html += '<span class="act-chip' + (cls ? ' ' + cls : '') + '">' + esc(act) + '</span>';
+            });
+            html += '</td>';
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+
+    // ── Legend ────────────────────────────────────────────────────────────
+    html += '<div class="legend">' +
+        '<span class="legend-item"><span class="legend-dot" style="background:#eef4ff;border:2px solid #146ff8;"></span>Activity</span>' +
+        '<span class="legend-item"><span class="legend-dot" style="background:#efffef;border:2px solid #00c87a;"></span>Meal</span>' +
+        '<span class="legend-item"><span class="legend-dot" style="background:#fff8e8;border:2px solid #f59e0b;"></span>Staff-Only</span>' +
+        '<span class="legend-item"><span class="legend-dot" style="background:#fff4ef;border:2px solid #f58220;"></span>Excursion</span>' +
+        '<span class="legend-item"><span class="legend-dot" style="background:#fdf0ff;border:2px solid #9b59b6;"></span>Social</span>' +
+    '</div>';
+
+    return html;
+}
+
+// ── Select a week tab ──────────────────────────────────────────────────────
+function selectWeek(id) {
+    selectedWeekId = id;
+    var week = allWeeks.find(function(w) { return w.id === id; });
+    if (!week) return;
+
+    document.querySelectorAll('.week-tab').forEach(function(btn) {
+        btn.classList.toggle('active', parseInt(btn.dataset.weekId, 10) === id);
+    });
+
+    document.getElementById('timetableCard').innerHTML = renderTimetable(week);
+}
+
+// ── Build week tabs ────────────────────────────────────────────────────────
+function renderTabs(weeks) {
+    var container = document.getElementById('weekTabs');
+    container.innerHTML = '';
+    weeks.forEach(function(week) {
+        var btn = document.createElement('button');
+        btn.className = 'week-tab';
+        btn.textContent = week.week_label;
+        btn.dataset.weekId = week.id;
+        btn.addEventListener('click', function() { selectWeek(week.id); });
+        container.appendChild(btn);
+    });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+fetch('/api/shad-schedule')
+    .then(function(r) { return r.json(); })
+    .then(function(weeks) {
+        if (!weeks || weeks.length === 0) return; // empty state already shown
+        allWeeks = weeks;
+        renderTabs(weeks);
+        selectWeek(weeks[0].id);
+    })
+    .catch(function() {
+        document.getElementById('timetableCard').innerHTML =
+            '<div class="schedule-empty"><h3>Could not load schedule</h3><p>Make sure the server is running.</p></div>';
+    });
+</script>
+
+</body>
+</html>

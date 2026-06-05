@@ -176,55 +176,68 @@ function attachTooltip(el, entry) {
 }
 
 // ── Swap panel ────────────────────────────────────────────────────
+// Staff can see all requests and their statuses (Pending / Approved / Denied).
+// Approve/Deny actions are admin-only (handled in admin.html).
 function renderSwapPanel() {
-    const pending = swapRequests.filter(r => r.status === "Pending");
-    const badge   = document.getElementById("swapBadge");
-    const list    = document.getElementById("swapList");
+    const list  = document.getElementById("swapList");
+    const badge = document.getElementById("swapBadge");
 
-    badge.textContent = pending.length;
-    badge.style.display = pending.length > 0 ? "inline-flex" : "none";
+    const pendingCount = swapRequests.filter(r => r.status === "Pending").length;
+    badge.textContent = pendingCount;
+    badge.style.display = pendingCount > 0 ? "inline-flex" : "none";
 
-    if (pending.length === 0) { list.innerHTML = `<p class="s-empty">No pending swap requests.</p>`; return; }
+    if (swapRequests.length === 0) {
+        list.innerHTML = `<p class="s-empty">No swap requests.</p>`;
+        return;
+    }
+
     list.innerHTML = "";
-    pending.forEach(r => {
+    swapRequests.forEach(r => {
         const item = mkDiv("s-item");
+        const statusClass = r.status === "Approved" ? "status-approved"
+                          : r.status === "Denied"   ? "status-denied"
+                          : "status-pending";
         item.innerHTML = `
             <div class="s-item-name">${r.requester_name}</div>
-            <div class="s-item-meta">${r.requester_role ? r.requester_role + " · " : ""}${r.shift_date} · ${r.shift_time}</div>
-            ${r.reason ? `<div class="s-item-reason">"${r.reason}"</div>` : ""}
-            <div class="s-item-actions">
-                <button class="act-btn act-approve" onclick="resolveSwap(${r.id},'Approved')">✓ Approve</button>
-                <button class="act-btn act-deny"    onclick="resolveSwap(${r.id},'Denied')">✕ Deny</button>
+            <div class="s-item-meta">
+                ${r.requester_role ? r.requester_role + " · " : ""}${r.shift_date} · ${r.shift_time}
             </div>
+            <div class="s-item-meta">
+                Swapping With: <strong>${r.swap_with || "Not specified"}</strong>
+            </div>
+            <div class="s-item-meta">
+                Status: <strong class="${statusClass}">${r.status}</strong>
+            </div>
+            ${r.reason ? `<div class="s-item-reason">"${r.reason}"</div>` : ""}
         `;
         list.appendChild(item);
     });
 }
 
-function resolveSwap(id, status) {
-    fetch(`/api/swap-requests/${id}`, {
-        method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, resolvedBy: "Admin" })
-    }).then(() => {
-        const i = swapRequests.findIndex(r => r.id === id);
-        if (i !== -1) swapRequests[i].status = status;
-        renderSwapPanel();
-    });
-}
-
 function submitSwap() {
-    const name = v("swapName"), role = v("swapRole"), date = v("swapDate"),
-          time = v("swapTime"), reason = v("swapReason");
+    const name = v("swapName"),
+        role = v("swapRole"),
+        swapWith = v("swapWith"),
+        date = v("swapDate"),
+        time = v("swapTime"),
+        reason = v("swapReason");
     if (!name || !date || !time) return showFormErr("swapModal", "Please fill in your name, date, and shift time.");
 
     fetch("/api/swap-requests", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requesterName: name, requesterRole: role, shiftDate: date, shiftTime: time, reason })
+        body: JSON.stringify({
+            requesterName: name,
+            requesterRole: role,
+            swapWith,
+            shiftDate: date,
+            shiftTime: time,
+            reason
+        })
     }).then(r => r.json()).then(row => {
         swapRequests.unshift(row);
         renderSwapPanel();
         closeModal("swapModal");
-        ["swapName","swapRole","swapDate","swapTime","swapReason"].forEach(id => document.getElementById(id).value = "");
+        ["swapName","swapRole","swapWith","swapDate","swapTime","swapReason"].forEach(id => document.getElementById(id).value = "");
         showToast("Swap request submitted!");
     });
 }

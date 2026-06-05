@@ -67,6 +67,12 @@
             <span class="nav-text">Attendance</span>
         </button>
 
+        <button class="hub-nav" data-screen="activityRollCallScreen" data-preview="Activity Roll Call">
+            <span class="nav-emoji">📋</span>
+            <span class="nav-divider">|</span>
+            <span class="nav-text">Activity Roll Call</span>
+        </button>
+
         <button class="hub-nav" data-screen="observationsScreen" data-preview="Observations">
             <span class="nav-emoji">🔍</span>
             <span class="nav-divider">|</span>
@@ -138,14 +144,6 @@
 
                 <div class="student-panel">
                     <div class="card-header">
-                        <h3>Medication Alerts</h3>
-                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-                    </div>
-                    <div id="medicationAlerts" class="panel-body"></div>
-                </div>
-
-                <div class="student-panel">
-                    <div class="card-header">
                         <h3>Recent Observations</h3>
                         <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                     </div>
@@ -207,7 +205,7 @@
             <div class="student-panel">
                 <div class="card-header student-list-header">
                     <h3>Student List</h3>
-                    <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse" data-start-expanded="true">−</button>
                 </div>
 
                 <div class="panel-body">
@@ -233,60 +231,121 @@
             <div class="page-header">
                 <div>
                     <p class="mini-title">MEDICATION TRACKING</p>
-                    <h2>Medications</h2>
-                    <p class="subtext">Track which students still need to take their medication.</p>
+                    <h2>Medication Log</h2>
+                    <p class="subtext">Record every medication administration. Entries are timestamped and attributed to the staff member on duty.</p>
+                </div>
+                <button class="add-btn" id="newMedLogBtn">+ Add New</button>
+            </div>
+
+            <!-- Add entry form — hidden until Add New is clicked -->
+            <div class="student-panel hidden" id="medLogFormCard">
+                <h3>Log Medication</h3>
+
+                <label for="medLogStudent">Student</label>
+                <input id="medLogStudent" list="medStudentDatalist" type="text"
+                       placeholder="Start typing a student name…" autocomplete="off">
+                <datalist id="medStudentDatalist"></datalist>
+
+                <label for="medLogMedication">Medication</label>
+                <input id="medLogMedication" type="text" placeholder="Medication name and dose">
+
+                <label for="medLogDateTime">Date &amp; Time</label>
+                <input id="medLogDateTime" type="datetime-local">
+
+                <label for="medLogNotes">Notes (optional)</label>
+                <textarea id="medLogNotes" rows="2" placeholder="Any additional notes…"></textarea>
+
+                <div class="form-actions">
+                    <button id="saveMedLogBtn">Save Entry</button>
+                    <button id="cancelMedLogBtn" class="cancel-btn">Cancel</button>
                 </div>
             </div>
 
+            <!-- Log panel — always expanded -->
             <div class="student-panel">
                 <div class="card-header">
-                    <h3>Medication Checklist</h3>
-                    <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    <h3>Administration Log</h3>
                 </div>
-
-                <div id="medicationList" class="panel-body"></div>
+                <div class="panel-body med-log-panel-body">
+                    <div class="med-log-search-wrap">
+                        <input id="medLogSearch" type="text" placeholder="Filter by student name…">
+                    </div>
+                    <div id="medicationLogList"></div>
+                </div>
             </div>
         </section>
 
-        <!-- ATTENDANCE SECTION -->
+        <!-- ATTENDANCE SECTION — Morning & Evening sessions, stored separately -->
         <section id="attendanceScreen" class="hub-screen">
             <div class="page-header">
                 <div>
                     <p class="mini-title">LIVE ATTENDANCE</p>
                     <h2>Attendance Check-In</h2>
-                    <p class="subtext">Scan student QR codes, confirm attendance, and identify missing students.</p>
+                    <p class="subtext">Start a morning or evening session. Each session is saved separately — starting a new one never erases the old one.</p>
                 </div>
-
-                <a href="#" class="submit-btn">Submit Attendance</a>
             </div>
 
-            <div class="attendance-grid">
-                <div class="scanner-card">
-                    <h3>QR Scanner</h3>
+            <!-- Session selector -->
+            <div class="att-session-bar">
+                <div class="att-session-tabs">
+                    <button class="att-tab active" id="attTabMorning" onclick="attSelectSession('morning')">🌅 Morning</button>
+                    <button class="att-tab" id="attTabEvening" onclick="attSelectSession('evening')">🌙 Evening</button>
+                </div>
+                <div class="att-session-info" id="attSessionInfo">
+                    <span id="attSessionLabel">Morning Check-In</span>
+                    <span class="att-session-date" id="attSessionDate"></span>
+                </div>
+                <button class="att-start-btn" id="attStartBtn" onclick="attStartSession()">▶ Start Session</button>
+                <button class="att-submit-btn hidden" id="attSubmitBtn" onclick="attSubmitSession()">✓ Submit</button>
+            </div>
 
-                    <div class="scanner-box">
-                        <p>Camera / QR Scanner Area</p>
-                        <span>Scan Student Lanyard</span>
+            <!-- Active session UI (hidden until a session is started/loaded) -->
+            <div id="attActivePanel" class="hidden">
+                <div class="attendance-grid">
+                    <div class="scanner-card">
+                        <h3>Check Students In</h3>
+
+                        <div class="scanner-box">
+                            <p>Camera / QR Scanner Area</p>
+                            <span>Scan Student Lanyard</span>
+                        </div>
+
+                        <div class="manual-entry">
+                            <input type="text" id="manualStudentInput" placeholder="Enter student name manually">
+                            <button id="manualStudentBtn">Add</button>
+                        </div>
+
+                        <div class="recent-scans">
+                            <h4>Recently Checked In</h4>
+                            <div id="recentScansList"></div>
+                        </div>
                     </div>
 
-                    <div class="manual-entry">
-                        <input type="text" id="manualStudentInput" placeholder="Enter student name manually">
-                        <button id="manualStudentBtn">Add Student</button>
-                    </div>
-
-                    <div class="recent-scans">
-                        <h4>Recently Checked In</h4>
-                        <div id="recentScansList"></div>
+                    <div class="missing-card">
+                        <div class="missing-head">
+                            <h3>Not Checked In</h3>
+                            <span id="missingBadge">0 Missing</span>
+                        </div>
+                        <div id="missingStudentsList"></div>
                     </div>
                 </div>
+            </div>
 
-                <div class="missing-card">
-                    <div class="missing-head">
-                        <h3>Students Not Checked In</h3>
-                        <span id="missingBadge">0 Missing</span>
-                    </div>
+            <!-- No active session placeholder -->
+            <div id="attNoSession" class="att-no-session">
+                <div class="att-no-session-icon">📋</div>
+                <p>No active session. Select Morning or Evening then press <strong>Start Session</strong>.</p>
+                <p class="att-no-session-sub">Previous sessions are saved and never overwritten.</p>
+            </div>
 
-                    <div id="missingStudentsList"></div>
+            <!-- Past sessions list -->
+            <div class="att-history-card">
+                <div class="card-header">
+                    <h3>Session History</h3>
+                    <button class="panel-toggle" type="button" aria-expanded="false" title="Expand">+</button>
+                </div>
+                <div class="panel-body collapsed" id="attHistoryList">
+                    <p style="color:#aaa;font-size:13px;font-weight:600;">Loading history...</p>
                 </div>
             </div>
         </section>
@@ -645,6 +704,75 @@
             setInterval(loadSignups, 15000);
         })();
         </script>
+
+        <!-- ACTIVITY ROLL CALL SECTION -->
+        <section id="activityRollCallScreen" class="hub-screen">
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">FIELD OPERATIONS</p>
+                    <h2>Activity Roll Call</h2>
+                    <p class="subtext">Start a roll call when leaving or arriving somewhere. Up to 6 per day. All check-ins are saved permanently for tracking.</p>
+                </div>
+                <button class="add-btn" id="startRollCallBtn" onclick="rcStartNew()">+ New Roll Call</button>
+            </div>
+
+            <!-- Active roll call panel (shown when one is in progress) -->
+            <div id="rcActivePanel" class="hidden">
+                <div class="rc-active-header">
+                    <div>
+                        <span class="mini-title" id="rcActiveLabel">Roll Call #1</span>
+                        <h3 id="rcActiveTime"></h3>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <span class="rc-progress-badge" id="rcProgressBadge">0 / 0</span>
+                        <button class="att-submit-btn" onclick="rcSubmit()">✓ Submit Roll Call</button>
+                    </div>
+                </div>
+
+                <div class="attendance-grid" style="margin-top:18px;">
+                    <div class="scanner-card">
+                        <h3>Check In</h3>
+                        <div class="scanner-box" id="rcScannerBox">
+                            <p>Camera / QR Scanner Area</p>
+                            <span>Scan Student Lanyard</span>
+                        </div>
+                        <div class="manual-entry">
+                            <input type="text" id="rcManualInput" placeholder="Enter student name manually">
+                            <button onclick="rcCheckInByName()">Add</button>
+                        </div>
+                        <div class="recent-scans">
+                            <h4>Recently Checked In</h4>
+                            <div id="rcRecentList"></div>
+                        </div>
+                    </div>
+                    <div class="missing-card">
+                        <div class="missing-head">
+                            <h3>Not Checked In</h3>
+                            <span id="rcMissingBadge">0 Missing</span>
+                        </div>
+                        <div id="rcMissingList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- No active roll call -->
+            <div id="rcNoActive" class="att-no-session">
+                <div class="att-no-session-icon">📋</div>
+                <p>No active roll call. Press <strong>New Roll Call</strong> to begin.</p>
+                <p class="att-no-session-sub">Up to 6 roll calls per day. All are permanently saved with date and time.</p>
+            </div>
+
+            <!-- Today's roll calls -->
+            <div class="att-history-card" style="margin-top:24px;">
+                <div class="card-header">
+                    <h3>Today's Roll Calls <span id="rcTodayBadge" style="display:none;background:#146ff8;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;margin-left:8px;"></span></h3>
+                    <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                </div>
+                <div class="panel-body" id="rcTodayList">
+                    <p style="color:#aaa;font-size:13px;font-weight:600;">Loading...</p>
+                </div>
+            </div>
+        </section>
 
         <!-- Isabelle — Committees section: two views — Assign Students (one card per student, preference pills, assign dropdown) and View by Committee (grouped list of assigned students) -->
         <!-- COMMITTEES SECTION -->
