@@ -210,6 +210,33 @@ db.serialize(() => {
         )
     `);
 
+    // Isabelle McLean — Shopping requests: shared live list across all staff devices
+    db.run(`
+        CREATE TABLE IF NOT EXISTS shopping_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            requested_by TEXT NOT NULL DEFAULT '',
+            reason TEXT NOT NULL DEFAULT '',
+            description TEXT NOT NULL DEFAULT '',
+            priority INTEGER NOT NULL DEFAULT 0,
+            purchased INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Isabelle McLean — Shopping archive: purchased items moved here when staff click "Remove Purchased Items"; never deleted so export always has full history
+    db.run(`
+        CREATE TABLE IF NOT EXISTS shopping_archive (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            requested_by TEXT NOT NULL DEFAULT '',
+            reason TEXT NOT NULL DEFAULT '',
+            description TEXT NOT NULL DEFAULT '',
+            priority INTEGER NOT NULL DEFAULT 0,
+            purchased_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
     // Isabelle McLean — Committee enrollment window: stores the open and close datetimes set by admin; student portal reads these instead of hardcoded values
     db.run(`
         CREATE TABLE IF NOT EXISTS committee_enrollment_config (

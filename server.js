@@ -1497,6 +1497,79 @@ app.delete("/api/medication-logs/:id", (req, res) => {
     });
 });
 
+// ── SHOPPING LIST ────────────────────────────────────────────────────────────
+app.get("/api/shopping", (req, res) => {
+    db.all("SELECT * FROM shopping_items ORDER BY created_at ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/shopping", (req, res) => {
+    const { name, requested_by, reason, description, priority } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: "Item name is required." });
+    if (!requested_by || !requested_by.trim()) return res.status(400).json({ error: "Requested by is required." });
+    db.run(
+        "INSERT INTO shopping_items (name, requested_by, reason, description, priority) VALUES (?, ?, ?, ?, ?)",
+        [name.trim(), requested_by.trim(), (reason || "").trim(), (description || "").trim(), priority ? 1 : 0],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID, name: name.trim(), requested_by: requested_by.trim(), reason, description, priority: priority ? 1 : 0, purchased: 0 });
+        }
+    );
+});
+
+app.patch("/api/shopping/:id", (req, res) => {
+    const { purchased } = req.body;
+    db.run("UPDATE shopping_items SET purchased = ? WHERE id = ?", [purchased ? 1 : 0, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ updated: this.changes });
+    });
+});
+
+app.delete("/api/shopping/:id", (req, res) => {
+    db.run("DELETE FROM shopping_items WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
+    });
+});
+
+// Move purchased items to archive instead of deleting — preserves full history for export
+app.delete("/api/shopping/purchased/all", (req, res) => {
+    db.all("SELECT * FROM shopping_items WHERE purchased = 1", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (rows.length === 0) return res.json({ cleared: 0 });
+        const stmt = db.prepare(
+            "INSERT INTO shopping_archive (name, requested_by, reason, description, priority) VALUES (?, ?, ?, ?, ?)"
+        );
+        rows.forEach(r => stmt.run([r.name, r.requested_by, r.reason, r.description, r.priority]));
+        stmt.finalize(() => {
+            db.run("DELETE FROM shopping_items WHERE purchased = 1", [], function(err2) {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ cleared: this.changes });
+            });
+        });
+    });
+});
+
+app.get("/api/shopping/archive", (req, res) => {
+    db.all("SELECT * FROM shopping_archive ORDER BY purchased_at DESC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// Admin: clear entire list and archive — full reset
+app.delete("/api/shopping/all/items", (req, res) => {
+    db.run("DELETE FROM shopping_items", [], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.run("DELETE FROM shopping_archive", [], function(err2) {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ cleared: this.changes });
+        });
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });

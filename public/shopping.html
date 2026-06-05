@@ -70,7 +70,7 @@
 
             <div id="shoppingList"></div>
 
-            <button id="savePurchasedBtn" class="save-btn">Save Checked Items</button>
+            <button id="savePurchasedBtn" class="save-btn">Remove Purchased Items</button>
 
         </div>
 
@@ -81,20 +81,16 @@
             <h3>Add New Item</h3>
 
             <label>Item Name</label>
-            <input type="text" placeholder="Ex: Batteries">
+            <input type="text" id="itemNameInput" placeholder="Ex: Batteries">
 
-            <label>Store Type</label>
-            <select>
-                <option>Select Store</option>
-                <option>Costco</option>
-                <option>Dollar Store</option>
-                <option>Grocery</option>
-                <option>Walmart</option>
-                <option>Other</option>
-            </select>
+            <label>Requested By</label>
+            <input type="text" id="requestedByInput" placeholder="Ex: Sarah">
+
+            <label>Reason for Request</label>
+            <textarea id="reasonInput" placeholder="Why is this item needed?"></textarea>
 
             <label>Description</label>
-            <textarea placeholder="Explain what is needed and why..."></textarea>
+            <textarea id="descriptionInput" placeholder="Any extra details (quantity, size, brand, etc.)..."></textarea>
 
             <label>Upload Picture</label>
             <input type="file" class="file-upload">
