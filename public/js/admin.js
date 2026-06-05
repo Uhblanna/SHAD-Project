@@ -719,7 +719,7 @@ function uploadShadScheduleCSV() {
 }
 
 function parseShadScheduleCSV(text) {
-    // Parse a single CSV field, respecting quoted values
+    // ── CSV row parser (handles quoted fields with embedded commas) ──────────
     function parseRow(line) {
         const fields = [];
         let cur = "", inQ = false;
@@ -732,53 +732,117 @@ function parseShadScheduleCSV(text) {
         return fields;
     }
 
-    const lines = text.trim().split(/\r?\n/);
+    // Keep all lines (even blank ones hold structural whitespace)
+    const lines = text.split(/\r?\n/);
     if (lines.length < 2) return null;
 
-    // Row 0: ,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday
-    const headers = parseRow(lines[0]).slice(1).map(h => h.trim());
-    // Ensure exactly 7 day columns
-    while (headers.length < 7) headers.push("");
+    const row0 = parseRow(lines[0]);
 
-    // Parse remaining rows into time slots
-    const timeSlots = [];
-    let currentSlot = null;
+    // ── Detect layout: find non-empty cells in row 0 after col 0 ────────────
+    // The gap between them tells us how many sub-columns each day uses.
+    const dayPositions = [];   // column indices where each day starts
+    for (let i = 1; i < row0.length; i++) {
+        if (row0[i].trim()) dayPositions.push(i);
+    }
+    if (dayPositions.length === 0) return null;
 
-    for (let i = 1; i < lines.length; i++) {
-        const row  = parseRow(lines[i]);
-        const time = (row[0] || "").trim();
-        const cells = row.slice(1).map(c => c.trim());
-        while (cells.length < 7) cells.push("");
-        const dayCells = cells.slice(0, 7);
+    const numDays    = Math.min(7, dayPositions.length);
+    const colsPerDay = numDays >= 2 ? dayPositions[1] - dayPositions[0] : 1;
 
-        if (time) {
-            currentSlot = { time, rows: [dayCells] };
-            timeSlots.push(currentSlot);
-        } else if (currentSlot) {
-            currentSlot.rows.push(dayCells);
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    const DAY_NAMES = /^(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)$/i;
+    const OLD_DATE  = /^[A-Za-z]{3}-\d{1,2}$/;          // "Jun-30"
+    const NEW_DATE  = /^[A-Za-z]+ \d{1,2}$|^[A-Za-z]+\d{1,2}$/; // "July 5"
+    const isDay  = v => DAY_NAMES.test(v.trim());
+    const isDate = v => OLD_DATE.test(v.trim()) || NEW_DATE.test(v.trim());
+    const isJunk = v => !v || isDay(v) || isDate(v);
+
+    // ── Extract headers and dates from the first 1-2 rows ───────────────────
+    const headers = Array(numDays).fill("");
+    const dates   = Array(numDays).fill("");
+
+    if (colsPerDay === 1) {
+        // Week-0 style: row 0 = day names; dates appear later inside time-slot cells
+        for (let d = 0; d < numDays; d++) {
+            headers[d] = (row0[dayPositions[d]] || "").trim();
+        }
+    } else {
+        // Week-1+ style: row 0 = dates, row 1 = day names (both sparse)
+        const row1 = parseRow(lines[1] || "");
+        for (let d = 0; d < numDays; d++) {
+            const pos = dayPositions[d];
+            dates[d]   = (row0[pos] || "").trim();
+            // Day name may land on pos or any sub-column within that day's span
+            let dayName = "";
+            for (let s = 0; s < colsPerDay && !dayName; s++) {
+                const v = (row1[pos + s] || "").trim();
+                if (isDay(v)) dayName = v;
+            }
+            headers[d] = dayName || (row1[pos] || "").trim();
         }
     }
 
-    // Detect date values (e.g. "Jun-30", "Jul-4") and extract them for column headers
-    const isDateVal = v => /^[A-Za-z]{3}-\d{1,2}$/.test(v);
-    const dates = Array(7).fill("");
-    for (const slot of timeSlots.slice(0, 4)) {
-        for (const row of slot.rows) {
-            row.forEach((val, i) => { if (isDateVal(val)) dates[i] = val; });
+    // ── Parse time slots ─────────────────────────────────────────────────────
+    // For each CSV row, collect all non-junk values from each day's sub-columns.
+    const startLine = colsPerDay === 1 ? 1 : 2;
+
+    // rawSlots: { time, csvRows: [ [day0acts, day1acts, ...], ... ] }
+    const rawSlots = [];
+    let cur = null;
+
+    for (let i = startLine; i < lines.length; i++) {
+        const row     = parseRow(lines[i]);
+        const timeVal = (row[0] || "").trim();
+
+        // Gather activities for each day from this CSV row
+        const rowDays = [];
+        for (let d = 0; d < numDays; d++) {
+            const pos  = dayPositions[d];
+            const acts = [];
+            for (let s = 0; s < colsPerDay; s++) {
+                const v = (row[pos + s] || "").trim();
+                if (v && !isJunk(v)) acts.push(v);
+            }
+            rowDays.push(acts);
+        }
+
+        if (timeVal && !isJunk(timeVal)) {
+            cur = { time: timeVal, csvRows: [rowDays] };
+            rawSlots.push(cur);
+        } else if (cur) {
+            cur.csvRows.push(rowDays);
         }
     }
 
-    // Strip date-only sub-rows from time slots so they don't show as activities
-    for (const slot of timeSlots) {
-        slot.rows = slot.rows.filter(row => row.some(v => v && !isDateVal(v)));
+    // ── Detect dates from time-slot cells (Week-0 only) ──────────────────────
+    if (colsPerDay === 1) {
+        for (const slot of rawSlots.slice(0, 4)) {
+            for (const csvRow of slot.csvRows) {
+                csvRow.forEach((acts, d) => {
+                    acts.forEach(v => { if (OLD_DATE.test(v)) dates[d] = v; });
+                });
+            }
+        }
     }
 
-    // Drop time slots where every day is now empty
-    const filtered = timeSlots.filter(slot =>
-        slot.rows.some(row => row.some(v => v !== ""))
-    );
+    // ── Flatten: merge all csvRows + sub-columns into one deduplicated list ──
+    const timeSlots = rawSlots.map(slot => {
+        const days = Array.from({ length: numDays }, (_, d) => {
+            const seen = new Set();
+            const out  = [];
+            for (const csvRow of slot.csvRows) {
+                for (const v of (csvRow[d] || [])) {
+                    // Skip old-date values that slipped through
+                    if (OLD_DATE.test(v)) continue;
+                    if (!seen.has(v)) { seen.add(v); out.push(v); }
+                }
+            }
+            return out;
+        });
+        return { time: slot.time, days };
+    }).filter(slot => slot.days.some(d => d.length > 0));
 
-    return { headers, dates, timeSlots: filtered };
+    return { headers, dates, timeSlots };
 }
 
 function clearShadSchedule() {
