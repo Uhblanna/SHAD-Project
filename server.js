@@ -1386,6 +1386,59 @@ app.delete("/api/shad-schedule/all", (req, res) => {
     });
 });
 
+// ── ATTENDANCE TRENDS ─────────────────────────────────────────────────────────
+// Returns students who missed MORE THAN 2 check-ins, with per-session detail.
+// Only sessions that have actual student data are counted.
+app.get("/api/attendance-trends", (req, res) => {
+    db.all(
+        "SELECT * FROM attendance_sessions ORDER BY session_date ASC, session_type ASC",
+        [],
+        (err, sessions) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            db.all("SELECT id, name, group_name FROM students ORDER BY name ASC", [], (err2, students) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+
+                // Only count sessions that have real data recorded
+                const parsed = sessions
+                    .map(s => ({ ...s, sj: JSON.parse(s.students_json || "{}") }))
+                    .filter(s => Object.keys(s.sj).length > 0);
+
+                if (parsed.length === 0 || students.length === 0) {
+                    return res.json({ sessions: [], atRisk: [] });
+                }
+
+                const atRisk = students.map(student => {
+                    const sid = String(student.id);
+                    const attendance = parsed.map(session => {
+                        const record = session.sj[sid];
+                        if (!record) return false;          // not in record = absent
+                        return record.checkedIn === true;
+                    });
+                    const missed = attendance.filter(a => !a).length;
+                    return {
+                        id:         student.id,
+                        name:       student.name,
+                        group:      student.group_name || "",
+                        attendance,
+                        missed
+                    };
+                })
+                .filter(s => s.missed > 2)
+                .sort((a, b) => b.missed - a.missed);
+
+                res.json({
+                    sessions: parsed.map(s => ({
+                        label: s.session_date + (s.session_type === "morning" ? " AM" : " PM"),
+                        type:  s.session_type
+                    })),
+                    atRisk
+                });
+            });
+        }
+    );
+});
+
 // ── MEDICATION LOGS ───────────────────────────────────────────────────────────
 // GET all logs, optionally filtered by student name substring (?student=)
 app.get("/api/medication-logs", (req, res) => {
@@ -1405,13 +1458,13 @@ app.get("/api/medication-logs", (req, res) => {
 
 // POST — add a new medication administration log entry
 app.post("/api/medication-logs", (req, res) => {
-    const { student_name, medication, administered_by, administered_at, notes } = req.body;
-    if (!student_name || !medication || !administered_by || !administered_at) {
-        return res.status(400).json({ error: "student_name, medication, administered_by, and administered_at are required." });
+    const { student_name, medication, administered_at, notes } = req.body;
+    if (!student_name || !medication || !administered_at) {
+        return res.status(400).json({ error: "student_name, medication, and administered_at are required." });
     }
     db.run(
         "INSERT INTO medication_logs (student_name, medication, administered_by, administered_at, notes) VALUES (?, ?, ?, ?, ?)",
-        [student_name.trim(), medication.trim(), administered_by.trim(), administered_at, (notes || "").trim()],
+        [student_name.trim(), medication.trim(), "", administered_at, (notes || "").trim()],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             db.get("SELECT * FROM medication_logs WHERE id = ?", [this.lastID], (err2, row) => {
