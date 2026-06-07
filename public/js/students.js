@@ -736,6 +736,25 @@ window.rcSubmit = function() {
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ students_json: rcRecord, submitted: true })
     }).then(function() {
+        var missing = students.filter(function(s) { return !(rcRecord[s.id] && rcRecord[s.id].checkedIn); });
+        // Isabelle
+        var date = new Date().toLocaleDateString('en-CA');
+        var obsPromises = missing.map(function(s) {
+            return fetch('/api/observations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    student: s.name,
+                    type: 'Attendance',
+                    mood: 'neutral',
+                    details: 'Not checked in at Activity Roll Call #' + rcNumber + ' on ' + date + '.',
+                    acknowledged: false,
+                    acknowledgementNote: ''
+                })
+            });
+        });
+        return Promise.all(obsPromises);
+    }).then(function() {
         showMsg('Roll Call #' + rcNumber + ' submitted!', 'success');
         stopOneScanner('rc');
         rcActiveId = null;
@@ -743,7 +762,7 @@ window.rcSubmit = function() {
         el('rcActivePanel').classList.add('hidden');
         el('rcNoActive').classList.remove('hidden');
         rcLoadToday();
-    }).catch(function() { showMsg('Save failed.', 'error'); });
+    }).catch(function(e) { console.error('Roll call submit error:', e); showMsg('Save failed.', 'error'); });
 };
 
 function rcSaveActive(callback) {
@@ -843,6 +862,9 @@ document.querySelectorAll('.hub-nav').forEach(function(btn) {
     btn.addEventListener('click', function() {
         if (this.dataset.screen === 'activityRollCallScreen') {
             rcLoadToday();
+        }
+        if (this.dataset.screen === 'observationsScreen') {
+            displayObservations();
         }
     });
 });
