@@ -5,11 +5,13 @@
 // ============================================================
 
 // ── STATE ─────────────────────────────────────────────────
-let editingStudentId   = null;
-let editingObsId       = null;
-let acknowledgingObsId = null;
-let qrStream           = null;
-let qrAnimFrame        = null;
+let editingStudentId    = null;
+let editingObsId        = null;
+let acknowledgingObsId  = null;
+let qrStream            = null;
+let qrAnimFrame         = null;
+let committeeAssignments = {}; // name → committee_name
+let committeeOptions     = []; // [{id, name, type}]
 
 // ── INIT ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -57,6 +59,8 @@ function setupPanelToggles() {
 }
 
 function refreshAll() {
+    committeeAssignments = ShadDB.getCommitteeAssignments();
+    committeeOptions     = ShadDB.getCommitteeOptions();
     loadStats();
     displayStudents(ShadDB.getStudents());
     displayAttendanceAlerts();
@@ -152,13 +156,27 @@ function setupAddStudentBtn() {
 }
 
 function clearEditForm() {
-    ['editStudentName','editStudentPronouns','editStudentAge','editStudentInstrument',
-     'editStudentMedication','editStudentDietary','editStudentNote'].forEach(function(id) {
+    ['editStudentName','editStudentPronouns','editStudentHouseTeam','editStudentDesignTeam',
+     'editStudentReqTeam','editStudentAge','editStudentInstrument',
+     'editStudentDietary','editStudentNote'].forEach(function(id) {
         var e2 = document.getElementById(id);
         if (e2) e2.value = '';
     });
-    var grp = document.getElementById('editStudentGroup');
-    if (grp) grp.value = 'Group 1';
+    populateCommitteeDropdown('');
+}
+
+// ── COMMITTEE DROPDOWN ────────────────────────────────────
+function populateCommitteeDropdown(selectedName) {
+    var sel = el('editStudentCommittee');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— No committee assigned —</option>';
+    committeeOptions.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name + (c.type ? ' (' + c.type + ')' : '');
+        if (c.name === selectedName) opt.selected = true;
+        sel.appendChild(opt);
+    });
 }
 
 // ── STUDENT LIST ──────────────────────────────────────────
@@ -175,15 +193,23 @@ function displayStudents(studentArray) {
         const checkedIn   = attendance[student.id] && attendance[student.id].checkedIn;
         const statusText  = checkedIn ? 'Present' : 'Not Checked In';
         const statusClass = checkedIn ? 'present' : 'missing';
+        const committee   = committeeAssignments[student.name] || '';
+
+        var teams = [];
+        if (student.houseTeam)  teams.push('House: ' + student.houseTeam);
+        if (student.designTeam) teams.push('Design: ' + student.designTeam);
+        if (student.reqTeam)    teams.push('Req: ' + student.reqTeam);
+
         const row = document.createElement('div');
         row.classList.add('student-row');
         row.innerHTML =
             '<div>' +
                 '<p class="student-name">' + esc(student.name) + '</p>' +
-                '<p class="student-info">' + esc(student.pronouns) + ' \u2022 ' + esc(student.group) + ' \u2022 Age ' + esc(student.age) + '</p>' +
-                '<p class="student-info">Instrument: ' + esc(student.instrument) + '</p>' +
-                '<p class="student-info">Medication: ' + esc(student.medication) + '</p>' +
-                '<p class="student-info">' + esc(student.note) + '</p>' +
+                '<p class="student-info">' + esc(student.pronouns) + (student.age ? ' \u2022 Age ' + esc(student.age) : '') + '</p>' +
+                (teams.length ? '<p class="student-info">' + esc(teams.join(' \u2022 ')) + '</p>' : '') +
+                (committee ? '<p class="student-info">Committee: <strong>' + esc(committee) + '</strong></p>' : '') +
+                (student.instrument ? '<p class="student-info">Instrument: ' + esc(student.instrument) + '</p>' : '') +
+                (student.note ? '<p class="student-info">' + esc(student.note) + '</p>' : '') +
             '</div>' +
             '<div class="student-actions">' +
                 '<span class="status ' + statusClass + '">' + statusText + '</span>' +
@@ -202,17 +228,21 @@ function displayStudents(studentArray) {
 }
 
 function setupStudentControls() {
-    var search = el('studentSearch'), filter = el('studentGroupFilter');
+    var search = el('studentSearch'), teamFilter = el('studentTeamFilter');
     if (search) search.addEventListener('input', filterStudents);
-    if (filter) filter.addEventListener('change', filterStudents);
+    if (teamFilter) teamFilter.addEventListener('input', filterStudents);
 }
 
 function filterStudents() {
-    var search = (el('studentSearch') || {}).value || '';
-    var group  = (el('studentGroupFilter') || {}).value || 'all';
+    var search = (el('studentSearch')     || {}).value || '';
+    var team   = (el('studentTeamFilter') || {}).value || '';
+    var s2 = search.toLowerCase(), t2 = team.toLowerCase();
     var filtered = ShadDB.getStudents().filter(function(s) {
-        return s.name.toLowerCase().includes(search.toLowerCase()) &&
-               (group === 'all' || s.group === group);
+        var nameMatch = !s2 || s.name.toLowerCase().includes(s2);
+        var teamMatch = !t2 || (s.houseTeam  || '').toLowerCase().includes(t2) ||
+                               (s.designTeam || '').toLowerCase().includes(t2) ||
+                               (s.reqTeam    || '').toLowerCase().includes(t2);
+        return nameMatch && teamMatch;
     });
     displayStudents(filtered);
 }
@@ -223,14 +253,16 @@ function editStudent(id) {
     editingStudentId = id;
     var card = el('studentFormCard');
     card.querySelector('h3').textContent = 'Edit Student';
-    el('editStudentName').value       = student.name;
-    el('editStudentPronouns').value   = student.pronouns;
-    el('editStudentGroup').value      = student.group;
-    el('editStudentAge').value        = student.age;
-    el('editStudentInstrument').value = student.instrument;
-    el('editStudentMedication').value = student.medication;
-    el('editStudentDietary').value    = student.dietary;
-    el('editStudentNote').value       = student.note;
+    el('editStudentName').value        = student.name;
+    el('editStudentPronouns').value    = student.pronouns;
+    el('editStudentHouseTeam').value   = student.houseTeam  || student.group || '';
+    el('editStudentDesignTeam').value  = student.designTeam || '';
+    el('editStudentReqTeam').value     = student.reqTeam    || '';
+    el('editStudentAge').value         = student.age;
+    el('editStudentInstrument').value  = student.instrument;
+    el('editStudentDietary').value     = student.dietary;
+    el('editStudentNote').value        = student.note;
+    populateCommitteeDropdown(committeeAssignments[student.name] || '');
     card.classList.remove('hidden');
     card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -241,20 +273,35 @@ function setupStudentEditForm() {
     saveBtn.addEventListener('click', function() {
         var name       = el('editStudentName').value.trim();
         var pronouns   = el('editStudentPronouns').value.trim();
-        var group      = el('editStudentGroup').value;
+        var houseTeam  = el('editStudentHouseTeam').value.trim();
+        var designTeam = el('editStudentDesignTeam').value.trim();
+        var reqTeam    = el('editStudentReqTeam').value.trim();
         var age        = el('editStudentAge').value;
         var instrument = el('editStudentInstrument').value.trim();
-        var medication = el('editStudentMedication').value.trim();
         var dietary    = el('editStudentDietary').value.trim();
         var note       = el('editStudentNote').value.trim();
-        if (!name || !pronouns || !age || !instrument || !medication) {
-            alert('Please fill in name, pronouns, age, instrument, and medication.');
+        var committee  = el('editStudentCommittee') ? el('editStudentCommittee').value : '';
+        if (!name) {
+            alert('Please fill in the student name.');
             return;
         }
+        var studentData = { name: name, pronouns: pronouns, houseTeam: houseTeam,
+                            designTeam: designTeam, reqTeam: reqTeam,
+                            age: age, instrument: instrument, dietary: dietary, note: note };
         if (editingStudentId !== null) {
-            ShadDB.updateStudent(editingStudentId, { name: name, pronouns: pronouns, group: group, age: age, instrument: instrument, medication: medication, dietary: dietary, note: note });
+            ShadDB.updateStudent(editingStudentId, studentData);
+            // Save committee assignment if changed
+            var prevCommittee = committeeAssignments[name] || '';
+            if (committee && committee !== prevCommittee) {
+                ShadDB.assignCommittee(name, committee, '');
+            } else if (!committee && prevCommittee) {
+                ShadDB.unassignCommittee(name);
+            }
         } else {
-            ShadDB.addStudent({ name: name, pronouns: pronouns, group: group, age: age, instrument: instrument, medication: medication, dietary: dietary, note: note });
+            var newStudent = ShadDB.addStudent(studentData);
+            if (committee && newStudent && newStudent.name) {
+                ShadDB.assignCommittee(newStudent.name, committee, '');
+            }
         }
         editingStudentId = null;
         formCard.classList.add('hidden');
