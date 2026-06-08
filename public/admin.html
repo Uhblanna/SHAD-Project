@@ -15,8 +15,48 @@
 <link rel="stylesheet" href="/public/css/shad-base.css">
 <link rel="stylesheet" href="/public/css/admin.css">
 
+<!-- Isabelle McLean — pdf.js renders the first page of an uploaded map PDF to an image in the browser before upload -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
 <script src="/public/js/db.js" defer></script>
 <script src="/public/js/admin.js" defer></script>
+
+<style>
+/* Isabelle McLean — Campus Maps card: a label spot + an upload spot per map */
+.map-upload-grid { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
+.map-upload-row {
+    padding: 14px; border: 1px solid #ececec; border-radius: 12px; background: #fafafa;
+}
+.map-add {
+    padding: 16px; border: 2px dashed #cfe0ff; border-radius: 12px; background: #f5f9ff;
+    display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px;
+}
+.map-field-label { font-size: 12px; font-weight: 800; letter-spacing: 0.3px; color: #888; text-transform: uppercase; }
+.map-label-input {
+    padding: 10px 12px; border: 2px solid #e5e5e5; border-radius: 10px;
+    font-family: 'Archivo', sans-serif; font-size: 14px; font-weight: 700; color: #111; outline: none;
+}
+.map-label-input:focus { border-color: #146ff8; }
+.map-upload-status { margin: 2px 0 0; min-height: 16px; }
+.map-list-head { font-size: 12px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #aaa; margin-bottom: 8px; }
+.map-row-main { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.map-row-main .map-label-input { flex: 1; min-width: 160px; }
+/* Arrange (up/down) controls — 3-class selector to outrank shad-base's .admin-card button:not(.danger-btn) */
+.map-arrange { display: flex; flex-direction: column; gap: 3px; flex: 0 0 auto; }
+.map-row-main .map-arrange .map-move-btn {
+    width: 28px; height: 19px; padding: 0; margin: 0;
+    background: #e7eefb; color: #146ff8; border: none; border-radius: 6px;
+    font-size: 10px; line-height: 1; cursor: pointer;
+}
+.map-row-main .map-arrange .map-move-btn:hover { background: #d6e4fd; }
+.map-row-main .map-arrange .map-move-btn:disabled { opacity: 0.3; cursor: default; }
+/* Override the admin-card defaults (full-width buttons / grey inputs) for the maps UI */
+.map-add .map-label-input, .map-add .map-upload-input { margin-bottom: 0; width: 100%; }
+.map-row-main .map-label-input { margin-bottom: 0; }
+.map-row-main .map-save-btn, .map-row-main .map-remove-btn {
+    width: auto; flex: 0 0 auto; margin-bottom: 0; padding: 9px 16px; border-radius: 9px; font-size: 13px;
+}
+</style>
 </head>
 
 <body>
@@ -210,6 +250,33 @@
                 <button id="clearCommitteesBtn" class="danger-btn">Clear All Committees</button>
 
                 <p class="example">Example: Shad Red Deer News,Daily news and announcements for the cohort</p>
+            </div>
+        </div>
+
+        <!-- Isabelle McLean — Upload Campus Maps: replaces the 4 map images shown on the student portal; accepts images or PDFs (PDF's first page is rendered to an image in the browser) -->
+        <div class="admin-card">
+            <div class="admin-card-head">
+                <h3>Campus Maps</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Add as many campus maps as you like — each becomes a tab on the student portal. Images accept <strong>PNG, JPG, or PDF</strong> (the first page of a PDF is used).</p>
+
+                <!-- Single upload point: label + image → Add Map -->
+                <div class="map-add">
+                    <label class="map-field-label">Label</label>
+                    <input type="text" id="newMapLabel" class="map-label-input" maxlength="40" placeholder="e.g. Whole Campus">
+                    <label class="map-field-label">Map image</label>
+                    <input type="file" id="newMapFile" class="map-upload-input" accept=".png,.jpg,.jpeg,.webp,.pdf">
+                    <div class="button-row"><button type="button" id="addMapBtn">Add Map</button></div>
+                    <p class="map-upload-status example" id="newMapStatus"></p>
+                </div>
+
+                <div class="map-list-head">Current maps</div>
+                <div id="mapList" class="map-upload-grid">
+                    <p class="example">Loading maps…</p>
+                </div>
+                <button type="button" id="clearAllMapsBtn" class="danger-btn">Clear All Maps</button>
             </div>
         </div>
 

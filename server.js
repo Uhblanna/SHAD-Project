@@ -1,6 +1,7 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
 const path = require("path");
+const fs = require("fs");
 const cors = require("cors");
 const session = require("express-session");
 const db = require("./database");
@@ -23,7 +24,7 @@ const ADMIN_PASSWORD = "shadadmin";
 // ──────────────────────────────────────────────────────────────────────────
 
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: "shad2026-session-secret",
@@ -55,6 +56,9 @@ app.post("/api/staff-logout", (req, res) => {
 app.post("/api/admin-login", (req, res) => {
     if (req.body.password === ADMIN_PASSWORD) {
         req.session.adminAuth = true;
+        // Admin implies staff access, so the login-page Admin button can grant full
+        // access in one step (the admin page also requires a staff session to load).
+        req.session.staffAuth = true;
         res.json({ ok: true });
     } else {
         res.status(401).json({ ok: false, error: "Incorrect admin password." });
@@ -917,6 +921,140 @@ app.post("/api/committee-options/replace", (req, res) => {
             });
         });
     });
+});
+
+// Isabelle McLean — Campus Maps: an unlimited, ordered list of maps shown on the student portal.
+// Admins add maps from one upload point (PDFs are rendered to PNG in the browser first); each
+// map is { id, label, file } persisted in maps-config.json, and the student portal builds one
+// tab per map. The ?v= version (file mtime) busts the image cache after a replace.
+const MAPS_DIR = path.join(__dirname, "public", "img", "maps");
+const MAPS_CONFIG_FILE = path.join(__dirname, "maps-config.json");
+// Default maps used to seed the list the first time (or after an old config format)
+const DEFAULT_MAPS = [
+    { label: "Whole Campus",          file: "rdp-exterior.png" },
+    { label: "Main Campus",           file: "wayfinding.png" },
+    { label: "GGC · First Floor",     file: "ggc-first-floor.png" },
+    { label: "GGC · 2nd & 3rd Floor", file: "ggc-second-third-floor.png" }
+];
+
+function readMaps() {
+    let data = null;
+    try { data = JSON.parse(fs.readFileSync(MAPS_CONFIG_FILE, "utf8")); } catch (e) { data = null; }
+    if (Array.isArray(data)) return data;
+    // Seed from whichever default map files actually exist on disk
+    const seeded = DEFAULT_MAPS
+        .filter(m => { try { fs.accessSync(path.join(MAPS_DIR, m.file)); return true; } catch (e) { return false; } })
+        .map((m, i) => ({ id: "m" + (Date.now() + i).toString(36), label: m.label, file: m.file }));
+    writeMaps(seeded);
+    return seeded;
+}
+function writeMaps(arr) {
+    try { fs.writeFileSync(MAPS_CONFIG_FILE, JSON.stringify(arr, null, 2)); return true; } catch (e) { return false; }
+}
+function mapVersion(file) {
+    try { return Math.floor(fs.statSync(path.join(MAPS_DIR, file)).mtimeMs); } catch (e) { return null; }
+}
+function decodeMapImage(dataUrl) {
+    const m = (dataUrl || "").match(/^data:image\/(?:png|jpeg|jpg|webp);base64,(.+)$/);
+    if (!m) return null;
+    const buffer = Buffer.from(m[1], "base64");
+    return buffer.length ? buffer : null;
+}
+
+// List all maps in order, each with a cache-busting version stamp
+app.get("/api/maps", (req, res) => {
+    res.json(readMaps().map(m => ({
+        id: m.id,
+        label: m.label,
+        url: "/public/img/maps/" + m.file,
+        updatedAt: mapVersion(m.file)
+    })));
+});
+
+// Add a new map. Body: { label, dataUrl }
+app.post("/api/maps", (req, res) => {
+    const body = req.body || {};
+    const label = typeof body.label === "string" ? body.label.trim() : "";
+    if (!label) return res.status(400).json({ error: "Please enter a label for the map." });
+    const buffer = decodeMapImage(body.dataUrl);
+    if (!buffer) return res.status(400).json({ error: "Please choose a PNG, JPG, or PDF map image." });
+
+    const id = "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const file = id + ".png";
+    fs.mkdir(MAPS_DIR, { recursive: true }, mkErr => {
+        if (mkErr) return res.status(500).json({ error: mkErr.message });
+        fs.writeFile(path.join(MAPS_DIR, file), buffer, wErr => {
+            if (wErr) return res.status(500).json({ error: wErr.message });
+            const maps = readMaps();
+            maps.push({ id, label, file });
+            writeMaps(maps);
+            res.json({ ok: true, id, label, url: "/public/img/maps/" + file, updatedAt: Date.now() });
+        });
+    });
+});
+
+// Reorder the maps. Body: { order: [id, id, ...] } — sets the tab order on the student portal.
+app.post("/api/maps/reorder", (req, res) => {
+    const order = Array.isArray(req.body && req.body.order) ? req.body.order : null;
+    if (!order) return res.status(400).json({ error: "Expected an 'order' array of map ids." });
+    const maps = readMaps();
+    const byId = {};
+    maps.forEach(m => { byId[m.id] = m; });
+    const reordered = [];
+    order.forEach(id => { if (byId[id]) { reordered.push(byId[id]); delete byId[id]; } });
+    maps.forEach(m => { if (byId[m.id]) reordered.push(m); }); // keep any not listed
+    writeMaps(reordered);
+    res.json({ ok: true, count: reordered.length });
+});
+
+// Clear all maps (deletes every image file and empties the list)
+app.delete("/api/maps", (req, res) => {
+    const maps = readMaps();
+    maps.forEach(m => { fs.unlink(path.join(MAPS_DIR, m.file), () => {}); });
+    writeMaps([]);
+    res.json({ ok: true, cleared: maps.length });
+});
+
+// Update a map's label and/or replace its image. Body: { label?, dataUrl? }
+app.put("/api/maps/:id", (req, res) => {
+    const maps = readMaps();
+    const map = maps.find(m => m.id === req.params.id);
+    if (!map) return res.status(404).json({ error: "Map not found." });
+
+    const body = req.body || {};
+    const hasLabel = typeof body.label === "string";
+    const hasImage = typeof body.dataUrl === "string" && body.dataUrl.length > 0;
+    if (!hasLabel && !hasImage) return res.status(400).json({ error: "Nothing to save." });
+
+    if (hasLabel) {
+        const t = body.label.trim();
+        if (!t) return res.status(400).json({ error: "Label cannot be empty." });
+        map.label = t;
+    }
+
+    const finish = (updatedAt) => {
+        writeMaps(maps);
+        res.json({ ok: true, id: map.id, label: map.label, url: "/public/img/maps/" + map.file, updatedAt });
+    };
+
+    if (!hasImage) return finish(mapVersion(map.file));
+    const buffer = decodeMapImage(body.dataUrl);
+    if (!buffer) return res.status(400).json({ error: "Image must be a PNG, JPG, or WebP." });
+    fs.writeFile(path.join(MAPS_DIR, map.file), buffer, wErr => {
+        if (wErr) return res.status(500).json({ error: wErr.message });
+        finish(Date.now());
+    });
+});
+
+// Delete a map (and best-effort remove its image file)
+app.delete("/api/maps/:id", (req, res) => {
+    const maps = readMaps();
+    const idx = maps.findIndex(m => m.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ error: "Map not found." });
+    const [removed] = maps.splice(idx, 1);
+    writeMaps(maps);
+    fs.unlink(path.join(MAPS_DIR, removed.file), () => {});
+    res.json({ ok: true, id: removed.id });
 });
 
 // Isabelle McLean — Committee signup API routes: fetch all signups, submit a new one (blocks duplicate student+committee combos), remove by ID

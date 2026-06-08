@@ -25,8 +25,216 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadEnrollmentWindow();
     loadSwapRequestsAdmin();
+    const addMapBtn = document.getElementById("addMapBtn");
+    if (addMapBtn) addMapBtn.addEventListener("click", addMap);
+    const clearMapsBtn = document.getElementById("clearAllMapsBtn");
+    if (clearMapsBtn) clearMapsBtn.addEventListener("click", clearAllMaps);
+    loadMaps();
     setupPanelToggles();
 });
+
+// Isabelle McLean — Point pdf.js at its matching worker (used to render uploaded map PDFs)
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+// Isabelle McLean — Render the current maps list: each row has an editable label (Save) and a Remove button
+function loadMaps() {
+    const list = document.getElementById("mapList");
+    if (!list) return;
+    fetch("/api/maps")
+        .then(r => r.json())
+        .then(maps => {
+            list.innerHTML = "";
+            if (!maps.length) {
+                list.innerHTML = '<p class="example">No maps yet. Add one above.</p>';
+                return;
+            }
+            maps.forEach((m, i) => {
+                const row = document.createElement("div");
+                row.className = "map-upload-row";
+                row.setAttribute("data-id", m.id);
+                row.innerHTML =
+                    '<div class="map-row-main">' +
+                        '<div class="map-arrange">' +
+                            '<button type="button" class="map-move-btn" data-dir="up" title="Move up">▲</button>' +
+                            '<button type="button" class="map-move-btn" data-dir="down" title="Move down">▼</button>' +
+                        "</div>" +
+                        '<input type="text" class="map-label-input" maxlength="40">' +
+                        '<button type="button" class="map-save-btn">Save</button>' +
+                        '<button type="button" class="map-remove-btn danger-btn">Remove</button>' +
+                    "</div>" +
+                    '<p class="map-upload-status example"></p>';
+                const labelInput = row.querySelector(".map-label-input");
+                const saveBtn = row.querySelector(".map-save-btn");
+                const removeBtn = row.querySelector(".map-remove-btn");
+                const upBtn = row.querySelector('.map-move-btn[data-dir="up"]');
+                const downBtn = row.querySelector('.map-move-btn[data-dir="down"]');
+                const status = row.querySelector(".map-upload-status");
+                labelInput.value = m.label || "";
+                upBtn.disabled = (i === 0);
+                downBtn.disabled = (i === maps.length - 1);
+                saveBtn.addEventListener("click", () => renameMap(m.id, labelInput, saveBtn, status));
+                removeBtn.addEventListener("click", () => removeMap(m.id, m.label, removeBtn, status));
+                upBtn.addEventListener("click", () => moveMap(m.id, "up"));
+                downBtn.addEventListener("click", () => moveMap(m.id, "down"));
+                list.appendChild(row);
+            });
+        })
+        .catch(() => {
+            list.innerHTML = '<p class="example">Could not load maps.</p>';
+        });
+}
+
+// Isabelle McLean — Add a new map from the single upload point (label + image → POST /api/maps)
+function addMap() {
+    const labelInput = document.getElementById("newMapLabel");
+    const fileInput = document.getElementById("newMapFile");
+    const btn = document.getElementById("addMapBtn");
+    const status = document.getElementById("newMapStatus");
+
+    const label = labelInput.value.trim();
+    const file = fileInput.files[0];
+    if (!label) { status.style.color = "#cf2e2e"; status.textContent = "Enter a label."; return; }
+    if (!file) { status.style.color = "#cf2e2e"; status.textContent = "Choose a map image or PDF."; return; }
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Processing…";
+    status.style.color = "#888";
+    status.textContent = (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) ? "Rendering PDF…" : "Preparing image…";
+
+    fileToMapPng(file)
+        .then(dataUrl => {
+            btn.textContent = "Adding…";
+            status.textContent = "Adding…";
+            return apiRequest("POST", "/api/maps", { label, dataUrl });
+        })
+        .then(res => {
+            if (res && res.error) throw new Error(res.error);
+            status.style.color = "#5a9a20";
+            status.textContent = "Added ✓";
+            labelInput.value = "";
+            fileInput.value = "";
+            btn.textContent = original;
+            btn.disabled = false;
+            loadMaps();
+        })
+        .catch(err => {
+            status.style.color = "#cf2e2e";
+            status.textContent = (err && err.message) ? err.message : "Could not add map.";
+            btn.textContent = original;
+            btn.disabled = false;
+        });
+}
+
+// Isabelle McLean — Rename an existing map (PUT label)
+function renameMap(id, labelInput, btn, status) {
+    const label = labelInput.value.trim();
+    if (!label) { status.style.color = "#cf2e2e"; status.textContent = "Label cannot be empty."; return; }
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    status.style.color = "#888";
+    status.textContent = "Saving…";
+    apiRequest("PUT", "/api/maps/" + id, { label })
+        .then(res => {
+            if (res && res.error) throw new Error(res.error);
+            status.style.color = "#5a9a20";
+            status.textContent = "Saved ✓";
+            btn.textContent = original;
+            btn.disabled = false;
+        })
+        .catch(err => {
+            status.style.color = "#cf2e2e";
+            status.textContent = (err && err.message) ? err.message : "Save failed.";
+            btn.textContent = original;
+            btn.disabled = false;
+        });
+}
+
+// Isabelle McLean — Move a map up or down; sends the full new order to the server, then re-renders
+function moveMap(id, dir) {
+    const ids = [].map.call(document.querySelectorAll("#mapList .map-upload-row"),
+        r => r.getAttribute("data-id"));
+    const i = ids.indexOf(id);
+    if (i < 0) return;
+    const j = dir === "up" ? i - 1 : i + 1;
+    if (j < 0 || j >= ids.length) return;
+    const tmp = ids[i]; ids[i] = ids[j]; ids[j] = tmp;
+    apiRequest("POST", "/api/maps/reorder", { order: ids })
+        .then(res => { if (res && res.error) throw new Error(res.error); loadMaps(); })
+        .catch(() => loadMaps());
+}
+
+// Isabelle McLean — Remove every map after confirmation
+function clearAllMaps() {
+    if (!confirm("Remove ALL maps? This deletes every map image and clears the Campus Maps section on the student portal.")) return;
+    apiRequest("DELETE", "/api/maps")
+        .then(res => { if (res && res.error) throw new Error(res.error); loadMaps(); })
+        .catch(() => alert("Failed to clear maps. Please try again."));
+}
+
+// Isabelle McLean — Remove a map (and its image) after confirmation
+function removeMap(id, label, btn, status) {
+    if (!confirm('Remove the "' + label + '" map? This deletes its image and removes its tab from the student portal.')) return;
+    btn.disabled = true;
+    status.style.color = "#888";
+    status.textContent = "Removing…";
+    apiRequest("DELETE", "/api/maps/" + id)
+        .then(res => {
+            if (res && res.error) throw new Error(res.error);
+            loadMaps();
+        })
+        .catch(err => {
+            status.style.color = "#cf2e2e";
+            status.textContent = (err && err.message) ? err.message : "Remove failed.";
+            btn.disabled = false;
+        });
+}
+
+// Isabelle McLean — Render a map file (image or PDF first page) to a normalized PNG data URL, capped at MAX_W wide
+function fileToMapPng(file) {
+    const MAX_W = 2200;
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+
+    if (isPdf) {
+        if (!window.pdfjsLib) return Promise.reject(new Error("PDF support failed to load. Try an image instead."));
+        return file.arrayBuffer()
+            .then(buf => pdfjsLib.getDocument({ data: buf }).promise)
+            .then(pdf => pdf.getPage(1))
+            .then(page => {
+                const base = page.getViewport({ scale: 1 });
+                const scale = Math.min(2.5, MAX_W / base.width);
+                const vp = page.getViewport({ scale });
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.round(vp.width);
+                canvas.height = Math.round(vp.height);
+                return page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise
+                    .then(() => canvas.toDataURL("image/png"));
+            });
+    }
+
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                const scale = Math.min(1, MAX_W / img.naturalWidth);
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.round(img.naturalWidth * scale);
+                canvas.height = Math.round(img.naturalHeight * scale);
+                canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL("image/png"));
+            };
+            img.onerror = () => reject(new Error("Could not read that image file."));
+            img.src = reader.result;
+        };
+        reader.onerror = () => reject(new Error("Could not read that file."));
+        reader.readAsDataURL(file);
+    });
+}
 
 // Isabelle McLean — Expand or collapse all admin cards at once; individual toggles still work independently
 function expandAllPanels() {
