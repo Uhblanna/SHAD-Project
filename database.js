@@ -192,6 +192,11 @@ db.serialize(() => {
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     `);
+    // Migrate existing databases: add team columns to students
+    db.run(`ALTER TABLE students ADD COLUMN design_team TEXT NOT NULL DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN req_team TEXT NOT NULL DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN house_team TEXT NOT NULL DEFAULT ''`, function() {});
+
     // Migrate existing databases that pre-date the completed_at column
     db.run(`ALTER TABLE daily_todos ADD COLUMN completed_at TEXT NOT NULL DEFAULT ''`, function() {});
     // Migrate existing databases that pre-date the date column; backfill with today so old tasks don't disappear
