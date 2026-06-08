@@ -173,12 +173,18 @@
                 <label for="editStudentPronouns">Pronouns</label>
                 <input id="editStudentPronouns" type="text" placeholder="Example: she/her, he/him, they/them">
 
-                <label for="editStudentGroup">Group</label>
-                <select id="editStudentGroup">
-                    <option value="Group 1">Group 1</option>
-                    <option value="Group 2">Group 2</option>
-                    <option value="Group 3">Group 3</option>
-                    <option value="Group 4">Group 4</option>
+                <label for="editStudentHouseTeam">House Team</label>
+                <input id="editStudentHouseTeam" type="text" placeholder="e.g. Group A">
+
+                <label for="editStudentDesignTeam">Design Team</label>
+                <input id="editStudentDesignTeam" type="text" placeholder="e.g. Team 1">
+
+                <label for="editStudentReqTeam">Req Team</label>
+                <input id="editStudentReqTeam" type="text" placeholder="e.g. Team A">
+
+                <label for="editStudentCommittee">Committee</label>
+                <select id="editStudentCommittee">
+                    <option value="">— No committee assigned —</option>
                 </select>
 
                 <label for="editStudentAge">Age</label>
@@ -186,9 +192,6 @@
 
                 <label for="editStudentInstrument">Instrument</label>
                 <input id="editStudentInstrument" type="text">
-
-                <label for="editStudentMedication">Medication</label>
-                <textarea id="editStudentMedication" placeholder="List medications, dosage notes, or write None"></textarea>
 
                 <label for="editStudentDietary">Dietary Restrictions</label>
                 <textarea id="editStudentDietary" placeholder="List allergies, dietary restrictions, or write None"></textarea>
@@ -211,14 +214,7 @@
                 <div class="panel-body">
                     <div class="student-controls">
                         <input id="studentSearch" type="text" placeholder="Search student name...">
-
-                        <select id="studentGroupFilter">
-                            <option value="all">All Groups</option>
-                            <option value="Group 1">Group 1</option>
-                            <option value="Group 2">Group 2</option>
-                            <option value="Group 3">Group 3</option>
-                            <option value="Group 4">Group 4</option>
-                        </select>
+                        <input id="studentTeamFilter" type="text" placeholder="Filter by team...">
                     </div>
 
                     <div id="studentList"></div>
