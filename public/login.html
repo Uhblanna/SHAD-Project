@@ -412,6 +412,10 @@ nav a:hover {
         <div class="logo-box"></div>
         <h1>SHAD Portal</h1>
     </div>
+    <!-- Isabelle McLean — Admin link styled like the staff portal nav; opens the staff modal, then routes to admin.html -->
+    <nav>
+        <a href="#" onclick="openStaffModal(event, '/public/admin.html')" style="color:#146ff8;font-weight:800;">Admin</a>
+    </nav>
 </header>
 
 <section class="hero">
@@ -471,8 +475,21 @@ nav a:hover {
 </div>
 
 <script>
-function openStaffModal(e) {
+// Isabelle McLean — Where to send the user after a successful staff login.
+// Staff card → index.html; Admin card → admin.html (which then asks for the admin password).
+var loginTarget = '/public/index.html';
+
+function isAdminTarget() { return loginTarget.indexOf('admin') !== -1; }
+
+function openStaffModal(e, target) {
     e.preventDefault();
+    loginTarget = target || '/public/index.html';
+    var admin = isAdminTarget();
+    document.querySelector('#staffModal h3').textContent = admin ? 'Admin Access' : 'Staff Access';
+    document.querySelector('#staffModal .modal-sub').textContent = admin
+        ? 'Enter the admin password to open the admin panel.'
+        : 'Enter the staff password to access the portal.';
+    document.querySelector('#staffModal .modal-submit').textContent = admin ? 'Enter Admin →' : 'Enter Staff Portal →';
     document.getElementById('staffModal').classList.add('active');
     setTimeout(function() { document.getElementById('staffPassword').focus(); }, 100);
 }
@@ -488,12 +505,15 @@ function submitStaffLogin(e) {
     var password = document.getElementById('staffPassword').value;
     var btn = document.querySelector('.modal-submit');
     var errEl = document.getElementById('loginError');
+    var admin = isAdminTarget();
+    var endpoint = admin ? '/api/admin-login' : '/api/staff-login';
+    var label = admin ? 'Enter Admin →' : 'Enter Staff Portal →';
 
     btn.textContent = 'Checking...';
     btn.disabled = true;
     errEl.textContent = '';
 
-    fetch('/api/staff-login', {
+    fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: password })
@@ -501,10 +521,10 @@ function submitStaffLogin(e) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.ok) {
-            window.location.href = '/public/index.html';
+            window.location.href = loginTarget;
         } else {
-            errEl.textContent = 'Incorrect password. Try again.';
-            btn.textContent = 'Enter Staff Portal →';
+            errEl.textContent = admin ? 'Incorrect admin password. Try again.' : 'Incorrect password. Try again.';
+            btn.textContent = label;
             btn.disabled = false;
             document.getElementById('staffPassword').value = '';
             document.getElementById('staffPassword').focus();
@@ -512,7 +532,7 @@ function submitStaffLogin(e) {
     })
     .catch(function() {
         errEl.textContent = 'Connection error. Is the server running?';
-        btn.textContent = 'Enter Staff Portal →';
+        btn.textContent = label;
         btn.disabled = false;
     });
 }

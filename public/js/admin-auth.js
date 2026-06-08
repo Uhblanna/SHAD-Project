@@ -32,7 +32,18 @@ document.documentElement.style.visibility = "hidden";
 
     function revealPage() {
         document.documentElement.style.visibility = "";
-        injectLogout();
+        whenReady(injectLogout);
+    }
+
+    // Run fn once the DOM is parsed. The auth fetch can resolve before <body> exists
+    // (fast/cached responses), so injecting the logout button immediately would find no
+    // nav and silently skip it — this guarantees the nav is present first.
+    function whenReady(fn) {
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", fn);
+        } else {
+            fn();
+        }
     }
 
     // Same logout-injection pattern as auth-check.js, plus also clears admin auth so re-entry requires the admin password again

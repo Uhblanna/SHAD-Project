@@ -7,12 +7,23 @@ fetch("/api/check-auth")
             window.location.href = "/public/login.html";
         } else {
             document.documentElement.style.visibility = "";
-            injectLogout();
+            whenReady(injectLogout);
         }
     })
     .catch(function() {
         window.location.href = "/public/login.html";
     });
+
+// Run fn once the DOM is parsed. The auth fetch can resolve before <body> exists
+// (fast/cached responses), so injecting the logout button immediately would find no
+// nav and silently skip it — this guarantees the nav is present first.
+function whenReady(fn) {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", fn);
+    } else {
+        fn();
+    }
+}
 
 function injectLogout() {
     var adminLink = document.querySelector('a[href="/public/admin.html"]');
