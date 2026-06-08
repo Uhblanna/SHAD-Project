@@ -55,11 +55,11 @@ function addStudent(student) {
     const newStudent = apiPost('/api/students', {
         name: student.name || '',
         pronouns: student.pronouns || '',
-        group: student.group || 'Group 1',
+        houseTeam: student.houseTeam || student.group || '',
+        designTeam: student.designTeam || '',
+        reqTeam: student.reqTeam || '',
         age: student.age || '',
         instrument: student.instrument || '',
-        medication: student.medication || 'None',
-        medicationTaken: false,
         dietary: student.dietary || 'None',
         note: student.note || ''
     });
@@ -79,39 +79,51 @@ function deleteStudent(id) {
     window.dispatchEvent(new CustomEvent('shad:studentsChanged'));
 }
 
+function _mapStudentRow(row) {
+    // Name: prefer PrefName if present, fall back to FirstName + LastName or Name
+    const prefName  = (row['PrefName'] || '').trim();
+    const firstName = (row['FirstName'] || row['First Name'] || '').trim();
+    const lastName  = (row['LastName']  || row['Last Name']  || '').trim();
+    const fullName  = prefName || (firstName && lastName ? firstName + ' ' + lastName : (firstName || lastName));
+    const name      = fullName || row['Name'] || row['name'] || '';
+
+    // Pronouns
+    const pronouns = row['Pronoun'] || row['Pronouns'] || row['pronouns'] || '';
+
+    // Teams — house team maps from Campus/Group columns
+    const houseTeam  = row['House Team']  || row['house_team']  || row['Campus'] || row['Group']  || row['group']  || '';
+    const designTeam = row['Design Team'] || row['design_team'] || '';
+    const reqTeam    = row['Req Team']    || row['req_team']    || '';
+
+    // Age
+    const age = row['Age Start Prog'] || row['Age'] || row['age'] || '';
+
+    // Instrument
+    const instrument = row['Instrument'] || row['instrument'] || '';
+
+    // Dietary
+    const dietary = row['Dietary Restrictions And/Or Intolerances'] ||
+                    row['Dietary'] || row['dietary'] ||
+                    row['Dietary Restrictions'] || row['dietary_restrictions'] || 'None';
+
+    // Notes — "Things to Know" / "Notes for PD to be aware of" → note field
+    const note = row['Things to Know']            ||
+                 row['Things To Know']             ||
+                 row['Notes for PD to be aware of'] ||
+                 row['Note'] || row['note'] || row['Notes'] || '';
+
+    return { name, pronouns, houseTeam, designTeam, reqTeam, age, instrument, dietary, note };
+}
+
 function importStudentsFromCSV(rows) {
     const existing = getStudents();
-    const newStudents = rows.map(row => ({
-        name:        row['Name']        || row['name']        || '',
-        pronouns:    row['Pronouns']    || row['pronouns']    || '',
-        group:       row['Group']       || row['group']       || 'Group 1',
-        age:         row['Age']         || row['age']         || '',
-        instrument:  row['Instrument']  || row['instrument']  || '',
-        medication:  row['Medication']  || row['medication']  || 'None',
-        medicationTaken: false,
-        dietary:     row['Dietary']     || row['dietary']     ||
-                     row['Dietary Restrictions'] || row['dietary_restrictions'] || 'None',
-        note:        row['Note']        || row['note']        || row['Notes'] || ''
-    })).filter(s => s.name.trim() !== '');
-
+    const newStudents = rows.map(_mapStudentRow).filter(s => s.name.trim() !== '');
     setStudents([...existing, ...newStudents]);
     return newStudents.length;
 }
 
 function clearAndImportStudents(rows) {
-    const newStudents = rows.map(row => ({
-        name:        row['Name']        || row['name']        || '',
-        pronouns:    row['Pronouns']    || row['pronouns']    || '',
-        group:       row['Group']       || row['group']       || 'Group 1',
-        age:         row['Age']         || row['age']         || '',
-        instrument:  row['Instrument']  || row['instrument']  || '',
-        medication:  row['Medication']  || row['medication']  || 'None',
-        medicationTaken: false,
-        dietary:     row['Dietary']     || row['dietary']     ||
-                     row['Dietary Restrictions'] || row['dietary_restrictions'] || 'None',
-        note:        row['Note']        || row['note']        || row['Notes'] || ''
-    })).filter(s => s.name.trim() !== '');
-
+    const newStudents = rows.map(_mapStudentRow).filter(s => s.name.trim() !== '');
     setStudents(newStudents);
     return newStudents.length;
 }
@@ -206,6 +218,30 @@ function formatReportTime(date) {
     return 'Today • ' + hours + ':' + mins + ' ' + ampm;
 }
 
+// ── COMMITTEE ASSIGNMENTS ────────────────────────────────
+function getCommitteeAssignments() {
+    const list = apiGet('/api/committee-assignments') || [];
+    const map = {};
+    list.forEach(a => { map[a.student_name] = a.committee_name; });
+    return map;
+}
+
+function getCommitteeOptions() {
+    return apiGet('/api/committee-options') || [];
+}
+
+function assignCommittee(studentName, committeeName, committeeType) {
+    return apiPut('/api/committee-assignments', {
+        student_name: studentName,
+        committee_name: committeeName,
+        committee_type: committeeType || ''
+    });
+}
+
+function unassignCommittee(studentName) {
+    return apiDelete('/api/committee-assignments/' + encodeURIComponent(studentName));
+}
+
 // ── DASHBOARD STATS ──────────────────────────────────────
 function getDashboardStats() {
     const students     = getStudents();
@@ -216,18 +252,13 @@ function getDashboardStats() {
     const checkedIn = students.filter(s => attendance[s.id] && attendance[s.id].checkedIn).length;
     const missing   = students.length - checkedIn;
 
-    const needsMed = students.filter(s =>
-        s.medication && s.medication.toLowerCase() !== 'none' && !s.medicationTaken
-    ).length;
-
     return {
         totalStudents:    students.length,
         checkedIn,
         missing,
         observationCount: observations.length,
         unacknowledged:   observations.filter(o => !o.acknowledged).length,
-        reportCount:      reports.length,
-        needsMedication:  needsMed
+        reportCount:      reports.length
     };
 }
 
@@ -280,6 +311,7 @@ window.ShadDB = {
     getTodayAttendance, setTodayAttendance, checkInStudent, isCheckedIn, todayKey,
     getObservations, setObservations, addObservation, updateObservation, deleteObservation,
     getReports, addReport,
+    getCommitteeAssignments, getCommitteeOptions, assignCommittee, unassignCommittee,
     getDashboardStats,
     parseCSV, formatReportTime
 };
