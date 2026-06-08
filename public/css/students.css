@@ -418,13 +418,14 @@ header nav a:hover{
     max-width:520px;
 }
 
-#studentGroupFilter,
 #editStudentName,
 #editStudentPronouns,
-#editStudentGroup,
+#editStudentHouseTeam,
+#editStudentDesignTeam,
+#editStudentReqTeam,
+#editStudentCommittee,
 #editStudentAge,
 #editStudentInstrument,
-#editStudentMedication,
 #editStudentDietary,
 #editStudentNote{
     width:100%;
@@ -434,9 +435,25 @@ header nav a:hover{
     background:#f7fafc;
     font-family:'Archivo',sans-serif;
     font-size:15px;
+    color:#111;
+    outline:none;
+    transition:border-color 0.2s;
 }
 
-#editStudentMedication,
+#editStudentName:focus,
+#editStudentPronouns:focus,
+#editStudentHouseTeam:focus,
+#editStudentDesignTeam:focus,
+#editStudentReqTeam:focus,
+#editStudentCommittee:focus,
+#editStudentAge:focus,
+#editStudentInstrument:focus,
+#editStudentDietary:focus,
+#editStudentNote:focus{
+    border-color:#146ff8;
+    background:#fff;
+}
+
 #editStudentDietary,
 #editStudentNote{
     min-height:110px;
@@ -570,6 +587,7 @@ header nav a:hover{
 
 /* INPUTS */
 #studentSearch,
+#studentTeamFilter,
 .observation-card select,
 .observation-card textarea{
     width:100%;
@@ -579,6 +597,15 @@ header nav a:hover{
     background:#f7fafc;
     font-family:'Archivo',sans-serif;
     font-size:15px;
+    color:#111;
+    outline:none;
+    transition:border-color 0.2s;
+}
+
+#studentSearch:focus,
+#studentTeamFilter:focus{
+    border-color:#146ff8;
+    background:#fff;
 }
 
 .observation-card textarea{
