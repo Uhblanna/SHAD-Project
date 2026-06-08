@@ -450,3 +450,197 @@ nav a:hover { color:#146ff8; }
 .status-approved { color: #1db954; }
 .status-denied   { color: #e74c3c; }
 .status-pending  { color: #f39c12; }
+
+/* ══════════════════════════════════════════════════════════════
+   VISUAL REFRESH — matches the SHAD Schedule aesthetic
+   These rules override the flat-colour sheet styles above.
+══════════════════════════════════════════════════════════════ */
+
+/* Page background to match */
+body { background: #f7fafc; }
+
+/* Each day = white card with soft shadow */
+.sheet-day {
+    margin-bottom: 28px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.07);
+    border: none;
+}
+
+/* Day title bar — blue like the SHAD schedule column headers */
+.sheet-day-title {
+    background: #146ff8;
+    color: white;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    padding: 14px 20px;
+}
+
+/* Column headers row */
+.sheet-table th {
+    background: #1a5ae0;
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+    padding: 11px 10px;
+    border: none;
+    border-right: 1px solid rgba(255,255,255,0.12);
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+.sheet-table th.time-col     { text-align: left; padding-left: 16px; }
+.sheet-table th.activity-col { text-align: left; padding-left: 14px; }
+
+/* Body cells */
+.sheet-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    border-right: 1px solid #f5f5f5;
+    text-align: center;
+    vertical-align: middle;
+    background: white;
+    font-size: 13px;
+    font-weight: 600;
+}
+.sheet-table tbody tr:nth-child(even) td { background: #fafcff; }
+.sheet-table tbody tr:last-child td      { border-bottom: none; }
+
+/* Time column */
+.sheet-table .time-cell {
+    text-align: left !important;
+    padding-left: 16px !important;
+    background: #f7fafc !important;
+    border-right: 2px solid #eef2f7 !important;
+    font-size: 12px;
+    font-weight: 800;
+    color: #888;
+    white-space: nowrap;
+    font-style: normal;
+}
+
+/* Activity column */
+.sheet-table .activity-cell {
+    text-align: left !important;
+    padding-left: 14px !important;
+    color: #555;
+    font-style: italic;
+    font-weight: 600;
+}
+
+/* ── Status chip spans ──────────────────────────────────────── */
+.sched-chip {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 800;
+    border-left: 3px solid #ddd;
+    background: #f5f5f5;
+    color: #555;
+    white-space: nowrap;
+}
+
+.sched-chip.sheet-duty {
+    background: #d4f5e4;
+    color: #155a30;
+    border-left-color: #1a7f4b;
+}
+
+.sched-chip.sheet-call {
+    background: #dde8ff;
+    color: #0d52c4;
+    border-left-color: #146ff8;
+}
+
+.sched-chip.sheet-meal {
+    background: #fff8e0;
+    color: #7a5000;
+    border-left-color: #cc9900;
+}
+
+.sched-chip.sheet-night {
+    background: #f0ecff;
+    color: #4a2d8a;
+    border-left-color: #6f2da8;
+}
+
+.sched-chip.sheet-off {
+    background: #ffe8e8;
+    color: #991b1b;
+    border-left-color: #ff3b30;
+}
+
+/* Legend dots to match new chip colours */
+.leg-dot.green  { background: #1a7f4b; }
+.leg-dot.purple { background: #146ff8; }
+.leg-dot.orange { background: #cc9900; }
+.leg-dot.red    { background: #ff3b30; }
+
+/* ── Text-wrap fix: prevent headers and chips bleeding into adjacent columns ── */
+.sheet-table th {
+    white-space: normal;
+    word-break: break-word;
+    min-width: 80px;
+}
+
+/* Time column header stays on one line; status/role headers wrap */
+.sheet-table th.time-col,
+.sheet-table th.activity-col {
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.sched-chip {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Give every body cell a small minimum so short names don't get crushed */
+.sheet-table td {
+    min-width: 80px;
+}
+.sheet-table .time-cell,
+.sheet-table .activity-cell {
+    min-width: 0;
+}
+
+/* ── Table-width fix: stop squeezing columns, scroll instead ──────────────
+   The root cause of bleeding: width:100% forces many columns into a fixed
+   space so text overflows. Use max-content so the table is as wide as it
+   needs to be, and let the scroll wrapper handle the rest — exactly how
+   the SHAD schedule works.                                                 */
+.sheet-table {
+    width: max-content;
+    min-width: 100%;
+}
+
+/* Headers — one line, no break */
+.sheet-table th {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+    min-width: auto;
+}
+
+/* Chips — one line, no break */
+.sched-chip {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+}
+
+/* Body cells — one line by default */
+.sheet-table td {
+    white-space: nowrap;
+    min-width: auto;
+}
+
+/* Time / activity columns are already set, just keep them consistent */
+.sheet-table .time-cell,
+.sheet-table .activity-cell {
+    white-space: nowrap;
+}
