@@ -106,11 +106,12 @@ function rowToStudent(row) {
         id: row.id,
         name: row.name,
         pronouns: row.pronouns || "",
-        group: row.group_name || "Group 1",
+        group: row.group_name || "",
+        designTeam: row.design_team || "",
+        reqTeam: row.req_team || "",
+        houseTeam: row.house_team || "",
         age: row.age || "",
         instrument: row.instrument || "",
-        medication: row.medication || "None",
-        medicationTaken: row.medication_taken === 1,
         dietary: row.dietary || "None",
         note: row.note || ""
     };
@@ -190,9 +191,9 @@ app.get("/api/students", (req, res) => {
 app.post("/api/students", (req, res) => {
     const s = req.body;
     db.run(`
-        INSERT INTO students (name, pronouns, group_name, age, instrument, medication, medication_taken, dietary, note)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [s.name, s.pronouns || "", s.group || "Group 1", s.age || null, s.instrument || "", s.medication || "None", s.medicationTaken ? 1 : 0, s.dietary || "None", s.note || ""], function(err) {
+        INSERT INTO students (name, pronouns, group_name, age, instrument, medication, medication_taken, dietary, note, design_team, req_team, house_team)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [s.name, s.pronouns || "", s.group || s.houseTeam || "", s.age || null, s.instrument || "", "None", 0, s.dietary || "None", s.note || "", s.designTeam || "", s.reqTeam || "", s.houseTeam || s.group || ""], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         db.get("SELECT * FROM students WHERE id = ?", [this.lastID], (err2, row) => {
             if (err2) return res.status(500).json({ error: err2.message });
@@ -210,12 +211,13 @@ app.put("/api/students/:id", (req, res) => {
             group_name = COALESCE(?, group_name),
             age = COALESCE(?, age),
             instrument = COALESCE(?, instrument),
-            medication = COALESCE(?, medication),
-            medication_taken = COALESCE(?, medication_taken),
             dietary = COALESCE(?, dietary),
-            note = COALESCE(?, note)
+            note = COALESCE(?, note),
+            design_team = COALESCE(?, design_team),
+            req_team = COALESCE(?, req_team),
+            house_team = COALESCE(?, house_team)
         WHERE id = ?
-    `, [s.name, s.pronouns, s.group, s.age, s.instrument, s.medication, typeof s.medicationTaken === "boolean" ? (s.medicationTaken ? 1 : 0) : null, s.dietary, s.note, req.params.id], function(err) {
+    `, [s.name, s.pronouns, s.houseTeam || s.group || null, s.age, s.instrument, s.dietary, s.note, s.designTeam !== undefined ? s.designTeam : null, s.reqTeam !== undefined ? s.reqTeam : null, s.houseTeam !== undefined ? s.houseTeam : (s.group || null), req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ updated: this.changes });
     });
@@ -237,11 +239,11 @@ app.post("/api/students/replace", (req, res) => {
         db.run("DELETE FROM committee_assignments");
         db.run("DELETE FROM morning_rec_signups");
         const stmt = db.prepare(`
-            INSERT INTO students (name, pronouns, group_name, age, instrument, medication, medication_taken, dietary, note)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO students (name, pronouns, group_name, age, instrument, medication, medication_taken, dietary, note, design_team, req_team, house_team)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         students.forEach(s => {
-            stmt.run([s.name, s.pronouns || "", s.group || "Group 1", s.age || null, s.instrument || "", s.medication || "None", s.medicationTaken ? 1 : 0, s.dietary || "None", s.note || ""]);
+            stmt.run([s.name, s.pronouns || "", s.houseTeam || s.group || "", s.age || null, s.instrument || "", "None", 0, s.dietary || "None", s.note || "", s.designTeam || "", s.reqTeam || "", s.houseTeam || s.group || ""]);
         });
         stmt.finalize(err => {
             if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
@@ -261,30 +263,27 @@ app.post("/api/students/add", (req, res) => {
 
         const stmt = db.prepare(`
             INSERT INTO students (
-                name,
-                pronouns,
-                group_name,
-                age,
-                instrument,
-                medication,
-                medication_taken,
-                dietary,
-                note
+                name, pronouns, group_name, age, instrument,
+                medication, medication_taken, dietary, note,
+                design_team, req_team, house_team
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         students.forEach(s => {
             stmt.run([
                 s.name,
                 s.pronouns || "",
-                s.group || "Group 1",
+                s.houseTeam || s.group || "",
                 s.age || null,
                 s.instrument || "",
-                s.medication || "None",
-                s.medicationTaken ? 1 : 0,
+                "None",
+                0,
                 s.dietary || "None",
-                s.note || ""
+                s.note || "",
+                s.designTeam || "",
+                s.reqTeam || "",
+                s.houseTeam || s.group || ""
             ]);
         });
 
