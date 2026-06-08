@@ -17,8 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("prevWeekBtn").addEventListener("click", () => shiftWeek(-1));
     document.getElementById("nextWeekBtn").addEventListener("click", () => shiftWeek(1));
-    document.getElementById("applyScheduleFilterBtn").addEventListener("click", jumpToDate);
-    document.getElementById("scheduleDateFilter").valueAsDate = new Date();
+    const filterBtn = document.getElementById("applyScheduleFilterBtn");
+    if (filterBtn) filterBtn.addEventListener("click", jumpToDate);
+    const dateFilter = document.getElementById("scheduleDateFilter");
+    if (dateFilter) dateFilter.valueAsDate = new Date();
 
     document.getElementById("openSwapModalBtn").addEventListener("click", () => openModal("swapModal"));
     document.getElementById("closeSwapModal").addEventListener("click",  () => closeModal("swapModal"));
@@ -145,7 +147,8 @@ function renderWeek() {
                 ${staffRoles.map(role => {
                     const entry = rowEntries.find(e => e.staffRole === role);
                     const status = entry ? entry.status : "";
-                    return `<td class="status-cell ${sheetStatusClass(status)}">${status}</td>`;
+                    const cls = sheetStatusClass(status);
+                    return `<td class="status-cell">${status ? `<span class="sched-chip ${cls}">${status}</span>` : ""}</td>`;
                 }).join("")}
             `;
 
