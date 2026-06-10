@@ -854,6 +854,35 @@ window.rcCheckInByName = function(nameArg) {
     showMsg(student.name + ' checked in!', 'success');
 };
 
+// Re-open a previously submitted roll call for editing
+window.rcReopenRollCall = function(id, studentsJson, number) {
+    if (rcActiveId && rcActiveId !== id) {
+        if (!confirm('You have an active roll call in progress. Reopen Roll Call #' + number + ' instead?')) return;
+        stopOneScanner('rc');
+    }
+    fetch('/api/activity-rollcall/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ students_json: studentsJson, reopen: true })
+    }).then(function(r) { return r.json(); })
+    .then(function(row) {
+        rcActiveId = row.id;
+        rcRecord = row.students_json || {};
+        rcNumber = row.checkin_number;
+        rcRecentScans = [];
+        el('rcActiveLabel').textContent = 'Roll Call #' + rcNumber + ' (Editing)';
+        var now = new Date();
+        el('rcActiveTime').textContent = 'Reopened · ' + fmtTime(now);
+        el('rcActivePanel').classList.remove('hidden');
+        el('rcNoActive').classList.add('hidden');
+        rcRefreshMissing();
+        rcUpdateProgress();
+        rcLoadToday();
+        setupOneScanner('rc', el('rcScannerBox'), function(name) { rcCheckInByName(name); });
+        showMsg('Roll Call #' + rcNumber + ' reopened for editing.', 'success');
+    }).catch(function() { showMsg('Failed to reopen roll call.', 'error'); });
+};
+
 window.rcSubmit = function() {
     if (!rcActiveId) return;
     var students = ShadDB.getStudents();
@@ -964,14 +993,26 @@ function rcLoadToday() {
                 var isActive = row.id === rcActiveId;
                 var card = document.createElement('div');
                 card.style.cssText = 'padding:14px 0;border-bottom:1px solid #f1f1f1;display:flex;align-items:center;gap:14px;flex-wrap:wrap;';
+                var statusBadge = row.submitted_at
+                    ? '<span style="font-size:11px;font-weight:700;color:#00c87a;background:#e8fff4;padding:3px 9px;border-radius:20px;">✓ Submitted</span>'
+                    : '<span style="font-size:11px;font-weight:700;color:#f39c12;background:#fff8e8;padding:3px 9px;border-radius:20px;">' + (isActive ? '● Active' : '○ In Progress') + '</span>';
                 card.innerHTML =
                     '<span style="font-size:13px;font-weight:800;color:#146ff8;min-width:90px;">Roll Call #' + row.checkin_number + '</span>' +
                     '<span style="font-size:13px;font-weight:700;color:#111;">' + checkedIn + ' / ' + students.length + ' present</span>' +
                     '<div style="flex:1;height:6px;background:#f0f0f0;border-radius:99px;overflow:hidden;min-width:60px;">' +
                     '<div style="height:100%;width:' + pct + '%;background:#8bc53f;border-radius:99px;"></div></div>' +
-                    '<span style="font-size:11px;font-weight:700;color:' + (row.submitted_at ? '#00c87a' : '#f39c12') + ';background:' + (row.submitted_at ? '#e8fff4' : '#fff8e8') + ';padding:3px 9px;border-radius:20px;">' +
-                    (row.submitted_at ? '✓ Submitted' : (isActive ? '● Active' : '○ In Progress')) + '</span>' +
+                    statusBadge +
                     '<span style="font-size:12px;color:#aaa;font-weight:600;">' + fmtDateTime(row.started_at) + '</span>';
+                if (row.submitted_at && !isActive) {
+                    var editBtn = document.createElement('button');
+                    editBtn.textContent = 'Edit';
+                    editBtn.style.cssText = 'padding:5px 12px;background:#146ff8;color:white;border:none;border-radius:8px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;';
+                    var capturedRow = row;
+                    editBtn.addEventListener('click', function() {
+                        rcReopenRollCall(capturedRow.id, capturedRow.students_json || {}, capturedRow.checkin_number);
+                    });
+                    card.appendChild(editBtn);
+                }
                 todayList.appendChild(card);
             });
             // Update the "new roll call" button
