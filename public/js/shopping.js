@@ -40,7 +40,10 @@ function renderShoppingList(items) {
                 '<span class="custom-box"></span>' +
             '</label>' +
             '<div class="item-info">' +
-                '<h4>' + escH(item.name) + (item.priority ? ' ⚡' : '') + '</h4>' +
+                '<h4' + (item.priority ? ' class="priority-item"' : '') + '>' +
+                    escH(item.name) +
+                    (item.priority ? '<span class="priority-label">Urgent</span>' : '') +
+                '</h4>' +
                 (item.requested_by ? '<p style="font-size:12px; font-weight:700; color:#146ff8; margin-bottom:2px;">Requested by: ' + escH(item.requested_by) + '</p>' : '') +
                 (item.reason ? '<p style="font-size:12px; font-weight:600; color:#888; margin-bottom:2px;">Reason: ' + escH(item.reason) + '</p>' : '') +
                 (item.description ? '<p>' + escH(item.description) + '</p>' : '') +
