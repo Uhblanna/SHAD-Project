@@ -241,8 +241,7 @@ function displayStudents(studentArray) {
 function printStudentQR(students) {
     if (!students.length) { alert('No students to print.'); return; }
 
-    // Use a hidden off-screen div to generate each QR code via qrcodejs,
-    // then pull the canvas data URL out before opening the print window
+    // Generate QR codes off-screen in the parent window where qrcodejs is already loaded
     var scratch = document.createElement('div');
     scratch.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
     document.body.appendChild(scratch);
@@ -250,7 +249,7 @@ function printStudentQR(students) {
     var cards = students.map(function(s) {
         var wrapper = document.createElement('div');
         scratch.appendChild(wrapper);
-        new QRCode(wrapper, { text: 'SHAD_STUDENT:' + s.id, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M });
+        new QRCode(wrapper, { text: 'SHAD_STUDENT:' + s.id, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
         var canvas = wrapper.querySelector('canvas');
         var dataUrl = canvas ? canvas.toDataURL() : '';
         return { student: s, dataUrl: dataUrl };
@@ -262,7 +261,8 @@ function printStudentQR(students) {
         var s = card.student;
         var sub = s.group || s.houseTeam || s.Group || '';
         return '<div class="qr-card">' +
-            (card.dataUrl ? '<img src="' + card.dataUrl + '" width="150" height="150">' : '') +
+            '<div class="qr-header">SHAD 2026</div>' +
+            (card.dataUrl ? '<img src="' + card.dataUrl + '" class="qr-img">' : '') +
             '<p class="qr-name">' + esc(s.name) + '</p>' +
             (sub ? '<p class="qr-sub">' + esc(sub) + '</p>' : '') +
             '</div>';
@@ -271,18 +271,36 @@ function printStudentQR(students) {
     var win = window.open('', '_blank');
     if (!win) { alert('Please allow pop-ups to print QR codes.'); return; }
     win.document.write(
-        '<!DOCTYPE html><html><head><title>SHAD QR Codes</title>' +
+        '<!DOCTYPE html><html><head><title>SHAD 2026 — QR Codes</title>' +
         '<style>' +
-            'body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#fff;}' +
-            '.qr-grid{display:flex;flex-wrap:wrap;gap:16px;}' +
-            '.qr-card{width:178px;border:2px solid #eee;border-radius:12px;padding:14px;text-align:center;page-break-inside:avoid;box-sizing:border-box;}' +
-            '.qr-name{font-weight:700;font-size:13px;margin:8px 0 2px;word-break:break-word;}' +
-            '.qr-sub{font-size:11px;color:#888;margin:0;}' +
-            '@media print{body{padding:10px;}button{display:none!important;}}' +
+            '*{box-sizing:border-box;margin:0;padding:0;}' +
+            'body{font-family:Arial,sans-serif;background:#fff;padding:0.25in;}' +
+            '.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}' +
+            '.toolbar h2{font-size:16px;}' +
+            '.print-btn{padding:10px 22px;background:#146ff8;color:white;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;}' +
+            '.qr-grid{display:flex;flex-wrap:wrap;gap:0;}' +
+            /* Each badge: 2.5in wide × 3.5in tall, dotted cut border */
+            '.qr-card{' +
+                'width:2.5in;height:3.5in;' +
+                'border:1.5px dashed #aaa;' +
+                'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+                'padding:0.15in;' +
+                'page-break-inside:avoid;' +
+            '}' +
+            '.qr-header{font-size:11px;font-weight:700;letter-spacing:1.5px;color:#146ff8;text-transform:uppercase;margin-bottom:8px;}' +
+            '.qr-img{width:1.8in;height:1.8in;display:block;}' +
+            '.qr-name{font-weight:700;font-size:13px;margin-top:10px;text-align:center;word-break:break-word;line-height:1.3;}' +
+            '.qr-sub{font-size:10px;color:#888;margin-top:4px;text-align:center;}' +
+            '@media print{' +
+                'body{padding:0.25in;}' +
+                '.toolbar{display:none!important;}' +
+                /* Fit 3 badges across a standard letter page (8.5in − 0.5in margins = 8in ÷ 2.5in = 3) */
+                '.qr-grid{width:7.5in;}' +
+            '}' +
         '</style></head><body>' +
-        '<div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">' +
-            '<h2 style="margin:0;font-size:18px;">SHAD 2026 — Student QR Codes</h2>' +
-            '<button onclick="window.print()" style="padding:10px 22px;background:#146ff8;color:white;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">🖨 Print</button>' +
+        '<div class="toolbar">' +
+            '<h2>SHAD 2026 — Student QR Badges &nbsp;<span style="font-weight:400;color:#888;font-size:13px;">Cut along dotted lines</span></h2>' +
+            '<button class="print-btn" onclick="window.print()">🖨 Print</button>' +
         '</div>' +
         '<div class="qr-grid">' + cardHTML + '</div>' +
         '</body></html>'
