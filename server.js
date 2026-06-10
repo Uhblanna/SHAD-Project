@@ -1458,22 +1458,27 @@ app.post("/api/activity-rollcall/start", (req, res) => {
     });
 });
 
-// PUT — update students_json for a roll call (live check-ins) and optionally submit
+// PUT — update students_json for a roll call (live check-ins) and optionally submit or reopen
 app.put("/api/activity-rollcall/:id", (req, res) => {
-    const { students_json, submitted } = req.body;
+    const { students_json, submitted, reopen } = req.body;
     const json = JSON.stringify(students_json || {});
-    const submittedAt = submitted ? new Date().toISOString() : null;
-    db.run(
-        "UPDATE activity_rollcall SET students_json = ?, submitted_at = COALESCE(?, submitted_at) WHERE id = ?",
-        [json, submittedAt, req.params.id],
-        function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            db.get("SELECT * FROM activity_rollcall WHERE id = ?", [req.params.id], (err2, r) => {
-                if (err2) return res.status(500).json({ error: err2.message });
-                res.json({ ...r, students_json: JSON.parse(r.students_json || "{}") });
-            });
-        }
-    );
+    let sql, params;
+    if (reopen) {
+        // Explicitly clear submitted_at so the roll call becomes editable again
+        sql = "UPDATE activity_rollcall SET students_json = ?, submitted_at = NULL WHERE id = ?";
+        params = [json, req.params.id];
+    } else {
+        const submittedAt = submitted ? new Date().toISOString() : null;
+        sql = "UPDATE activity_rollcall SET students_json = ?, submitted_at = COALESCE(?, submitted_at) WHERE id = ?";
+        params = [json, submittedAt, req.params.id];
+    }
+    db.run(sql, params, function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get("SELECT * FROM activity_rollcall WHERE id = ?", [req.params.id], (err2, r) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ ...r, students_json: JSON.parse(r.students_json || "{}") });
+        });
+    });
 });
 
 // DELETE a roll call session
