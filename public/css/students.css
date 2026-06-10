@@ -472,7 +472,8 @@ header nav a:hover{
     align-items:flex-end;
     gap:10px;
 }
-.edit-student-btn{
+.edit-student-btn,
+.print-qr-btn{
     background:#146ff8;
     color:white;
     border:none;
@@ -502,6 +503,7 @@ header nav a:hover{
 }
 
 .edit-student-btn:hover,
+.print-qr-btn:hover,
 #saveStudentEditBtn:hover{
     transform:translateY(-3px) scale(1.02);
 }
