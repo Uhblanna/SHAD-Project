@@ -235,7 +235,18 @@ app.delete("/api/students/:id", (req, res) => {
 });
 
 app.post("/api/students/replace", (req, res) => {
-    const students = Array.isArray(req.body.students) ? req.body.students : [];
+    const students = (Array.isArray(req.body.students) ? req.body.students : []).map(s => ({
+        name:       (s.name || s.Name || "").trim(),
+        pronouns:   s.pronouns || s.Pronouns || "",
+        group:      s.group || s.Group || s.houseTeam || "",
+        age:        s.age || s.Age || null,
+        instrument: s.instrument || s.Instrument || "",
+        dietary:    s.dietary || s.Dietary || "None",
+        note:       s.note || s.Note || "",
+        designTeam: s.designTeam || "",
+        reqTeam:    s.reqTeam || "",
+        houseTeam:  s.houseTeam || s.group || s.Group || ""
+    })).filter(s => s.name);
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run("DELETE FROM students");
@@ -247,7 +258,7 @@ app.post("/api/students/replace", (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         students.forEach(s => {
-            stmt.run([s.name, s.pronouns || "", s.houseTeam || s.group || "", s.age || null, s.instrument || "", "None", 0, s.dietary || "None", s.note || "", s.designTeam || "", s.reqTeam || "", s.houseTeam || s.group || ""]);
+            stmt.run([s.name, s.pronouns, s.houseTeam || s.group, s.age, s.instrument, "None", 0, s.dietary, s.note, s.designTeam, s.reqTeam, s.houseTeam || s.group]);
         });
         stmt.finalize(err => {
             if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
@@ -260,7 +271,18 @@ app.post("/api/students/replace", (req, res) => {
 });
 
 app.post("/api/students/add", (req, res) => {
-    const students = Array.isArray(req.body.students) ? req.body.students : [];
+    const students = (Array.isArray(req.body.students) ? req.body.students : []).map(s => ({
+        name:       (s.name || s.Name || "").trim(),
+        pronouns:   s.pronouns || s.Pronouns || "",
+        group:      s.group || s.Group || s.houseTeam || "",
+        age:        s.age || s.Age || null,
+        instrument: s.instrument || s.Instrument || "",
+        dietary:    s.dietary || s.Dietary || "None",
+        note:       s.note || s.Note || "",
+        designTeam: s.designTeam || "",
+        reqTeam:    s.reqTeam || "",
+        houseTeam:  s.houseTeam || s.group || s.Group || ""
+    })).filter(s => s.name);
 
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");

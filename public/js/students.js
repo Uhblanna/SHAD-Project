@@ -20,6 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAddStudentBtn();
     refreshAll();
 
+    var printAllBtn = el('printAllQRBtn');
+    if (printAllBtn) {
+        printAllBtn.addEventListener('click', function() {
+            printStudentQR(ShadDB.getStudents());
+        });
+    }
+
     setupStudentControls();
     setupStudentEditForm();
     setupObservationToggle();
@@ -213,9 +220,11 @@ function displayStudents(studentArray) {
             '</div>' +
             '<div class="student-actions">' +
                 '<span class="status ' + statusClass + '">' + statusText + '</span>' +
+                '<button class="print-qr-btn">\ud83d\udda8 QR</button>' +
                 '<button class="edit-student-btn">Edit</button>' +
                 '<button class="delete-student-btn">\u2715</button>' +
             '</div>';
+        row.querySelector('.print-qr-btn').addEventListener('click', function() { printStudentQR([student]); });
         row.querySelector('.edit-student-btn').addEventListener('click', function() { editStudent(student.id); });
         row.querySelector('.delete-student-btn').addEventListener('click', function() {
             if (confirm('Remove ' + student.name + ' from the list?')) {
@@ -225,6 +234,60 @@ function displayStudents(studentArray) {
         });
         list.appendChild(row);
     });
+}
+
+// ── QR CODE PRINTING ──────────────────────────────────────
+// Isabelle
+function printStudentQR(students) {
+    if (!students.length) { alert('No students to print.'); return; }
+
+    // Use a hidden off-screen div to generate each QR code via qrcodejs,
+    // then pull the canvas data URL out before opening the print window
+    var scratch = document.createElement('div');
+    scratch.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+    document.body.appendChild(scratch);
+
+    var cards = students.map(function(s) {
+        var wrapper = document.createElement('div');
+        scratch.appendChild(wrapper);
+        new QRCode(wrapper, { text: 'SHAD_STUDENT:' + s.id, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M });
+        var canvas = wrapper.querySelector('canvas');
+        var dataUrl = canvas ? canvas.toDataURL() : '';
+        return { student: s, dataUrl: dataUrl };
+    });
+
+    document.body.removeChild(scratch);
+
+    var cardHTML = cards.map(function(card) {
+        var s = card.student;
+        var sub = s.group || s.houseTeam || s.Group || '';
+        return '<div class="qr-card">' +
+            (card.dataUrl ? '<img src="' + card.dataUrl + '" width="150" height="150">' : '') +
+            '<p class="qr-name">' + esc(s.name) + '</p>' +
+            (sub ? '<p class="qr-sub">' + esc(sub) + '</p>' : '') +
+            '</div>';
+    }).join('');
+
+    var win = window.open('', '_blank');
+    if (!win) { alert('Please allow pop-ups to print QR codes.'); return; }
+    win.document.write(
+        '<!DOCTYPE html><html><head><title>SHAD QR Codes</title>' +
+        '<style>' +
+            'body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#fff;}' +
+            '.qr-grid{display:flex;flex-wrap:wrap;gap:16px;}' +
+            '.qr-card{width:178px;border:2px solid #eee;border-radius:12px;padding:14px;text-align:center;page-break-inside:avoid;box-sizing:border-box;}' +
+            '.qr-name{font-weight:700;font-size:13px;margin:8px 0 2px;word-break:break-word;}' +
+            '.qr-sub{font-size:11px;color:#888;margin:0;}' +
+            '@media print{body{padding:10px;}button{display:none!important;}}' +
+        '</style></head><body>' +
+        '<div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">' +
+            '<h2 style="margin:0;font-size:18px;">SHAD 2026 — Student QR Codes</h2>' +
+            '<button onclick="window.print()" style="padding:10px 22px;background:#146ff8;color:white;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">🖨 Print</button>' +
+        '</div>' +
+        '<div class="qr-grid">' + cardHTML + '</div>' +
+        '</body></html>'
+    );
+    win.document.close();
 }
 
 function setupStudentControls() {

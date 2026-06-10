@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="/public/css/shad-base.css">
     <link rel="stylesheet" href="/public/css/students.css">
     <script src="/public/js/db.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/public/js/students.js" defer></script>
 </head>
 
@@ -161,7 +162,10 @@
                     <p class="subtext">Quickly access key details, health notes, medications, and behavior logs.</p>
                 </div>
 
-                <a href="#" class="add-btn">+ Add Student</a>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <a href="#" class="add-btn">+ Add Student</a>
+                    <button id="printAllQRBtn" class="add-btn" style="background:#146ff8;">🖨 Print QR Codes</button>
+                </div>
             </div>
 
             <div class="student-panel hidden" id="studentFormCard">
@@ -551,7 +555,6 @@
             </div>
         </div>
 
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
         <script>
         (function() {
             var recUrl = window.location.origin + '/public/morning-rec.html';
