@@ -342,7 +342,10 @@
             <div class="att-history-card">
                 <div class="card-header">
                     <h3>Session History</h3>
-                    <button class="panel-toggle" type="button" aria-expanded="false" title="Expand">+</button>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button id="attDownloadAllBtn" style="padding:6px 14px;background:#0693e3;color:white;border:none;border-radius:8px;font-family:'Archivo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">⬇ Download All</button>
+                        <button class="panel-toggle" type="button" aria-expanded="false" title="Expand">+</button>
+                    </div>
                 </div>
                 <div class="panel-body collapsed" id="attHistoryList">
                     <p style="color:#aaa;font-size:13px;font-weight:600;">Loading history...</p>
@@ -768,6 +771,20 @@
                     <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                 </div>
                 <div class="panel-body" id="rcTodayList">
+                    <p style="color:#aaa;font-size:13px;font-weight:600;">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Full roll call history (all dates) -->
+            <div class="att-history-card" style="margin-top:16px;">
+                <div class="card-header">
+                    <h3>Full History</h3>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button id="rcDownloadAllBtn" style="padding:6px 14px;background:#0693e3;color:white;border:none;border-radius:8px;font-family:'Archivo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">⬇ Download All</button>
+                        <button class="panel-toggle" type="button" aria-expanded="false" title="Expand">+</button>
+                    </div>
+                </div>
+                <div class="panel-body collapsed" id="rcHistoryList">
                     <p style="color:#aaa;font-size:13px;font-weight:600;">Loading...</p>
                 </div>
             </div>
