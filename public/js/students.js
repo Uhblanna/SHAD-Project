@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    var rcDlAllBtn = el('rcDownloadAllBtn');
+    if (rcDlAllBtn) rcDlAllBtn.addEventListener('click', rcDownloadAll);
+
     setupStudentControls();
     setupStudentEditForm();
     setupObservationToggle();
@@ -423,6 +426,8 @@ function fmtDateTime(iso) {
 function setupAttendance() {
     attSelectSession('morning');
     attLoadHistory();
+    var attDlAllBtn = el('attDownloadAllBtn');
+    if (attDlAllBtn) attDlAllBtn.addEventListener('click', attDownloadAll);
     // Manual entry wiring
     var input = el('manualStudentInput'), btn = el('manualStudentBtn');
     if (input && btn) {
@@ -611,9 +616,49 @@ function attLoadHistory() {
                     '<div style="flex:1;height:6px;background:#f0f0f0;border-radius:99px;overflow:hidden;min-width:80px;">' +
                     '<div style="height:100%;width:' + pct + '%;background:#8bc53f;border-radius:99px;"></div></div>' +
                     '<span style="font-size:12px;color:#aaa;font-weight:600;">' + fmtDateTime(session.submitted_at) + '</span>';
+                var dlBtn = document.createElement('button');
+                dlBtn.textContent = '⬇ CSV';
+                dlBtn.style.cssText = 'padding:5px 12px;background:#0693e3;color:white;border:none;border-radius:8px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;';
+                var captured = session;
+                dlBtn.addEventListener('click', function() { attDownloadSession(captured); });
+                row.appendChild(dlBtn);
                 histList.appendChild(row);
             });
         }).catch(function() { if (histList) histList.innerHTML = '<p style="color:#e74c3c;font-size:13px;">Failed to load history.</p>'; });
+}
+
+function attDownloadSession(session) {
+    var students = ShadDB.getStudents();
+    var typeLabel = session.session_type === 'morning' ? 'Morning' : 'Evening';
+    var rows = [['Student Name', 'Status', 'Check-In Time']];
+    students.forEach(function(s) {
+        var record = (session.students_json || {})[s.id];
+        var status = (record && record.checkedIn) ? 'Present' : 'Not Checked In';
+        var time = (record && record.time) ? new Date(record.time).toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true}) : '';
+        rows.push([s.name, status, time]);
+    });
+    downloadCSV(rows, 'attendance_' + session.session_date + '_' + typeLabel.toLowerCase() + '.csv');
+}
+
+function attDownloadAll() {
+    fetch('/api/attendance-sessions')
+        .then(function(r) { return r.json(); })
+        .then(function(sessions) {
+            if (!sessions || sessions.length === 0) { showMsg('No sessions to download.', 'error'); return; }
+            var students = ShadDB.getStudents();
+            var rows = [['Date', 'Session Type', 'Student Name', 'Status', 'Check-In Time']];
+            sessions.forEach(function(session) {
+                var typeLabel = session.session_type === 'morning' ? 'Morning' : 'Evening';
+                students.forEach(function(s) {
+                    var record = (session.students_json || {})[s.id];
+                    var status = (record && record.checkedIn) ? 'Present' : 'Not Checked In';
+                    var time = (record && record.time) ? new Date(record.time).toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true}) : '';
+                    rows.push([session.session_date, typeLabel, s.name, status, time]);
+                });
+            });
+            downloadCSV(rows, 'attendance_all.csv');
+        })
+        .catch(function() { showMsg('Failed to download attendance data.', 'error'); });
 }
 
 function renderMissingStudents() {
@@ -1013,6 +1058,12 @@ function rcLoadToday() {
                     });
                     card.appendChild(editBtn);
                 }
+                var dlBtn = document.createElement('button');
+                dlBtn.textContent = '⬇ CSV';
+                dlBtn.style.cssText = 'padding:5px 12px;background:#0693e3;color:white;border:none;border-radius:8px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;';
+                var capturedForDl = row;
+                dlBtn.addEventListener('click', function() { rcDownloadSession(capturedForDl); });
+                card.appendChild(dlBtn);
                 todayList.appendChild(card);
             });
             // Update the "new roll call" button
@@ -1026,11 +1077,92 @@ function rcLoadToday() {
         }).catch(function() {});
 }
 
+function rcLoadFullHistory() {
+    var histList = el('rcHistoryList');
+    if (!histList) return;
+    fetch('/api/activity-rollcall?all=1')
+        .then(function(r) { return r.json(); })
+        .then(function(rows) {
+            if (!rows || rows.length === 0) {
+                histList.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;padding:12px 0;">No roll calls recorded yet.</p>';
+                return;
+            }
+            var students = ShadDB.getStudents();
+            histList.innerHTML = '';
+            // Group by date
+            var byDate = {};
+            rows.forEach(function(row) { var d = row.checkin_date; if (!byDate[d]) byDate[d] = []; byDate[d].push(row); });
+            Object.keys(byDate).sort().reverse().forEach(function(date) {
+                var dateHeader = document.createElement('div');
+                dateHeader.style.cssText = 'font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#146ff8;padding:16px 0 8px;';
+                var d = new Date(date + 'T12:00:00');
+                dateHeader.textContent = d.toLocaleDateString('en-CA', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+                histList.appendChild(dateHeader);
+                byDate[date].forEach(function(row) {
+                    var checkedIn = Object.values(row.students_json || {}).filter(function(v) { return v && v.checkedIn; }).length;
+                    var total = students.length;
+                    var pct = total > 0 ? Math.round((checkedIn / total) * 100) : 0;
+                    var card = document.createElement('div');
+                    card.style.cssText = 'padding:12px 0;border-bottom:1px solid #f1f1f1;display:flex;align-items:center;gap:14px;flex-wrap:wrap;';
+                    card.innerHTML =
+                        '<span style="font-size:13px;font-weight:800;color:#111;min-width:100px;">Roll Call #' + row.checkin_number + '</span>' +
+                        '<span style="font-size:13px;font-weight:700;color:#111;">' + checkedIn + ' / ' + total + ' present</span>' +
+                        '<div style="flex:1;height:6px;background:#f0f0f0;border-radius:99px;overflow:hidden;min-width:60px;">' +
+                        '<div style="height:100%;width:' + pct + '%;background:#8bc53f;border-radius:99px;"></div></div>' +
+                        '<span style="font-size:11px;font-weight:700;color:' + (row.submitted_at ? '#00c87a' : '#f39c12') + ';background:' + (row.submitted_at ? '#e8fff4' : '#fff8e8') + ';padding:3px 9px;border-radius:20px;">' +
+                        (row.submitted_at ? '✓ Submitted' : '○ In Progress') + '</span>' +
+                        '<span style="font-size:12px;color:#aaa;font-weight:600;">' + fmtDateTime(row.started_at) + '</span>';
+                    var dlBtn = document.createElement('button');
+                    dlBtn.textContent = '⬇ CSV';
+                    dlBtn.style.cssText = 'padding:5px 12px;background:#0693e3;color:white;border:none;border-radius:8px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;';
+                    var capturedRow = row;
+                    dlBtn.addEventListener('click', function() { rcDownloadSession(capturedRow); });
+                    card.appendChild(dlBtn);
+                    histList.appendChild(card);
+                });
+            });
+        })
+        .catch(function() { if (el('rcHistoryList')) el('rcHistoryList').innerHTML = '<p style="color:#e74c3c;font-size:13px;padding:12px 0;">Failed to load history.</p>'; });
+}
+
+function rcDownloadSession(rollcall) {
+    var students = ShadDB.getStudents();
+    var rows = [['Student Name', 'Status', 'Check-In Time']];
+    students.forEach(function(s) {
+        var record = (rollcall.students_json || {})[s.id];
+        var status = (record && record.checkedIn) ? 'Present' : 'Not Checked In';
+        var time = (record && record.time) ? new Date(record.time).toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true}) : '';
+        rows.push([s.name, status, time]);
+    });
+    downloadCSV(rows, 'rollcall_' + rollcall.checkin_date + '_' + rollcall.checkin_number + '.csv');
+}
+
+function rcDownloadAll() {
+    fetch('/api/activity-rollcall?all=1')
+        .then(function(r) { return r.json(); })
+        .then(function(rollcalls) {
+            if (!rollcalls || rollcalls.length === 0) { showMsg('No roll calls to download.', 'error'); return; }
+            var students = ShadDB.getStudents();
+            var rows = [['Date', 'Roll Call #', 'Student Name', 'Status', 'Check-In Time']];
+            rollcalls.forEach(function(rc) {
+                students.forEach(function(s) {
+                    var record = (rc.students_json || {})[s.id];
+                    var status = (record && record.checkedIn) ? 'Present' : 'Not Checked In';
+                    var time = (record && record.time) ? new Date(record.time).toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true}) : '';
+                    rows.push([rc.checkin_date, 'Roll Call #' + rc.checkin_number, s.name, status, time]);
+                });
+            });
+            downloadCSV(rows, 'rollcall_all.csv');
+        })
+        .catch(function() { showMsg('Failed to download roll call data.', 'error'); });
+}
+
 // Load today's roll calls when the roll call tab is opened
 document.querySelectorAll('.hub-nav').forEach(function(btn) {
     btn.addEventListener('click', function() {
         if (this.dataset.screen === 'activityRollCallScreen') {
             rcLoadToday();
+            rcLoadFullHistory();
         }
         if (this.dataset.screen === 'observationsScreen') {
             displayObservations();
@@ -1423,6 +1555,18 @@ function setupAcknowledgementModal() {
 
 // ── UTILITIES ─────────────────────────────────────────────
 function el(id) { return document.getElementById(id); }
+
+function downloadCSV(rows, filename) {
+    var csv = rows.map(function(r) {
+        return r.map(function(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }).join(',');
+    }).join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
 
 function esc(str) {
     if (str === null || str === undefined) return '';
