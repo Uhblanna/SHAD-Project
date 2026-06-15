@@ -382,6 +382,51 @@
                 <p class="example">Example: MEDKIT-001,Main Med Kit,Sarah Kim,Lecture Hall,Ready,Fully stocked</p>
             </div>
         </div>
+
+        <!-- Bulk Team Assignment — mass-select students and set their Design / Req / House teams -->
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Bulk Team Assignment</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Select students and assign them to Design Team, Req Team, and/or House Team in one go. Leave a field blank to leave that team unchanged.</p>
+
+                <!-- Team input fields -->
+                <div style="display:flex; flex-wrap:wrap; gap:14px; margin:18px 0;">
+                    <div style="flex:1; min-width:160px;">
+                        <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">Design Team</label>
+                        <input id="bulkDesignTeam" type="text" placeholder="e.g. Design Team A"
+                            style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
+                    </div>
+                    <div style="flex:1; min-width:160px;">
+                        <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">Req Team</label>
+                        <input id="bulkReqTeam" type="text" placeholder="e.g. Req Team B"
+                            style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
+                    </div>
+                    <div style="flex:1; min-width:160px;">
+                        <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">House Team</label>
+                        <input id="bulkHouseTeam" type="text" placeholder="e.g. House 1"
+                            style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
+                    </div>
+                </div>
+
+                <!-- Select all / deselect all controls -->
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
+                    <button onclick="bulkSelectAll()" style="padding:7px 16px; background:#e7eefb; color:#146ff8; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Select All</button>
+                    <button onclick="bulkDeselectAll()" style="padding:7px 16px; background:#f0f0f0; color:#555; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Deselect All</button>
+                    <span id="bulkSelectionCount" style="font-size:13px; font-weight:700; color:#888;">0 selected</span>
+                </div>
+
+                <!-- Student list with checkboxes -->
+                <div id="bulkStudentList" style="display:flex; flex-direction:column; gap:6px; max-height:340px; overflow-y:auto; border:2px solid #f0f0f0; border-radius:12px; padding:10px; margin-bottom:16px; background:#fafafa;">
+                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading students…</p>
+                </div>
+
+                <button id="bulkApplyBtn" onclick="bulkApplyTeams()" style="padding:12px 28px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Apply to Selected</button>
+                <p id="bulkStatus" style="margin-top:10px; font-size:13px; font-weight:700; color:#5a9a20; min-height:18px;"></p>
+            </div>
+        </div>
     </div>
 
 </section>
@@ -564,6 +609,112 @@ function exportTaskCompletion() {
 loadAdminTodos();
 loadStaffBreakdown();
 loadAdminShopping();
+loadBulkStudentList();
+
+// ── BULK TEAM ASSIGNMENT ─────────────────────────────────────────────────────
+var _bulkStudents = [];
+
+function loadBulkStudentList() {
+    fetch('/api/students')
+        .then(function(r) { return r.json(); })
+        .then(function(students) {
+            _bulkStudents = students.sort(function(a, b) {
+                return (a.name || '').localeCompare(b.name || '');
+            });
+            renderBulkStudentList();
+        })
+        .catch(function() {
+            var el = document.getElementById('bulkStudentList');
+            if (el) el.innerHTML = '<p style="color:#e74c3c; font-size:13px; font-weight:600;">Could not load students.</p>';
+        });
+}
+
+function renderBulkStudentList() {
+    var container = document.getElementById('bulkStudentList');
+    if (!container) return;
+    if (_bulkStudents.length === 0) {
+        container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">No students found. Upload a student CSV first.</p>';
+        return;
+    }
+    container.innerHTML = '';
+    _bulkStudents.forEach(function(s) {
+        var row = document.createElement('label');
+        row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:9px; cursor:pointer; background:#fff; border:1px solid #ececec; user-select:none;';
+        row.innerHTML =
+            '<input type="checkbox" data-id="' + s.id + '" style="width:16px; height:16px; cursor:pointer; flex-shrink:0;" onchange="updateBulkCount()">' +
+            '<span style="flex:1; font-size:14px; font-weight:700; color:#111;">' + escH(s.name) + '</span>' +
+            '<span style="font-size:11px; font-weight:700; color:#aaa;">' +
+                [s.designTeam, s.reqTeam, s.houseTeam].filter(Boolean).join(' · ') +
+            '</span>';
+        container.appendChild(row);
+    });
+    updateBulkCount();
+}
+
+function updateBulkCount() {
+    var checked = document.querySelectorAll('#bulkStudentList input[type="checkbox"]:checked').length;
+    var el = document.getElementById('bulkSelectionCount');
+    if (el) el.textContent = checked + ' selected';
+}
+
+function bulkSelectAll() {
+    document.querySelectorAll('#bulkStudentList input[type="checkbox"]').forEach(function(cb) { cb.checked = true; });
+    updateBulkCount();
+}
+
+function bulkDeselectAll() {
+    document.querySelectorAll('#bulkStudentList input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
+    updateBulkCount();
+}
+
+function bulkApplyTeams() {
+    var ids = [].map.call(
+        document.querySelectorAll('#bulkStudentList input[type="checkbox"]:checked'),
+        function(cb) { return parseInt(cb.getAttribute('data-id'), 10); }
+    );
+    if (ids.length === 0) {
+        document.getElementById('bulkStatus').style.color = '#d12c2c';
+        document.getElementById('bulkStatus').textContent = 'No students selected.';
+        return;
+    }
+
+    var designTeam = (document.getElementById('bulkDesignTeam').value || '').trim();
+    var reqTeam    = (document.getElementById('bulkReqTeam').value    || '').trim();
+    var houseTeam  = (document.getElementById('bulkHouseTeam').value  || '').trim();
+
+    if (!designTeam && !reqTeam && !houseTeam) {
+        document.getElementById('bulkStatus').style.color = '#d12c2c';
+        document.getElementById('bulkStatus').textContent = 'Enter at least one team value.';
+        return;
+    }
+
+    var btn = document.getElementById('bulkApplyBtn');
+    btn.disabled = true;
+    btn.textContent = 'Applying…';
+
+    fetch('/api/students/bulk-teams', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentIds: ids, designTeam: designTeam, reqTeam: reqTeam, houseTeam: houseTeam })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.error) throw new Error(data.error);
+        document.getElementById('bulkStatus').style.color = '#5a9a20';
+        document.getElementById('bulkStatus').textContent = (data.updated || ids.length) + ' student(s) updated ✓';
+        // Refresh the list so current team values are visible
+        loadBulkStudentList();
+        bulkDeselectAll();
+    })
+    .catch(function(err) {
+        document.getElementById('bulkStatus').style.color = '#d12c2c';
+        document.getElementById('bulkStatus').textContent = (err && err.message) ? err.message : 'Failed to apply. Please try again.';
+    })
+    .finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Apply to Selected';
+    });
+}
 
 // ── SHOPPING LIST ADMIN ──────────────────────────────────────────────────────
 function loadAdminShopping() {
