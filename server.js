@@ -206,6 +206,29 @@ app.post("/api/students", (req, res) => {
     });
 });
 
+// Bulk-assign team fields for multiple students at once (Admin panel)
+// IMPORTANT: must be registered before /:id to prevent "bulk-teams" matching as an id
+app.put("/api/students/bulk-teams", (req, res) => {
+    const { studentIds, designTeam, reqTeam, houseTeam } = req.body;
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+        return res.status(400).json({ error: "No student IDs provided." });
+    }
+    // Only update fields that were actually supplied (non-empty string)
+    const sets = [];
+    const baseParams = [];
+    if (designTeam !== undefined && designTeam !== "") { sets.push("design_team = ?"); baseParams.push(designTeam); }
+    if (reqTeam    !== undefined && reqTeam    !== "") { sets.push("req_team = ?");    baseParams.push(reqTeam); }
+    if (houseTeam  !== undefined && houseTeam  !== "") { sets.push("house_team = ?");  baseParams.push(houseTeam); }
+    if (sets.length === 0) return res.status(400).json({ error: "No team fields to update." });
+
+    const placeholders = studentIds.map(() => "?").join(",");
+    const sql = `UPDATE students SET ${sets.join(", ")} WHERE id IN (${placeholders})`;
+    db.run(sql, [...baseParams, ...studentIds], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ updated: this.changes });
+    });
+});
+
 app.put("/api/students/:id", (req, res) => {
     const s = req.body;
     db.run(`
