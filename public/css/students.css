@@ -1045,6 +1045,16 @@ header nav a:hover{
     color:#777;
 }
 
+#recentScansList,
+#missingStudentsList,
+#rcRecentList,
+#rcMissingList{
+    max-height:420px;
+    overflow-y:auto;
+    padding-right:6px;
+    padding-bottom:4px;
+}
+
 .missing-head{
     display:flex;
     justify-content:space-between;
