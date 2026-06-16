@@ -284,16 +284,16 @@ function printStudentQR(students) {
             '.qr-grid{display:flex;flex-wrap:wrap;gap:0;}' +
             /* Each badge: 2.5in wide × 3.5in tall, dotted cut border */
             '.qr-card{' +
-                'width:2.5in;height:3.5in;' +
-                'border:1.5px dashed #aaa;' +
-                'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+                'width:2.5in;height:3.5in;min-width:2.5in;max-width:2.5in;min-height:3.5in;max-height:3.5in;' +
+                'border:1.5px dashed #aaa;overflow:hidden;' +
+                'display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;' +
                 'padding:0.15in;' +
-                'page-break-inside:avoid;' +
+                'page-break-inside:avoid;break-inside:avoid;' +
             '}' +
-            '.qr-header{font-size:11px;font-weight:700;letter-spacing:1.5px;color:#146ff8;text-transform:uppercase;margin-bottom:8px;}' +
-            '.qr-img{width:1.8in;height:1.8in;display:block;}' +
-            '.qr-name{font-weight:700;font-size:13px;margin-top:10px;text-align:center;word-break:break-word;line-height:1.3;}' +
-            '.qr-sub{font-size:10px;color:#888;margin-top:4px;text-align:center;}' +
+            '.qr-header{font-size:11px;font-weight:700;letter-spacing:1.5px;color:#146ff8;text-transform:uppercase;margin-bottom:8px;flex-shrink:0;}' +
+            '.qr-img{width:1.8in;height:1.8in;display:block;flex-shrink:0;}' +
+            '.qr-name{font-weight:700;font-size:13px;margin-top:10px;text-align:center;word-break:break-word;line-height:1.3;flex-shrink:0;}' +
+            '.qr-sub{font-size:10px;color:#888;margin-top:4px;text-align:center;flex-shrink:0;}' +
             '@media print{' +
                 'body{padding:0.25in;}' +
                 '.toolbar{display:none!important;}' +

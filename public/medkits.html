@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="/public/css/medkits.css">
 
 <script src="https://unpkg.com/html5-qrcode" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="/public/js/medkits.js" defer></script>
 
 </head>
@@ -44,12 +45,48 @@
 <section class="med-page">
 
     <div class="page-header">
-        <div>
-            <p class="mini-title">MEDICAL SUPPLY TRACKING</p>
-            <h2>Med Kits & Med Packs</h2>
-            <p class="subtext">
-                Track who has each kit, where it is, whether it has been checked, and if anything is missing.
-            </p>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+            <div>
+                <p class="mini-title">MEDICAL SUPPLY TRACKING</p>
+                <h2>Med Kits & Med Packs</h2>
+                <p class="subtext">
+                    Track who has each kit, whether it has been checked, and if anything is missing.
+                </p>
+            </div>
+            <button id="showAddKitBtn" style="padding:12px 22px; background:#146ff8; color:white; border:none; border-radius:14px; font-family:'Archivo',sans-serif; font-size:15px; font-weight:800; cursor:pointer; white-space:nowrap; margin-top:8px;">+ Add Med Kit</button>
+        </div>
+    </div>
+
+    <!-- Add kit form — hidden until the button above is clicked -->
+    <div id="addKitForm" class="hidden-form" style="background:white; border-radius:20px; padding:28px 32px; box-shadow:0 18px 35px rgba(0,0,0,.05); margin-bottom:28px;">
+        <h3 style="font-size:22px; margin-bottom:4px;">Add Med Kit Manually</h3>
+
+        <label>QR Code</label>
+        <input type="text" id="qrCode" placeholder="Example: MEDKIT-006">
+
+        <label>Kit Name</label>
+        <input type="text" id="kitName" placeholder="Example: Main Med Kit">
+
+        <label>Assigned Staff</label>
+        <input type="text" id="assignedStaff" placeholder="Example: Sarah Kim">
+
+        <label>Current Location</label>
+        <input type="text" id="location" placeholder="Example: Lecture Hall">
+
+        <label>Status</label>
+        <select id="status">
+            <option value="Ready">Ready</option>
+            <option value="Needs Restock">Needs Restock</option>
+            <option value="Missing">Missing</option>
+            <option value="In Use">In Use</option>
+        </select>
+
+        <label>Description / Notes</label>
+        <textarea id="supplies" placeholder="Example: Fully stocked, low on gloves..."></textarea>
+
+        <div style="display:flex; gap:12px; margin-top:20px;">
+            <button id="addKitBtn">Save Med Kit</button>
+            <button id="cancelAddKitBtn" style="background:#f0f0f0; color:#555; border:none; padding:14px 22px; border-radius:14px; font-family:'Archivo',sans-serif; font-size:15px; font-weight:700; cursor:pointer;">Cancel</button>
         </div>
     </div>
 
@@ -78,50 +115,26 @@
         <div class="kit-list-card">
             <div class="card-head">
                 <h3>Current Med Kits</h3>
-                <span id="kit-count">0 Kits</span>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <span id="kit-count">0 Kits</span>
+                    <button id="printAllMedkitQRBtn" style="padding:7px 16px;background:#146ff8;color:#fff;border:none;border-radius:9px;font-family:'Archivo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🖨 Print Master List</button>
+                </div>
             </div>
 
             <div id="kit-list"></div>
         </div>
 
+        <!-- Check-in status summary panel -->
         <div class="form-card">
-            <button id="showAddKitBtn">Add Med Kit</button>
-
-            <div id="addKitForm" class="hidden-form">
-                <h3>Add Med Kit Manually</h3>
-
-                <label>QR Code</label>
-                <input type="text" id="qrCode" placeholder="Example: MEDKIT-001">
-
-                <label>Kit Name</label>
-                <input type="text" id="kitName" placeholder="Example: Main Med Kit">
-
-                <label>Assigned Staff</label>
-                <input type="text" id="assignedStaff" placeholder="Example: Sarah Kim">
-
-                <label>Current Location</label>
-                <input type="text" id="location" placeholder="Example: Lecture Hall">
-
-                <label>Status</label>
-                <select id="status">
-                    <option value="Ready">Ready</option>
-                    <option value="Needs Restock">Needs Restock</option>
-                    <option value="Missing">Missing</option>
-                    <option value="In Use">In Use</option>
-                </select>
-
-                <label>Supply Notes</label>
-                <textarea id="supplies" placeholder="Example: Fully stocked, low on gloves..."></textarea>
-
-                <button id="addKitBtn">Save Med Kit</button>
-            </div>
+            <h3 style="font-size:22px; margin-bottom:20px;">Check-In Status</h3>
+            <p style="color:#888; font-size:14px; font-weight:600; margin-bottom:18px;">Overview of which med kits have been checked in for the current trip.</p>
+            <div id="checkin-summary"></div>
+            <button id="resetCheckinsBtn" style="margin-top:20px; width:100%; background:#ffe7e7; color:#ff3b30; border:none; padding:14px; border-radius:14px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:800; cursor:pointer;">Reset All Check-Ins</button>
         </div>
 
     </div>
 
 </section>
-
-
 
 </body>
 </html>

@@ -1289,6 +1289,18 @@ app.post("/api/medkits/check-in", (req, res) => {
     });
 });
 
+app.post("/api/medkits/uncheck/:id", (req, res) => {
+    db.run(`UPDATE medkits SET checked_in = 0, checked_in_time = NULL WHERE id = ?`,
+        [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: "Med kit not found." });
+        db.get("SELECT * FROM medkits WHERE id = ?", [req.params.id], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json(rowToMedkit(row));
+        });
+    });
+});
+
 app.post("/api/medkits/reset-checkins", (req, res) => {
     db.run(`
         UPDATE medkits

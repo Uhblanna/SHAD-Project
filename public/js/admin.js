@@ -639,18 +639,28 @@ function uploadMedkitsCSV() {
     }
 
     readCSV(file).then(rows => {
-        const medkits = rows.map(row => ({
-            qrCode: row.QRCode || row.qrCode || row.qr_code || row["QR Code"] || "",
-            name: row.Name || row.name || "",
-            assignedStaff: row.AssignedStaff || row.assignedStaff || row["Assigned Staff"] || "",
-            location: row.Location || row.location || "",
-            status: row.Status || row.status || "Ready",
-            supplies: row.Supplies || row.supplies || ""
-        })).filter(kit => kit.qrCode && kit.name);
+        const medkits = rows.map((row, i) => {
+            const name = row.Name || row.name || "";
+            if (!name) return null;
+            const num = String(i + 1).padStart(3, "0");
+            return {
+                qrCode: "MEDKIT-" + num,
+                name: name,
+                assignedStaff: "",
+                location: "",
+                status: "Ready",
+                supplies: row.Description || row.description || row.Type || row.type || ""
+            };
+        }).filter(Boolean);
+
+        if (medkits.length === 0) {
+            alert("No valid med kit rows found. Make sure your CSV has a Name column.");
+            return;
+        }
 
         apiRequest("POST", "/api/medkits/replace", { medkits })
             .then(() => {
-                alert(medkits.length + " med kit(s) uploaded.");
+                alert(medkits.length + " med kit(s) uploaded with auto-generated QR codes.");
                 input.value = "";
             });
     });
