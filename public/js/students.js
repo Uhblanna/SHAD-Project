@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rcDlAllBtn) rcDlAllBtn.addEventListener('click', rcDownloadAll);
 
     setupStudentControls();
+    setupDietarySearch();
     setupStudentEditForm();
     setupObservationToggle();
     setupObservationForm();
@@ -1344,13 +1345,95 @@ function medDisplayLogs(logs) {
 }
 
 // ── DIETARY ───────────────────────────────────────────────
+var DIETARY_TYPES = [
+    { label: 'Epipen',       keywords: ['epipen'] },
+    { label: 'Nut Allergy',  keywords: ['nut', 'peanut', 'tree nut'] },
+    { label: 'Allergy',      keywords: ['allerg'] },
+    { label: 'Gluten-Free',  keywords: ['gluten', 'celiac'] },
+    { label: 'Dairy-Free',   keywords: ['dairy', 'lactose', 'milk'] },
+    { label: 'Shellfish',    keywords: ['shellfish', 'seafood', 'shrimp', 'lobster', 'crab'] },
+    { label: 'Egg',          keywords: ['egg'] },
+    { label: 'Soy',          keywords: ['soy'] },
+    { label: 'Vegetarian',   keywords: ['vegetarian'] },
+    { label: 'Vegan',        keywords: ['vegan'] },
+    { label: 'Halal',        keywords: ['halal'] },
+    { label: 'Kosher',       keywords: ['kosher'] },
+];
+
 function displayDietaryList() {
     var list = el('dietaryList');
     if (!list) return;
     list.innerHTML = '';
-    var students = ShadDB.getStudents().filter(function(s) { return s.dietary && s.dietary.toLowerCase() !== 'none'; });
-    if (students.length === 0) { list.innerHTML = '<p class="student-info">No dietary restrictions have been listed.</p>'; return; }
-    students.forEach(function(student) {
+
+    var allStudents = ShadDB.getStudents().filter(function(s) {
+        return s.dietary && s.dietary.toLowerCase() !== 'none';
+    });
+
+    // Summary box \u2014 always based on full list, not filtered
+    if (allStudents.length > 0) {
+        var counts = {};
+        var matchedStudents = new Set();
+
+        allStudents.forEach(function(s) {
+            var d = s.dietary.toLowerCase();
+            var matched = false;
+            DIETARY_TYPES.forEach(function(type) {
+                if (type.keywords.some(function(k) { return d.includes(k); })) {
+                    counts[type.label] = (counts[type.label] || 0) + 1;
+                    matched = true;
+                }
+            });
+            if (matched) matchedStudents.add(s.name);
+        });
+
+        var otherCount = allStudents.filter(function(s) { return !matchedStudents.has(s.name); }).length;
+
+        var summary = document.createElement('div');
+        summary.style.cssText = 'background:#f7fafc;border:1px solid #e5e5e5;border-radius:16px;padding:18px 20px;margin-bottom:22px;';
+
+        var heading = document.createElement('p');
+        heading.style.cssText = 'font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin-bottom:14px;';
+        heading.textContent = 'Summary \u2014 ' + allStudents.length + ' student' + (allStudents.length === 1 ? '' : 's') + ' with restrictions';
+        summary.appendChild(heading);
+
+        var grid = document.createElement('div');
+        grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;';
+
+        var summaryKeys = Object.keys(counts).sort(function(a, b) { return counts[b] - counts[a]; });
+        summaryKeys.forEach(function(label) {
+            var pill = document.createElement('span');
+            pill.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:white;border:1px solid #e5e5e5;border-radius:999px;font-size:13px;font-weight:700;color:#333;';
+            pill.innerHTML = esc(label) + ' <span style="background:#146ff8;color:white;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:800;">' + counts[label] + '</span>';
+            grid.appendChild(pill);
+        });
+
+        if (otherCount > 0) {
+            var otherPill = document.createElement('span');
+            otherPill.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:white;border:1px solid #e5e5e5;border-radius:999px;font-size:13px;font-weight:700;color:#333;';
+            otherPill.innerHTML = 'Other <span style="background:#888;color:white;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:800;">' + otherCount + '</span>';
+            grid.appendChild(otherPill);
+        }
+
+        summary.appendChild(grid);
+        list.appendChild(summary);
+    }
+
+    // Filtered list
+    var query = ((el('dietarySearch') || {}).value || '').toLowerCase().trim();
+    var filtered = allStudents.filter(function(s) {
+        if (!query) return true;
+        return s.name.toLowerCase().includes(query) || s.dietary.toLowerCase().includes(query);
+    });
+
+    if (filtered.length === 0) {
+        var empty = document.createElement('p');
+        empty.className = 'student-info';
+        empty.textContent = query ? 'No results for "' + query + '".' : 'No dietary restrictions have been listed.';
+        list.appendChild(empty);
+        return;
+    }
+
+    filtered.forEach(function(student) {
         var row = document.createElement('div');
         row.classList.add('student-row');
         row.innerHTML =
@@ -1360,6 +1443,11 @@ function displayDietaryList() {
             '<span class="status observation">Food Note</span>';
         list.appendChild(row);
     });
+}
+
+function setupDietarySearch() {
+    var input = el('dietarySearch');
+    if (input) input.addEventListener('input', displayDietaryList);
 }
 
 // ── OBSERVATIONS ──────────────────────────────────────────

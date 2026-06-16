@@ -655,7 +655,8 @@ header nav a:hover{
 
 #observationSearch,
 #observationFilter,
-#observationSort{
+#observationSort,
+#dietarySearch{
     width:100%;
     padding:14px 16px;
     border:1px solid #e5e5e5;
