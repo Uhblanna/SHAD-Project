@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("clearScheduleBtn").addEventListener("click", clearSchedule);
     document.getElementById("clearStaffBtn").addEventListener("click", clearStaff);
     document.getElementById("exportStudentsBtn").addEventListener("click", exportStudentsCSV);
+    document.getElementById("uploadRoomsBtn").addEventListener("click", uploadRoomsCSV);
     document.getElementById("saveEnrollmentWindowBtn").addEventListener("click", saveEnrollmentWindow);
     document.getElementById("uploadShadScheduleBtn").addEventListener("click", uploadShadScheduleCSV);
     document.getElementById("clearShadScheduleBtn").addEventListener("click", clearShadSchedule);
@@ -811,39 +812,53 @@ function exportStudentsCSV() {
 
 function formatShadStudentRows(rows) {
     return rows.map(row => {
-        const firstName = row.FirstName || row["FirstName"] || "";
-        const lastName = row.LastName || row["LastName"] || "";
-        const prefName = row.PrefName || row["PrefName"] || "";
-
-        const displayName = prefName
-            ? `${prefName} ${lastName}`
-            : `${firstName} ${lastName}`;
-
-        const dietary = row["Dietary Restrictions And/Or Intolerances"] || "None";
-        const allergies = row.Allergies || "None";
-        const epipen = row["Epipen?"] || "No";
-
-        let dietaryNote = dietary;
-
-        if (allergies && allergies.toLowerCase() !== "none") {
-            dietaryNote += ` | Allergies: ${allergies}`;
-        }
-
-        if (epipen && epipen.toLowerCase() !== "no") {
-            dietaryNote += ` | Epipen: ${epipen}`;
-        }
-
+        const g = k => (row[k] || "").trim();
+        const firstName = g("FirstName");
+        const lastName  = g("LastName");
+        const prefName  = g("PrefName");
+        const displayName = prefName ? `${prefName} ${lastName}` : `${firstName} ${lastName}`;
         return {
-            Name: displayName.trim(),
-            Pronouns: row.Pronoun || row["Self-ID Pronoun"] || "",
-            Group: row.Campus || "Group 1",
-            Age: row["Age Start Prog"] || "",
-            Instrument: "",
-            Medication: "None",
-            Dietary: dietaryNote,
-            Note: row["Notes for PD to be aware of"] || ""
+            name:               displayName.trim(),
+            firstName:          firstName,
+            lastName:           lastName,
+            prefName:           prefName,
+            appId:              g("AppID"),
+            campus:             g("Campus"),
+            pronouns:           g("Pronoun") || g("Self-ID Pronoun"),
+            selfIdPronoun:      g("Self-ID Pronoun"),
+            gender:             g("Gender"),
+            selfIdGender:       g("Self-ID Gender"),
+            dob:                g("DOB"),
+            age:                g("Age Start Prog"),
+            pdNotes:            g("Notes for PD to be aware of"),
+            city:               g("City"),
+            province:           g("Prov"),
+            email:              g("Email"),
+            phone:              g("Phone"),
+            school:             g("School"),
+            grade:              g("Grade"),
+            ethnicity:          g("Ethnicity"),
+            selfDescEthnicity:  g("Self-Desc Ethnicity"),
+            indigenous:         g("Indig?"),
+            selfDescIndigenous: g("Self-Des Indig."),
+            languagePref:       g("Language Pref"),
+            parentFirstName:    g("Parent First Name"),
+            parentLastName:     g("Parent Last Name"),
+            parentRelationship: g("Relationship To Applicant"),
+            parentEmail:        g("Parent Email Address"),
+            parentPhone:        g("Parent Phone #"),
+            lgbtq:              g("2SLGBTQ+"),
+            citySize:           g("City Size"),
+            region:             g("Region"),
+            hoodieSize:         g("Hoodie Size"),
+            dietary:            g("Dietary Restrictions And/Or Intolerances") || "None",
+            allergies:          g("Allergies"),
+            epipen:             g("Epipen?"),
+            group:              g("Campus"),
+            instrument:         "",
+            note:               ""
         };
-    }).filter(student => student.Name);
+    }).filter(s => s.name);
 }
 
 // ── Shift Swap Requests — Admin approval ──────────────────────────────────
@@ -1101,4 +1116,49 @@ function clearShadSchedule() {
         .then(r => r.json())
         .then(d => alert("Cleared " + (d.cleared || 0) + " week(s)."))
         .catch(() => alert("Failed to clear schedule."));
+}
+
+// ── ROOM NUMBER CSV UPLOAD ────────────────────────────────────────────────────
+function uploadRoomsCSV() {
+    const input  = document.getElementById("roomCsvInput");
+    const status = document.getElementById("roomUploadStatus");
+    const file   = input.files[0];
+    if (!file) { setRoomStatus("Please choose a CSV file first.", true); return; }
+
+    readCSV(file).then(rows => {
+        const rooms = rows.map(row => ({
+            firstName:  (row.FirstName  || row.firstname  || row["First Name"]  || row.first_name  || "").trim(),
+            lastName:   (row.LastName   || row.lastname   || row["Last Name"]   || row.last_name   || "").trim(),
+            roomNumber: (row.RoomNumber || row.roomnumber || row["Room Number"] || row.room_number || row.Room || "").trim()
+        })).filter(r => r.firstName && r.lastName && r.roomNumber);
+
+        if (rooms.length === 0) {
+            setRoomStatus("No valid rows found. Check that columns are FirstName, LastName, RoomNumber.", true);
+            return;
+        }
+
+        fetch("/api/students/upload-rooms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rooms })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            let msg = data.updated + " student(s) updated.";
+            if (data.unmatched && data.unmatched.length > 0) {
+                msg += " Could not match: " + data.unmatched.join(", ") + ".";
+            }
+            setRoomStatus(msg, data.unmatched && data.unmatched.length > 0);
+            input.value = "";
+        })
+        .catch(err => setRoomStatus((err && err.message) || "Upload failed.", true));
+    });
+}
+
+function setRoomStatus(msg, isError) {
+    const el = document.getElementById("roomUploadStatus");
+    if (!el) return;
+    el.style.color = isError ? "#d12c2c" : "#5a9a20";
+    el.textContent = msg;
 }
