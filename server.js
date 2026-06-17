@@ -1321,13 +1321,18 @@ app.delete("/api/medkits/:id", (req, res) => {
 
 // Isabelle McLean — Daily to-do list routes: GET all tasks, POST a new task, PATCH to check off with staff name, DELETE one or all
 app.get("/api/todos", (req, res) => {
-    // Optional ?date=YYYY-MM-DD filter; omitting returns all tasks (used by staff history)
+    // Optional ?date=YYYY-MM-DD filter: returns today's tasks + any incomplete tasks from prior days.
+    // Omitting the date returns all tasks (used by staff history / admin).
     const date = (req.query.date || "").trim();
     if (date) {
-        db.all("SELECT * FROM daily_todos WHERE date = ? ORDER BY created_at ASC", [date], (err, rows) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json(rows);
-        });
+        db.all(
+            "SELECT * FROM daily_todos WHERE date = ? OR (date < ? AND completed = 0) ORDER BY date ASC, created_at ASC",
+            [date, date],
+            (err, rows) => {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json(rows);
+            }
+        );
     } else {
         db.all("SELECT * FROM daily_todos ORDER BY created_at ASC", [], (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
