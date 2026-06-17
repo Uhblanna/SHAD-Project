@@ -196,6 +196,40 @@ db.serialize(() => {
     db.run(`ALTER TABLE students ADD COLUMN design_team TEXT NOT NULL DEFAULT ''`, function() {});
     db.run(`ALTER TABLE students ADD COLUMN req_team TEXT NOT NULL DEFAULT ''`, function() {});
     db.run(`ALTER TABLE students ADD COLUMN house_team TEXT NOT NULL DEFAULT ''`, function() {});
+    // Migrate existing databases: add room_number column
+    db.run(`ALTER TABLE students ADD COLUMN room_number TEXT NOT NULL DEFAULT ''`, function() {});
+    // Migrate existing databases: add full SHAD application fields
+    db.run(`ALTER TABLE students ADD COLUMN app_id TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN first_name TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN last_name TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN pref_name TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN gender TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN self_id_gender TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN self_id_pronoun TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN dob TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN pd_notes TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN city TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN province TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN email TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN phone TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN school TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN grade TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN ethnicity TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN self_desc_ethnicity TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN indigenous TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN self_desc_indigenous TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN language_pref TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN parent_first_name TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN parent_last_name TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN parent_relationship TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN parent_email TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN parent_phone TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN lgbtq TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN city_size TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN region TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN hoodie_size TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN allergies TEXT DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE students ADD COLUMN epipen TEXT DEFAULT ''`, function() {});
 
     // Migrate existing databases that pre-date the completed_at column
     db.run(`ALTER TABLE daily_todos ADD COLUMN completed_at TEXT NOT NULL DEFAULT ''`, function() {});
