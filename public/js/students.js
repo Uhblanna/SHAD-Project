@@ -211,7 +211,7 @@ function displayStudents(studentArray) {
         var teams = [];
         if (student.houseTeam)  teams.push('House: ' + student.houseTeam);
         if (student.designTeam) teams.push('Design: ' + student.designTeam);
-        if (student.reqTeam)    teams.push('Req: ' + student.reqTeam);
+        if (student.reqTeam)    teams.push('Rec: ' + student.reqTeam);
 
         const row = document.createElement('div');
         row.classList.add('student-row');
@@ -352,7 +352,7 @@ function populateTeamDropdowns() {
         if (current && map[current]) sel.value = current;
     }
     fill('filterDesignTeam', design, 'Design Team');
-    fill('filterReqTeam',    req,    'Req Team');
+    fill('filterReqTeam',    req,    'Rec Team');
     fill('filterHouseTeam',  house,  'House Team');
 }
 
