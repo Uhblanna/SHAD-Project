@@ -346,7 +346,9 @@
                 <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
             <div class="admin-card-body">
-                <p>CSV columns accepted: <strong>Name, Pronouns, Group, Age, Instrument, Medication, Dietary, Note</strong></p>
+                <p>Upload the SHAD application export CSV directly — all fields are captured automatically. Required columns: <strong>FirstName, LastName</strong>. All other columns below are stored if present.</p>
+                <p style="font-size:12px; color:#888; font-weight:600; margin:8px 0 4px;">Recognized columns:</p>
+                <p style="font-size:12px; color:#aaa; font-weight:500; line-height:1.7; margin:0 0 12px;">Campus · AppID · LastName · FirstName · PrefName · Gender · Self-ID Gender · Pronoun · Self-ID Pronoun · DOB · Age Start Prog · Notes for PD to be aware of · City · Prov · Email · Phone · School · Grade · Ethnicity · Self-Desc Ethnicity · Indig? · Self-Des Indig. · Language Pref · Parent First Name · Parent Last Name · Relationship To Applicant · Parent Email Address · Parent Phone # · 2SLGBTQ+ · City Size · Region · Hoodie Size · Dietary Restrictions And/Or Intolerances · Allergies · Epipen?</p>
 
                 <input id="studentCsvInput" type="file" accept=".csv">
 
@@ -360,8 +362,22 @@
                 </div>
 
                 <button id="clearStudentsAdminBtn" class="danger-btn">Clear All Students</button>
+            </div>
+        </div>
 
-                <p class="example">Example: Jane Smith,she/her,Group 1,16,Violin,None,Vegetarian,Quiet student</p>
+        <div class="admin-card">
+            <div class="admin-card-head">
+                <h3>Upload Room Numbers CSV</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>CSV columns required: <strong>FirstName, LastName, RoomNumber</strong>. Students are matched by first + last name.</p>
+                <input id="roomCsvInput" type="file" accept=".csv">
+                <div class="button-row">
+                    <button id="uploadRoomsBtn">Upload Room Numbers</button>
+                </div>
+                <p id="roomUploadStatus" style="font-size:13px;font-weight:700;min-height:18px;margin-top:6px;"></p>
+                <p class="example">Example: Jane,Smith,204</p>
             </div>
         </div>
 
@@ -380,6 +396,62 @@
                 </div>
                 <button id="clearMedkitsBtn" class="danger-btn">Clear Med Kits</button>
                 <p class="example">Example: Main Med Kit,General first aid supplies for field trips</p>
+            </div>
+        </div>
+
+        <!-- Rename Req Teams — edit existing req team names without re-uploading a CSV -->
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Rename Req Teams</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Rename any existing Req Team without touching the CSV. Every student on that team is updated instantly.</p>
+                <div id="reqTeamRenameList" style="display:flex; flex-direction:column; gap:8px; margin:16px 0; min-height:32px;">
+                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading…</p>
+                </div>
+                <button onclick="loadReqTeamRenameList()" style="padding:7px 16px; background:#e7eefb; color:#146ff8; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">↺ Refresh</button>
+            </div>
+        </div>
+
+        <!-- Upload Team Assignment CSVs — one CSV per team type, names matched against student DB -->
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Upload Team Assignment CSVs</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Upload one CSV per team type. Each CSV lists a team name, then student first and last names below it — repeat for each team. Students are matched by name against the database.</p>
+
+                <div style="display:flex; flex-direction:column; gap:18px; margin:18px 0;">
+                    <!-- Design Team -->
+                    <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
+                        <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">Design Team CSV</div>
+                        <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: team letter/name on its own line, then student names below it.</p>
+                        <p class="example" style="margin-bottom:8px;">A<br>Jane Smith<br>Bob Lee<br>B<br>Alice Chen</p>
+                        <input id="csvDesignInput" type="file" accept=".csv,.txt">
+                    </div>
+
+                    <!-- Req Team -->
+                    <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
+                        <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">Req Team CSV</div>
+                        <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: team name on its own line, then student names below it.</p>
+                        <p class="example" style="margin-bottom:8px;">Req Team A<br>Jane Smith<br>B<br>Bob Lee</p>
+                        <input id="csvReqInput" type="file" accept=".csv,.txt">
+                    </div>
+
+                    <!-- House Team -->
+                    <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
+                        <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">House Team CSV</div>
+                        <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: house number/name on its own line, then student names below it.</p>
+                        <p class="example" style="margin-bottom:8px;">House 1<br>Jane Smith<br>House 2<br>Bob Lee<br>Alice Chen</p>
+                        <input id="csvHouseInput" type="file" accept=".csv,.txt">
+                    </div>
+                </div>
+
+                <button id="csvApplyBtn" onclick="applyTeamCSVs()" style="padding:12px 28px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Upload &amp; Apply Teams</button>
+                <p id="csvStatus" style="margin-top:10px; font-size:13px; font-weight:700; color:#5a9a20; min-height:18px;"></p>
+                <div id="csvPreview" style="margin-top:12px; font-size:13px; font-weight:600; color:#555; white-space:pre-wrap; font-family:'Archivo',sans-serif;"></div>
             </div>
         </div>
 
@@ -624,6 +696,247 @@ loadAdminTodos();
 loadStaffBreakdown();
 loadAdminShopping();
 loadBulkStudentList();
+loadReqTeamRenameList();
+
+// ── TEAM CSV UPLOAD ──────────────────────────────────────────────────────────
+
+// Read a File object as text (Promise)
+function readFileText(file) {
+    return new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function(e) { resolve(e.target.result); };
+        reader.onerror = function() { reject(new Error('Could not read file.')); };
+        reader.readAsText(file);
+    });
+}
+
+// Parse a team-assignment text block.
+// Lines that match a student name (case-insensitive) → assigned to currentTeam.
+// Lines that don't match any student → treated as a new team header.
+// Returns { teamName: [studentId, ...], ... }
+function parseTeamBlock(text, nameLookup) {
+    var lines = text.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(Boolean);
+    var assignments = {};
+    var currentTeam = null;
+
+    lines.forEach(function(line) {
+        var key = line.toLowerCase();
+        if (nameLookup.hasOwnProperty(key)) {
+            // It's a student name
+            if (currentTeam !== null) {
+                assignments[currentTeam].push(nameLookup[key]);
+            }
+        } else {
+            // It's a team header
+            currentTeam = line;
+            if (!assignments[currentTeam]) assignments[currentTeam] = [];
+        }
+    });
+
+    return assignments;
+}
+
+// Call bulk-teams endpoint for every team in an assignments map
+// teamField: 'designTeam' | 'reqTeam' | 'houseTeam'
+function applyAssignments(assignments, teamField) {
+    var entries = Object.keys(assignments).filter(function(name) {
+        return assignments[name].length > 0;
+    });
+    if (entries.length === 0) return Promise.resolve({ updated: 0, skipped: 0 });
+
+    var totalUpdated = 0;
+    var totalSkipped = 0;
+
+    // Chain the fetches sequentially
+    return entries.reduce(function(chain, teamName) {
+        return chain.then(function() {
+            var payload = { studentIds: assignments[teamName] };
+            payload[teamField] = teamName;
+            return fetch('/api/students/bulk-teams', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(function(r) { return r.json(); })
+            .then(function(data) {
+                totalUpdated += (data.updated || 0);
+            });
+        });
+    }, Promise.resolve())
+    .then(function() { return { updated: totalUpdated, skipped: totalSkipped }; });
+}
+
+function setCsvStatus(msg, isError) {
+    var el = document.getElementById('csvStatus');
+    if (!el) return;
+    el.style.color = isError ? '#d12c2c' : '#5a9a20';
+    el.textContent = msg;
+}
+
+function applyTeamCSVs() {
+    var designFile = (document.getElementById('csvDesignInput').files || [])[0];
+    var reqFile    = (document.getElementById('csvReqInput').files    || [])[0];
+    var houseFile  = (document.getElementById('csvHouseInput').files  || [])[0];
+
+    if (!designFile && !reqFile && !houseFile) {
+        setCsvStatus('Please choose at least one CSV file.', true);
+        return;
+    }
+
+    var btn = document.getElementById('csvApplyBtn');
+    btn.disabled = true;
+    btn.textContent = 'Applying…';
+    setCsvStatus('', false);
+    document.getElementById('csvPreview').textContent = '';
+
+    // Load students first to build a name → id lookup
+    fetch('/api/students')
+        .then(function(r) { return r.json(); })
+        .then(function(students) {
+            var nameLookup = {};
+            students.forEach(function(s) {
+                if (s.name) nameLookup[s.name.trim().toLowerCase()] = s.id;
+            });
+
+            // Read all supplied files in parallel
+            var reads = [
+                designFile ? readFileText(designFile) : Promise.resolve(null),
+                reqFile    ? readFileText(reqFile)    : Promise.resolve(null),
+                houseFile  ? readFileText(houseFile)  : Promise.resolve(null)
+            ];
+
+            return Promise.all(reads).then(function(texts) {
+                var designText = texts[0], reqText = texts[1], houseText = texts[2];
+
+                var designMap = designText ? parseTeamBlock(designText, nameLookup) : {};
+                var reqMap    = reqText    ? parseTeamBlock(reqText,    nameLookup) : {};
+                var houseMap  = houseText  ? parseTeamBlock(houseText,  nameLookup) : {};
+
+                // Build a preview summary before applying
+                var lines = [];
+                function summarise(map, label) {
+                    var keys = Object.keys(map);
+                    if (!keys.length) return;
+                    lines.push(label + ':');
+                    keys.forEach(function(k) {
+                        lines.push('  ' + k + ' → ' + map[k].length + ' student(s)');
+                    });
+                }
+                summarise(designMap, 'Design Teams');
+                summarise(reqMap,    'Req Teams');
+                summarise(houseMap,  'House Teams');
+
+                // Warn about any lines that didn't match a student
+                // (already handled by parseTeamBlock — unmatched lines become team headers)
+                document.getElementById('csvPreview').textContent = lines.join('\n');
+
+                return applyAssignments(designMap, 'designTeam')
+                    .then(function(r1) {
+                        return applyAssignments(reqMap, 'reqTeam').then(function(r2) {
+                            return applyAssignments(houseMap, 'houseTeam').then(function(r3) {
+                                return r1.updated + r2.updated + r3.updated;
+                            });
+                        });
+                    });
+            });
+        })
+        .then(function(total) {
+            setCsvStatus(total + ' student record(s) updated ✓', false);
+            // Refresh bulk-assignment student list so new teams are visible there too
+            loadBulkStudentList();
+            // Clear file inputs
+            document.getElementById('csvDesignInput').value = '';
+            document.getElementById('csvReqInput').value    = '';
+            document.getElementById('csvHouseInput').value  = '';
+        })
+        .catch(function(err) {
+            setCsvStatus((err && err.message) ? err.message : 'Failed. Please try again.', true);
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.textContent = 'Upload & Apply Teams';
+        });
+}
+
+// ── RENAME REQ TEAMS ─────────────────────────────────────────────────────────
+
+function loadReqTeamRenameList() {
+    var container = document.getElementById('reqTeamRenameList');
+    if (!container) return;
+    container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">Loading…</p>';
+
+    fetch('/api/students')
+        .then(function(r) { return r.json(); })
+        .then(function(students) {
+            // Collect unique non-empty req team names, sorted
+            var seen = {};
+            students.forEach(function(s) {
+                var t = (s.reqTeam || '').trim();
+                if (t) seen[t] = (seen[t] || 0) + 1;
+            });
+            var names = Object.keys(seen).sort();
+
+            container.innerHTML = '';
+
+            if (names.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">No Req Teams assigned yet.</p>';
+                return;
+            }
+
+            names.forEach(function(name) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 14px; background:#f8f8f8; border-radius:10px; flex-wrap:wrap;';
+
+                var count = seen[name];
+                var inputId = 'rtr_' + name.replace(/\W/g, '_');
+
+                row.innerHTML =
+                    '<span style="font-size:13px; font-weight:700; color:#555; min-width:140px; flex:0 0 auto;">' + escH(name) +
+                        '<span style="font-size:11px; font-weight:600; color:#aaa; margin-left:6px;">(' + count + ' student' + (count === 1 ? '' : 's') + ')</span>' +
+                    '</span>' +
+                    '<span style="color:#ccc; font-size:18px; flex:0 0 auto;">→</span>' +
+                    '<input id="' + inputId + '" type="text" value="' + escH(name) + '" ' +
+                        'style="flex:1; min-width:140px; padding:8px 12px; border:2px solid #e5e5e5; border-radius:9px; font-family:\'Archivo\',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">' +
+                    '<button onclick="renameReqTeam(\'' + escH(name).replace(/'/g, "\\'") + '\', document.getElementById(\'' + inputId + '\').value, this)" ' +
+                        'style="padding:8px 16px; background:#146ff8; color:#fff; border:none; border-radius:8px; font-family:\'Archivo\',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0; flex:0 0 auto;">Save</button>' +
+                    '<span class="rtr-msg" style="font-size:12px; font-weight:700; color:#5a9a20; flex:0 0 auto; min-width:40px;"></span>';
+
+                container.appendChild(row);
+            });
+        })
+        .catch(function() {
+            container.innerHTML = '<p style="color:#e74c3c; font-size:13px; font-weight:600;">Could not load students.</p>';
+        });
+}
+
+function renameReqTeam(oldName, newName, btn) {
+    newName = (newName || '').trim();
+    if (!newName) { alert('New name cannot be empty.'); return; }
+    if (newName === oldName) { alert('Name is unchanged.'); return; }
+
+    var msgEl = btn.parentElement.querySelector('.rtr-msg');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    if (msgEl) { msgEl.style.color = '#aaa'; msgEl.textContent = ''; }
+
+    fetch('/api/students/rename-team', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: 'req_team', oldName: oldName, newName: newName })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.error) throw new Error(data.error);
+        if (msgEl) { msgEl.style.color = '#5a9a20'; msgEl.textContent = '✓ Saved'; }
+        // Refresh so the label updates and the bulk list reflects the change
+        loadReqTeamRenameList();
+        loadBulkStudentList();
+    })
+    .catch(function(err) {
+        if (msgEl) { msgEl.style.color = '#d12c2c'; msgEl.textContent = (err && err.message) ? err.message : 'Failed'; }
+        btn.disabled = false;
+        btn.textContent = 'Save';
+    });
+}
 
 // ── BULK TEAM ASSIGNMENT ─────────────────────────────────────────────────────
 var _bulkStudents = [];
