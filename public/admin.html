@@ -419,9 +419,9 @@
 
                     <!-- Req Team -->
                     <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
-                        <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">Req Team CSV</div>
+                        <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">Rec Team CSV</div>
                         <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: team name on its own line, then student names below it.</p>
-                        <p class="example" style="margin-bottom:8px;">Req Team A<br>Jane Smith<br>B<br>Bob Lee</p>
+                        <p class="example" style="margin-bottom:8px;">Rec Team A<br>Jane Smith<br>B<br>Bob Lee</p>
                         <input id="csvReqInput" type="file" accept=".csv,.txt">
                     </div>
 
@@ -443,11 +443,11 @@
         <!-- Rename Req Teams — edit existing req team names without re-uploading a CSV -->
         <div class="admin-card admin-card-wide">
             <div class="admin-card-head">
-                <h3>Rename Req Teams</h3>
+                <h3>Rename Rec Teams</h3>
                 <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
             <div class="admin-card-body">
-                <p>Rename any existing Req Team without touching the CSV. Every student on that team is updated instantly.</p>
+                <p>Rename any existing Rec Team without touching the CSV. Every student on that team is updated instantly.</p>
                 <div id="reqTeamRenameList" style="display:flex; flex-direction:column; gap:8px; margin:16px 0; min-height:32px;">
                     <p style="color:#aaa; font-size:13px; font-weight:600;">Loading…</p>
                 </div>
@@ -462,7 +462,7 @@
                 <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
             <div class="admin-card-body">
-                <p>Select students and assign them to Design Team, Req Team, and/or House Team in one go. Leave a field blank to leave that team unchanged.</p>
+                <p>Select students and assign them to Design Team, Rec Team, and/or House Team in one go. Leave a field blank to leave that team unchanged.</p>
 
                 <!-- Team input fields -->
                 <div style="display:flex; flex-wrap:wrap; gap:14px; margin:18px 0;">
@@ -472,8 +472,8 @@
                             style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
                     </div>
                     <div style="flex:1; min-width:160px;">
-                        <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">Req Team</label>
-                        <input id="bulkReqTeam" type="text" placeholder="e.g. Req Team B"
+                        <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">Rec Team</label>
+                        <input id="bulkReqTeam" type="text" placeholder="e.g. Rec Team B"
                             style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
                     </div>
                     <div style="flex:1; min-width:160px;">
@@ -822,7 +822,7 @@ function applyTeamCSVs() {
                     });
                 }
                 summarise(designMap, 'Design Teams');
-                summarise(reqMap,    'Req Teams');
+                summarise(reqMap,    'Rec Teams');
                 summarise(houseMap,  'House Teams');
 
                 // Warn about any lines that didn't match a student
@@ -878,7 +878,7 @@ function loadReqTeamRenameList() {
             container.innerHTML = '';
 
             if (names.length === 0) {
-                container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">No Req Teams assigned yet.</p>';
+                container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">No Rec Teams assigned yet.</p>';
                 return;
             }
 
