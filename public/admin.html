@@ -399,21 +399,6 @@
             </div>
         </div>
 
-        <!-- Rename Req Teams — edit existing req team names without re-uploading a CSV -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Rename Req Teams</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Rename any existing Req Team without touching the CSV. Every student on that team is updated instantly.</p>
-                <div id="reqTeamRenameList" style="display:flex; flex-direction:column; gap:8px; margin:16px 0; min-height:32px;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading…</p>
-                </div>
-                <button onclick="loadReqTeamRenameList()" style="padding:7px 16px; background:#e7eefb; color:#146ff8; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">↺ Refresh</button>
-            </div>
-        </div>
-
         <!-- Upload Team Assignment CSVs — one CSV per team type, names matched against student DB -->
         <div class="admin-card admin-card-wide">
             <div class="admin-card-head">
@@ -452,6 +437,21 @@
                 <button id="csvApplyBtn" onclick="applyTeamCSVs()" style="padding:12px 28px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Upload &amp; Apply Teams</button>
                 <p id="csvStatus" style="margin-top:10px; font-size:13px; font-weight:700; color:#5a9a20; min-height:18px;"></p>
                 <div id="csvPreview" style="margin-top:12px; font-size:13px; font-weight:600; color:#555; white-space:pre-wrap; font-family:'Archivo',sans-serif;"></div>
+            </div>
+        </div>
+
+        <!-- Rename Req Teams — edit existing req team names without re-uploading a CSV -->
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Rename Req Teams</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Rename any existing Req Team without touching the CSV. Every student on that team is updated instantly.</p>
+                <div id="reqTeamRenameList" style="display:flex; flex-direction:column; gap:8px; margin:16px 0; min-height:32px;">
+                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading…</p>
+                </div>
+                <button onclick="loadReqTeamRenameList()" style="padding:7px 16px; background:#e7eefb; color:#146ff8; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">↺ Refresh</button>
             </div>
         </div>
 
@@ -884,7 +884,7 @@ function loadReqTeamRenameList() {
 
             names.forEach(function(name) {
                 var row = document.createElement('div');
-                row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 14px; background:#f8f8f8; border-radius:10px; flex-wrap:wrap;';
+                row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 14px; background:#f8f8f8; border-radius:10px; flex-wrap:nowrap;';
 
                 var count = seen[name];
                 var inputId = 'rtr_' + name.replace(/\W/g, '_');
@@ -895,9 +895,9 @@ function loadReqTeamRenameList() {
                     '</span>' +
                     '<span style="color:#ccc; font-size:18px; flex:0 0 auto;">→</span>' +
                     '<input id="' + inputId + '" type="text" value="' + escH(name) + '" ' +
-                        'style="flex:1; min-width:140px; padding:8px 12px; border:2px solid #e5e5e5; border-radius:9px; font-family:\'Archivo\',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">' +
+                        'style="flex:1; min-width:140px; width:auto; padding:8px 12px; margin:0; border:2px solid #e5e5e5; border-radius:9px; font-family:\'Archivo\',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff; box-sizing:border-box;">' +
                     '<button onclick="renameReqTeam(\'' + escH(name).replace(/'/g, "\\'") + '\', document.getElementById(\'' + inputId + '\').value, this)" ' +
-                        'style="padding:8px 16px; background:#146ff8; color:#fff; border:none; border-radius:8px; font-family:\'Archivo\',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0; flex:0 0 auto;">Save</button>' +
+                        'style="width:auto !important; flex:0 0 auto; padding:8px 16px; background:#146ff8; color:#fff; border:none; border-radius:8px; font-family:\'Archivo\',sans-serif; font-size:13px; font-weight:700; cursor:pointer; margin:0; white-space:nowrap;">Save</button>' +
                     '<span class="rtr-msg" style="font-size:12px; font-weight:700; color:#5a9a20; flex:0 0 auto; min-width:40px;"></span>';
 
                 container.appendChild(row);
