@@ -73,9 +73,11 @@ function refreshAll() {
     committeeAssignments = ShadDB.getCommitteeAssignments();
     committeeOptions     = ShadDB.getCommitteeOptions();
     loadStats();
+    populateTeamDropdowns();
     displayStudents(ShadDB.getStudents());
     displayAttendanceAlerts();
     displayObservations();
+    displayObsLeaderboard();
     loadObservationStudentDropdown();
     displayDietaryList();
 }
@@ -168,7 +170,7 @@ function setupAddStudentBtn() {
 
 function clearEditForm() {
     ['editStudentName','editStudentPronouns','editStudentHouseTeam','editStudentDesignTeam',
-     'editStudentReqTeam','editStudentAge','editStudentInstrument',
+     'editStudentReqTeam','editStudentRoomNumber','editStudentAge','editStudentInstrument',
      'editStudentDietary','editStudentNote'].forEach(function(id) {
         var e2 = document.getElementById(id);
         if (e2) e2.value = '';
@@ -217,6 +219,7 @@ function displayStudents(studentArray) {
             '<div>' +
                 '<p class="student-name">' + esc(student.name) + '</p>' +
                 '<p class="student-info">' + esc(student.pronouns) + (student.age ? ' \u2022 Age ' + esc(student.age) : '') + '</p>' +
+                (student.roomNumber ? '<p class="student-info">\ud83d\udeaa Room ' + esc(student.roomNumber) + '</p>' : '') +
                 (teams.length ? '<p class="student-info">' + esc(teams.join(' \u2022 ')) + '</p>' : '') +
                 (committee ? '<p class="student-info">Committee: <strong>' + esc(committee) + '</strong></p>' : '') +
                 (student.instrument ? '<p class="student-info">Instrument: ' + esc(student.instrument) + '</p>' : '') +
@@ -264,10 +267,14 @@ function printStudentQR(students) {
     var cardHTML = cards.map(function(card) {
         var s = card.student;
         var sub = s.group || s.houseTeam || s.Group || '';
+        // Use preferred name if available, fall back to stored display name
+        var displayName = (s.prefName && s.lastName)
+            ? s.prefName + ' ' + s.lastName
+            : s.name;
         return '<div class="qr-card">' +
             '<div class="qr-header">SHAD 2026</div>' +
             (card.dataUrl ? '<img src="' + card.dataUrl + '" class="qr-img">' : '') +
-            '<p class="qr-name">' + esc(s.name) + '</p>' +
+            '<p class="qr-name">' + esc(displayName) + '</p>' +
             (sub ? '<p class="qr-sub">' + esc(sub) + '</p>' : '') +
             '</div>';
     }).join('');
@@ -313,21 +320,54 @@ function printStudentQR(students) {
 }
 
 function setupStudentControls() {
-    var search = el('studentSearch'), teamFilter = el('studentTeamFilter');
+    var search = el('studentSearch');
     if (search) search.addEventListener('input', filterStudents);
-    if (teamFilter) teamFilter.addEventListener('input', filterStudents);
+    var dSel = el('filterDesignTeam'), rSel = el('filterReqTeam'), hSel = el('filterHouseTeam');
+    if (dSel) dSel.addEventListener('change', filterStudents);
+    if (rSel) rSel.addEventListener('change', filterStudents);
+    if (hSel) hSel.addEventListener('change', filterStudents);
+}
+
+// Populate the three team dropdowns from current student data
+function populateTeamDropdowns() {
+    var students = ShadDB.getStudents();
+    var design = {}, req = {}, house = {};
+    students.forEach(function(s) {
+        if (s.designTeam) design[s.designTeam] = 1;
+        if (s.reqTeam)    req[s.reqTeam]       = 1;
+        if (s.houseTeam)  house[s.houseTeam]   = 1;
+    });
+    function fill(id, map, label) {
+        var sel = el(id);
+        if (!sel) return;
+        var current = sel.value;
+        sel.innerHTML = '<option value="">All ' + label + 's</option>';
+        Object.keys(map).sort().forEach(function(name) {
+            var opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            sel.appendChild(opt);
+        });
+        // Restore previous selection if it still exists
+        if (current && map[current]) sel.value = current;
+    }
+    fill('filterDesignTeam', design, 'Design Team');
+    fill('filterReqTeam',    req,    'Req Team');
+    fill('filterHouseTeam',  house,  'House Team');
 }
 
 function filterStudents() {
-    var search = (el('studentSearch')     || {}).value || '';
-    var team   = (el('studentTeamFilter') || {}).value || '';
-    var s2 = search.toLowerCase(), t2 = team.toLowerCase();
+    var search  = (el('studentSearch')    || {}).value || '';
+    var design  = (el('filterDesignTeam') || {}).value || '';
+    var req     = (el('filterReqTeam')    || {}).value || '';
+    var house   = (el('filterHouseTeam')  || {}).value || '';
+    var s2 = search.toLowerCase();
     var filtered = ShadDB.getStudents().filter(function(s) {
-        var nameMatch = !s2 || s.name.toLowerCase().includes(s2);
-        var teamMatch = !t2 || (s.houseTeam  || '').toLowerCase().includes(t2) ||
-                               (s.designTeam || '').toLowerCase().includes(t2) ||
-                               (s.reqTeam    || '').toLowerCase().includes(t2);
-        return nameMatch && teamMatch;
+        var nameMatch   = !s2     || s.name.toLowerCase().includes(s2);
+        var designMatch = !design || (s.designTeam || '') === design;
+        var reqMatch    = !req    || (s.reqTeam    || '') === req;
+        var houseMatch  = !house  || (s.houseTeam  || '') === house;
+        return nameMatch && designMatch && reqMatch && houseMatch;
     });
     displayStudents(filtered);
 }
@@ -343,6 +383,7 @@ function editStudent(id) {
     el('editStudentHouseTeam').value   = student.houseTeam  || student.group || '';
     el('editStudentDesignTeam').value  = student.designTeam || '';
     el('editStudentReqTeam').value     = student.reqTeam    || '';
+    el('editStudentRoomNumber').value  = student.roomNumber || '';
     el('editStudentAge').value         = student.age;
     el('editStudentInstrument').value  = student.instrument;
     el('editStudentDietary').value     = student.dietary;
@@ -361,6 +402,7 @@ function setupStudentEditForm() {
         var houseTeam  = el('editStudentHouseTeam').value.trim();
         var designTeam = el('editStudentDesignTeam').value.trim();
         var reqTeam    = el('editStudentReqTeam').value.trim();
+        var roomNumber = el('editStudentRoomNumber') ? el('editStudentRoomNumber').value.trim() : '';
         var age        = el('editStudentAge').value;
         var instrument = el('editStudentInstrument').value.trim();
         var dietary    = el('editStudentDietary').value.trim();
@@ -371,7 +413,7 @@ function setupStudentEditForm() {
             return;
         }
         var studentData = { name: name, pronouns: pronouns, houseTeam: houseTeam,
-                            designTeam: designTeam, reqTeam: reqTeam,
+                            designTeam: designTeam, reqTeam: reqTeam, roomNumber: roomNumber,
                             age: age, instrument: instrument, dietary: dietary, note: note };
         if (editingStudentId !== null) {
             ShadDB.updateStudent(editingStudentId, studentData);
@@ -404,6 +446,7 @@ var attCurrentSession = 'morning';  // 'morning' | 'evening'
 var attActiveRecord = null;         // the current in-memory attendance map {studentId: {checkedIn, time}}
 var attRecentScans = [];
 var attSessionActive = false;       // true while a session is open for editing
+var attEditingDate = null;          // null = today; string = reopened past session date
 
 function todayFmt() {
     var d = new Date();
@@ -497,6 +540,14 @@ window.attStartSession = function() {
 window.attSubmitSession = function() {
     var students = ShadDB.getStudents();
     var checkedIn = Object.values(attActiveRecord).filter(function(v) { return v && v.checkedIn; }).length;
+    if (attEditingDate) {
+        // Saving a reopened past session — no confirm needed, just save and close edit mode
+        attSaveSession(function() {
+            showMsg('Session updated!', 'success');
+            attCloseEditMode();
+        });
+        return;
+    }
     if (!confirm('Submit ' + (attCurrentSession === 'morning' ? 'morning' : 'evening') + ' attendance?\n\nChecked In: ' + checkedIn + '\nNot checked in: ' + (students.length - checkedIn))) return;
     attSaveSession(function() {
         showMsg('Attendance submitted! ' + checkedIn + '/' + students.length + ' present.', 'success');
@@ -505,10 +556,11 @@ window.attSubmitSession = function() {
 };
 
 function attSaveSession(callback) {
+    var dateToSave = attEditingDate || todayFmt();
     fetch('/api/attendance-sessions', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ session_date: todayFmt(), session_type: attCurrentSession, students_json: attActiveRecord })
+        body: JSON.stringify({ session_date: dateToSave, session_type: attCurrentSession, students_json: attActiveRecord })
     }).then(function() { if (callback) callback(); }).catch(function() { showMsg('Save failed.', 'error'); });
 }
 
@@ -532,7 +584,71 @@ function attUpdateSubmitBtn() {
     var students = ShadDB.getStudents();
     var checkedIn = Object.values(attActiveRecord).filter(function(v) { return v && v.checkedIn; }).length;
     var btn = el('attSubmitBtn');
-    if (btn) btn.textContent = '✓ Submit (' + checkedIn + '/' + students.length + ')';
+    if (!btn) return;
+    if (attEditingDate) {
+        btn.textContent = '✓ Save Changes (' + checkedIn + '/' + students.length + ')';
+        btn.style.background = '#f39c12';
+    } else {
+        btn.textContent = '✓ Submit (' + checkedIn + '/' + students.length + ')';
+        btn.style.background = '';
+    }
+}
+
+window.attReopenSession = function(session) {
+    if (attEditingDate && attEditingDate !== session.session_date) {
+        if (!confirm('You are already editing a session. Switch to ' + session.session_date + ' ' + session.session_type + '?')) return;
+    }
+    // Switch tab to match the session type
+    attCurrentSession = session.session_type;
+    el('attTabMorning').classList.toggle('active', session.session_type === 'morning');
+    el('attTabEvening').classList.toggle('active', session.session_type === 'evening');
+
+    attEditingDate = session.session_date;
+    attActiveRecord = session.students_json || {};
+    attSessionActive = true;
+    attShowActive();
+    attRefreshMissingList();
+    attUpdateSubmitBtn();
+
+    // Update labels to show which historical session is being edited
+    var labelEl = el('attSessionLabel');
+    if (labelEl) labelEl.textContent = (session.session_type === 'morning' ? 'Morning' : 'Evening') + ' — Editing';
+    var dateEl = el('attSessionDate');
+    if (dateEl) dateEl.textContent = session.session_date;
+
+    // Show a "Back to Today" button if not already present
+    var backBtn = el('attBackTodayBtn');
+    if (!backBtn) {
+        backBtn = document.createElement('button');
+        backBtn.id = 'attBackTodayBtn';
+        backBtn.textContent = '← Back to Today';
+        backBtn.style.cssText = 'margin-left:10px;padding:6px 14px;background:#f0f0f0;color:#555;border:none;border-radius:8px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+        backBtn.addEventListener('click', attCloseEditMode);
+        var submitBtn = el('attSubmitBtn');
+        if (submitBtn && submitBtn.parentNode) submitBtn.parentNode.insertBefore(backBtn, submitBtn.nextSibling);
+    }
+    backBtn.style.display = 'inline-block';
+    showMsg('Editing ' + session.session_date + ' ' + session.session_type + ' session.', 'success');
+};
+
+function attCloseEditMode() {
+    attEditingDate = null;
+    // Remove the back button
+    var backBtn = el('attBackTodayBtn');
+    if (backBtn) backBtn.style.display = 'none';
+    // Restore today's session for the current tab
+    attLoadHistory();
+    attLoadOrShowSession();
+    // Restore the label
+    var labelEl = el('attSessionLabel');
+    if (labelEl) labelEl.textContent = attCurrentSession === 'morning' ? 'Morning Check-In' : 'Evening Check-In';
+    var dateEl = el('attSessionDate');
+    if (dateEl) {
+        var d = new Date();
+        dateEl.textContent = d.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'});
+    }
+    var btn = el('attSubmitBtn');
+    if (btn) btn.style.background = '';
 }
 
 function attCheckInByName(name) {
@@ -617,10 +733,15 @@ function attLoadHistory() {
                     '<div style="flex:1;height:6px;background:#f0f0f0;border-radius:99px;overflow:hidden;min-width:80px;">' +
                     '<div style="height:100%;width:' + pct + '%;background:#8bc53f;border-radius:99px;"></div></div>' +
                     '<span style="font-size:12px;color:#aaa;font-weight:600;">' + fmtDateTime(session.submitted_at) + '</span>';
+                var captured = session;
+                var editBtn = document.createElement('button');
+                editBtn.textContent = '✎ Edit';
+                editBtn.style.cssText = 'padding:5px 12px;background:#f39c12;color:white;border:none;border-radius:8px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;';
+                editBtn.addEventListener('click', function() { attReopenSession(captured); });
+                row.appendChild(editBtn);
                 var dlBtn = document.createElement('button');
                 dlBtn.textContent = '⬇ CSV';
                 dlBtn.style.cssText = 'padding:5px 12px;background:#0693e3;color:white;border:none;border-radius:8px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;';
-                var captured = session;
                 dlBtn.addEventListener('click', function() { attDownloadSession(captured); });
                 row.appendChild(dlBtn);
                 histList.appendChild(row);
@@ -1450,8 +1571,131 @@ function setupDietarySearch() {
     if (input) input.addEventListener('input', displayDietaryList);
 }
 
+// ── OBSERVATION LEADERBOARD ────────────────────────────────
+function displayObsLeaderboard() {
+    var posBox  = el('obsTopPositive');
+    var negBox  = el('obsTopNegative');
+    var brkList = el('obsBreakdownList');
+    if (!posBox && !negBox && !brkList) return;
+
+    var obs = ShadDB.getObservations();
+    if (!obs || obs.length === 0) {
+        if (posBox) posBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No observations yet.</p>';
+        if (negBox) negBox.innerHTML = '';
+        if (brkList) brkList.innerHTML = '';
+        return;
+    }
+
+    // Tally per student
+    var tally = {}; // { name: { pos, neg } }
+    obs.forEach(function(o) {
+        if (!o.student) return;
+        if (!tally[o.student]) tally[o.student] = { pos: 0, neg: 0 };
+        if (o.mood === 'positive') tally[o.student].pos++;
+        else if (o.mood === 'negative') tally[o.student].neg++;
+    });
+
+    var names = Object.keys(tally);
+    var maxPos = Math.max(1, Math.max.apply(null, names.map(function(n) { return tally[n].pos; })));
+    var maxNeg = Math.max(1, Math.max.apply(null, names.map(function(n) { return tally[n].neg; })));
+
+    // Sort for top-3 lists
+    var byPos = names.slice().sort(function(a, b) { return tally[b].pos - tally[a].pos; }).slice(0, 3);
+    var byNeg = names.slice().sort(function(a, b) { return tally[b].neg - tally[a].neg; }).slice(0, 3);
+
+    var medals = ['🥇', '🥈', '🥉'];
+
+    function makeTopRow(name, count, maxCount, colour, rank) {
+        var pct = Math.round((count / maxCount) * 100);
+        var div = document.createElement('div');
+        div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:10px;';
+        div.innerHTML =
+            '<span style="font-size:18px;flex:0 0 24px;text-align:center;">' + medals[rank] + '</span>' +
+            '<div style="flex:1;">' +
+                '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+                    '<span style="font-size:13px;font-weight:800;color:#111;">' + esc(name) + '</span>' +
+                    '<span style="font-size:13px;font-weight:700;color:' + colour + ';">' + count + '</span>' +
+                '</div>' +
+                '<div style="height:8px;background:#f0f0f0;border-radius:99px;overflow:hidden;">' +
+                    '<div style="height:100%;width:' + pct + '%;background:' + colour + ';border-radius:99px;transition:width 0.4s;"></div>' +
+                '</div>' +
+            '</div>';
+        return div;
+    }
+
+    // Render top positive
+    if (posBox) {
+        posBox.innerHTML = '';
+        var filtered = byPos.filter(function(n) { return tally[n].pos > 0; });
+        if (filtered.length === 0) {
+            posBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No positive observations yet.</p>';
+        } else {
+            filtered.forEach(function(name, i) {
+                posBox.appendChild(makeTopRow(name, tally[name].pos, maxPos, '#5a9a20', i));
+            });
+        }
+    }
+
+    // Render top negative
+    if (negBox) {
+        negBox.innerHTML = '';
+        var filteredNeg = byNeg.filter(function(n) { return tally[n].neg > 0; });
+        if (filteredNeg.length === 0) {
+            negBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No negative observations yet.</p>';
+        } else {
+            filteredNeg.forEach(function(name, i) {
+                negBox.appendChild(makeTopRow(name, tally[name].neg, maxNeg, '#d12c2c', i));
+            });
+        }
+    }
+
+    // Render full breakdown (all students, sorted by total desc)
+    if (brkList) {
+        brkList.innerHTML = '';
+        var allSorted = names.slice().sort(function(a, b) {
+            return (tally[b].pos + tally[b].neg) - (tally[a].pos + tally[a].neg);
+        });
+        allSorted.forEach(function(name) {
+            var p = tally[name].pos, n = tally[name].neg, total = p + n;
+            if (total === 0) return;
+            var pPct = Math.round((p / total) * 100);
+            var nPct = 100 - pPct;
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f1f1f1;flex-wrap:wrap;';
+            row.innerHTML =
+                '<span style="font-size:13px;font-weight:800;color:#111;min-width:140px;flex:0 0 140px;">' + esc(name) + '</span>' +
+                '<div style="flex:1;min-width:120px;">' +
+                    '<div style="display:flex;height:10px;border-radius:99px;overflow:hidden;gap:2px;">' +
+                        '<div title="Positive: ' + p + '" style="width:' + pPct + '%;background:#8bc53f;transition:width 0.3s;border-radius:99px 0 0 99px;"></div>' +
+                        '<div title="Negative: ' + n + '" style="width:' + nPct + '%;background:#e74c3c;transition:width 0.3s;border-radius:0 99px 99px 0;"></div>' +
+                    '</div>' +
+                '</div>' +
+                '<span style="font-size:12px;font-weight:700;color:#5a9a20;min-width:36px;text-align:right;">+' + p + '</span>' +
+                '<span style="font-size:12px;font-weight:700;color:#d12c2c;min-width:36px;text-align:right;">−' + n + '</span>';
+            brkList.appendChild(row);
+        });
+
+        // Wire up the breakdown toggle if not already done
+        var toggle = el('obsBreakdownToggle');
+        if (toggle && !toggle._wired) {
+            toggle._wired = true;
+            var btn = toggle.querySelector('.panel-toggle');
+            toggle.addEventListener('click', function() {
+                var collapsed = brkList.classList.contains('collapsed');
+                brkList.classList.toggle('collapsed', !collapsed);
+                if (btn) {
+                    btn.textContent = collapsed ? '−' : '+';
+                    btn.setAttribute('aria-expanded', collapsed ? 'true' : 'false');
+                    btn.title = collapsed ? 'Collapse' : 'Expand';
+                }
+            });
+        }
+    }
+}
+
 // ── OBSERVATIONS ──────────────────────────────────────────
 function displayObservations() {
+    displayObsLeaderboard();
     var recentBox = el('recentObservations'), fullList = el('observationList');
     var searchText = (el('observationSearch') || {}).value || '';
     var filterMood = (el('observationFilter') || {}).value || 'all';
