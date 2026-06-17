@@ -107,17 +107,50 @@ function rowToMedkit(row) {
 
 function rowToStudent(row) {
     return {
-        id: row.id,
-        name: row.name,
-        pronouns: row.pronouns || "",
-        group: row.group_name || "",
-        designTeam: row.design_team || "",
-        reqTeam: row.req_team || "",
-        houseTeam: row.house_team || "",
-        age: row.age || "",
-        instrument: row.instrument || "",
-        dietary: row.dietary || "None",
-        note: row.note || ""
+        id:                 row.id,
+        name:               row.name,
+        pronouns:           row.pronouns || "",
+        group:              row.group_name || "",
+        designTeam:         row.design_team || "",
+        reqTeam:            row.req_team || "",
+        houseTeam:          row.house_team || "",
+        roomNumber:         row.room_number || "",
+        age:                row.age || "",
+        instrument:         row.instrument || "",
+        dietary:            row.dietary || "None",
+        note:               row.note || "",
+        // SHAD application fields
+        appId:              row.app_id || "",
+        firstName:          row.first_name || "",
+        lastName:           row.last_name || "",
+        prefName:           row.pref_name || "",
+        gender:             row.gender || "",
+        selfIdGender:       row.self_id_gender || "",
+        selfIdPronoun:      row.self_id_pronoun || "",
+        dob:                row.dob || "",
+        pdNotes:            row.pd_notes || "",
+        city:               row.city || "",
+        province:           row.province || "",
+        email:              row.email || "",
+        phone:              row.phone || "",
+        school:             row.school || "",
+        grade:              row.grade || "",
+        ethnicity:          row.ethnicity || "",
+        selfDescEthnicity:  row.self_desc_ethnicity || "",
+        indigenous:         row.indigenous || "",
+        selfDescIndigenous: row.self_desc_indigenous || "",
+        languagePref:       row.language_pref || "",
+        parentFirstName:    row.parent_first_name || "",
+        parentLastName:     row.parent_last_name || "",
+        parentRelationship: row.parent_relationship || "",
+        parentEmail:        row.parent_email || "",
+        parentPhone:        row.parent_phone || "",
+        lgbtq:              row.lgbtq || "",
+        citySize:           row.city_size || "",
+        region:             row.region || "",
+        hoodieSize:         row.hoodie_size || "",
+        allergies:          row.allergies || "",
+        epipen:             row.epipen || ""
     };
 }
 
@@ -184,6 +217,92 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
+// ── Student helpers ───────────────────────────────────────────────────────────
+function mapStudentRows(rawStudents) {
+    return (Array.isArray(rawStudents) ? rawStudents : []).map(s => ({
+        name:               (s.name || s.Name || "").trim(),
+        pronouns:           s.pronouns || s.Pronouns || "",
+        group:              s.group || s.Group || s.campus || "",
+        age:                s.age || s.Age || null,
+        instrument:         s.instrument || s.Instrument || "",
+        dietary:            s.dietary || s.Dietary || "None",
+        note:               s.note || s.Note || "",
+        designTeam:         s.designTeam || "",
+        reqTeam:            s.reqTeam || "",
+        houseTeam:          s.houseTeam || s.group || s.Group || "",
+        roomNumber:         s.roomNumber || "",
+        appId:              s.appId || "",
+        firstName:          s.firstName || "",
+        lastName:           s.lastName || "",
+        prefName:           s.prefName || "",
+        gender:             s.gender || "",
+        selfIdGender:       s.selfIdGender || "",
+        selfIdPronoun:      s.selfIdPronoun || "",
+        dob:                s.dob || "",
+        pdNotes:            s.pdNotes || "",
+        city:               s.city || "",
+        province:           s.province || "",
+        email:              s.email || "",
+        phone:              s.phone || "",
+        school:             s.school || "",
+        grade:              s.grade || "",
+        ethnicity:          s.ethnicity || "",
+        selfDescEthnicity:  s.selfDescEthnicity || "",
+        indigenous:         s.indigenous || "",
+        selfDescIndigenous: s.selfDescIndigenous || "",
+        languagePref:       s.languagePref || "",
+        parentFirstName:    s.parentFirstName || "",
+        parentLastName:     s.parentLastName || "",
+        parentRelationship: s.parentRelationship || "",
+        parentEmail:        s.parentEmail || "",
+        parentPhone:        s.parentPhone || "",
+        lgbtq:              s.lgbtq || "",
+        citySize:           s.citySize || "",
+        region:             s.region || "",
+        hoodieSize:         s.hoodieSize || "",
+        allergies:          s.allergies || "",
+        epipen:             s.epipen || ""
+    }));
+}
+
+function studentInsertSQL() {
+    return `INSERT INTO students (
+        name, pronouns, group_name, age, instrument, medication, medication_taken,
+        dietary, note, design_team, req_team, house_team, room_number,
+        app_id, first_name, last_name, pref_name, gender, self_id_gender,
+        self_id_pronoun, dob, pd_notes, city, province, email, phone, school, grade,
+        ethnicity, self_desc_ethnicity, indigenous, self_desc_indigenous, language_pref,
+        parent_first_name, parent_last_name, parent_relationship, parent_email, parent_phone,
+        lgbtq, city_size, region, hoodie_size, allergies, epipen
+    ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?
+    )`;
+}
+
+function studentInsertParams(s) {
+    return [
+        s.name, s.pronouns || "", s.houseTeam || s.group || "", s.age || null,
+        s.instrument || "", "None", 0,
+        s.dietary || "None", s.note || "", s.designTeam || "", s.reqTeam || "",
+        s.houseTeam || s.group || "", s.roomNumber || "",
+        s.appId || "", s.firstName || "", s.lastName || "", s.prefName || "",
+        s.gender || "", s.selfIdGender || "", s.selfIdPronoun || "", s.dob || "",
+        s.pdNotes || "", s.city || "", s.province || "", s.email || "",
+        s.phone || "", s.school || "", s.grade || "", s.ethnicity || "",
+        s.selfDescEthnicity || "", s.indigenous || "", s.selfDescIndigenous || "",
+        s.languagePref || "", s.parentFirstName || "", s.parentLastName || "",
+        s.parentRelationship || "", s.parentEmail || "", s.parentPhone || "",
+        s.lgbtq || "", s.citySize || "", s.region || "", s.hoodieSize || "",
+        s.allergies || "", s.epipen || ""
+    ];
+}
+
 // STUDENTS
 app.get("/api/students", (req, res) => {
     db.all("SELECT * FROM students ORDER BY name ASC", [], (err, rows) => {
@@ -193,16 +312,38 @@ app.get("/api/students", (req, res) => {
 });
 
 app.post("/api/students", (req, res) => {
-    const s = req.body;
-    db.run(`
-        INSERT INTO students (name, pronouns, group_name, age, instrument, medication, medication_taken, dietary, note, design_team, req_team, house_team)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [s.name, s.pronouns || "", s.group || s.houseTeam || "", s.age || null, s.instrument || "", "None", 0, s.dietary || "None", s.note || "", s.designTeam || "", s.reqTeam || "", s.houseTeam || s.group || ""], function(err) {
+    const [s] = mapStudentRows([req.body]);
+    if (!s || !s.name) return res.status(400).json({ error: "Name is required." });
+    db.run(studentInsertSQL(), studentInsertParams(s), function(err) {
         if (err) return res.status(500).json({ error: err.message });
         db.get("SELECT * FROM students WHERE id = ?", [this.lastID], (err2, row) => {
             if (err2) return res.status(500).json({ error: err2.message });
             res.json(rowToStudent(row));
         });
+    });
+});
+
+// Upload room numbers: matches students by first+last name and sets room_number
+// Body: { rooms: [{ firstName, lastName, roomNumber }, ...] }
+app.post("/api/students/upload-rooms", (req, res) => {
+    const rooms = Array.isArray(req.body.rooms) ? req.body.rooms : [];
+    if (rooms.length === 0) return res.status(400).json({ error: "No room entries provided." });
+    db.all("SELECT id, name FROM students", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        // Build lookup: "firstname lastname" (lowercase) → id
+        const lookup = {};
+        rows.forEach(r => {
+            lookup[(r.name || "").trim().toLowerCase()] = r.id;
+        });
+        let updated = 0, unmatched = [];
+        const stmt = db.prepare("UPDATE students SET room_number = ? WHERE id = ?");
+        rooms.forEach(entry => {
+            const full = ((entry.firstName || "") + " " + (entry.lastName || "")).trim().toLowerCase();
+            const id   = lookup[full];
+            if (id) { stmt.run([(entry.roomNumber || "").trim(), id]); updated++; }
+            else     { unmatched.push((entry.firstName + " " + entry.lastName).trim()); }
+        });
+        stmt.finalize(() => res.json({ updated, unmatched }));
     });
 });
 
@@ -229,6 +370,19 @@ app.put("/api/students/bulk-teams", (req, res) => {
     });
 });
 
+// Rename all students sharing one team name to a new name
+// field must be one of design_team, req_team, house_team (whitelist enforced)
+app.put("/api/students/rename-team", (req, res) => {
+    const allowed = { design_team: 1, req_team: 1, house_team: 1 };
+    const { field, oldName, newName } = req.body;
+    if (!allowed[field])      return res.status(400).json({ error: "Invalid team field." });
+    if (!oldName || !newName) return res.status(400).json({ error: "oldName and newName are required." });
+    db.run(`UPDATE students SET ${field} = ? WHERE ${field} = ?`, [newName.trim(), oldName.trim()], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ updated: this.changes });
+    });
+});
+
 app.put("/api/students/:id", (req, res) => {
     const s = req.body;
     db.run(`
@@ -242,9 +396,10 @@ app.put("/api/students/:id", (req, res) => {
             note = COALESCE(?, note),
             design_team = COALESCE(?, design_team),
             req_team = COALESCE(?, req_team),
-            house_team = COALESCE(?, house_team)
+            house_team = COALESCE(?, house_team),
+            room_number = COALESCE(?, room_number)
         WHERE id = ?
-    `, [s.name, s.pronouns, s.houseTeam || s.group || null, s.age, s.instrument, s.dietary, s.note, s.designTeam !== undefined ? s.designTeam : null, s.reqTeam !== undefined ? s.reqTeam : null, s.houseTeam !== undefined ? s.houseTeam : (s.group || null), req.params.id], function(err) {
+    `, [s.name, s.pronouns, s.houseTeam || s.group || null, s.age, s.instrument, s.dietary, s.note, s.designTeam !== undefined ? s.designTeam : null, s.reqTeam !== undefined ? s.reqTeam : null, s.houseTeam !== undefined ? s.houseTeam : (s.group || null), s.roomNumber !== undefined ? s.roomNumber : null, req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ updated: this.changes });
     });
@@ -258,31 +413,15 @@ app.delete("/api/students/:id", (req, res) => {
 });
 
 app.post("/api/students/replace", (req, res) => {
-    const students = (Array.isArray(req.body.students) ? req.body.students : []).map(s => ({
-        name:       (s.name || s.Name || "").trim(),
-        pronouns:   s.pronouns || s.Pronouns || "",
-        group:      s.group || s.Group || s.houseTeam || "",
-        age:        s.age || s.Age || null,
-        instrument: s.instrument || s.Instrument || "",
-        dietary:    s.dietary || s.Dietary || "None",
-        note:       s.note || s.Note || "",
-        designTeam: s.designTeam || "",
-        reqTeam:    s.reqTeam || "",
-        houseTeam:  s.houseTeam || s.group || s.Group || ""
-    })).filter(s => s.name);
+    const students = mapStudentRows(req.body.students).filter(s => s.name);
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run("DELETE FROM students");
         db.run("DELETE FROM committee_signups");
         db.run("DELETE FROM committee_assignments");
         db.run("DELETE FROM morning_rec_signups");
-        const stmt = db.prepare(`
-            INSERT INTO students (name, pronouns, group_name, age, instrument, medication, medication_taken, dietary, note, design_team, req_team, house_team)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-        students.forEach(s => {
-            stmt.run([s.name, s.pronouns, s.houseTeam || s.group, s.age, s.instrument, "None", 0, s.dietary, s.note, s.designTeam, s.reqTeam, s.houseTeam || s.group]);
-        });
+        const stmt = db.prepare(studentInsertSQL());
+        students.forEach(s => stmt.run(studentInsertParams(s)));
         stmt.finalize(err => {
             if (err) return db.run("ROLLBACK", () => res.status(500).json({ error: err.message }));
             db.run("COMMIT", err2 => {
@@ -294,47 +433,13 @@ app.post("/api/students/replace", (req, res) => {
 });
 
 app.post("/api/students/add", (req, res) => {
-    const students = (Array.isArray(req.body.students) ? req.body.students : []).map(s => ({
-        name:       (s.name || s.Name || "").trim(),
-        pronouns:   s.pronouns || s.Pronouns || "",
-        group:      s.group || s.Group || s.houseTeam || "",
-        age:        s.age || s.Age || null,
-        instrument: s.instrument || s.Instrument || "",
-        dietary:    s.dietary || s.Dietary || "None",
-        note:       s.note || s.Note || "",
-        designTeam: s.designTeam || "",
-        reqTeam:    s.reqTeam || "",
-        houseTeam:  s.houseTeam || s.group || s.Group || ""
-    })).filter(s => s.name);
+    const students = mapStudentRows(req.body.students).filter(s => s.name);
 
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
 
-        const stmt = db.prepare(`
-            INSERT INTO students (
-                name, pronouns, group_name, age, instrument,
-                medication, medication_taken, dietary, note,
-                design_team, req_team, house_team
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-
-        students.forEach(s => {
-            stmt.run([
-                s.name,
-                s.pronouns || "",
-                s.houseTeam || s.group || "",
-                s.age || null,
-                s.instrument || "",
-                "None",
-                0,
-                s.dietary || "None",
-                s.note || "",
-                s.designTeam || "",
-                s.reqTeam || "",
-                s.houseTeam || s.group || ""
-            ]);
-        });
+        const stmt = db.prepare(studentInsertSQL());
+        students.forEach(s => stmt.run(studentInsertParams(s)));
 
         stmt.finalize(err => {
             if (err) {
