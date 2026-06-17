@@ -46,7 +46,7 @@ function renderStaff() {
 
             <div class="actions">
                 <a href="mailto:${person.email}">Email</a>
-                <a href="${person.slackLink}" target="_blank">Slack</a>
+                <a href="https://app.slack.com/client/T0BC70X1MT2/C0BBEHCU88H?entry_point=redirect_flow" target="_blank">Slack</a>
             </div>
         `;
 
