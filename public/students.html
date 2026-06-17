@@ -151,6 +151,38 @@
                     <div id="recentObservations" class="panel-body"></div>
                 </div>
             </div>
+
+            <!-- Observation Leaderboard — full width below the two-column grid -->
+            <div class="student-panel" style="margin-top:20px;">
+                <div class="card-header">
+                    <h3>Observation Leaderboard</h3>
+                    <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                </div>
+                <div class="panel-body" id="obsLeaderboardPanel">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;" id="obsLeaderboardGrid">
+                        <!-- Top Positive -->
+                        <div>
+                            <p style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#5a9a20;margin-bottom:12px;">🏆 Top Positive</p>
+                            <div id="obsTopPositive"></div>
+                        </div>
+                        <!-- Top Negative -->
+                        <div>
+                            <p style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#d12c2c;margin-bottom:12px;">⚠ Top Negative</p>
+                            <div id="obsTopNegative"></div>
+                        </div>
+                    </div>
+
+                    <!-- Full breakdown, collapsible -->
+                    <div style="margin-top:20px;">
+                        <div class="card-header" style="cursor:pointer;user-select:none;padding:0;border:none;background:none;" id="obsBreakdownToggle">
+                            <p style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#888;">Full Student Breakdown</p>
+                            <button class="panel-toggle" type="button" aria-expanded="false" title="Expand" style="background:none;box-shadow:none;color:#aaa;">+</button>
+                        </div>
+                        <div id="obsBreakdownList" class="panel-body collapsed" style="padding:0;margin-top:10px;"></div>
+                    </div>
+                </div>
+            </div>
+
         </section>
 
         <!-- STUDENTS SECTION -->
@@ -186,6 +218,9 @@
                 <label for="editStudentReqTeam">Req Team</label>
                 <input id="editStudentReqTeam" type="text" placeholder="e.g. Team A">
 
+                <label for="editStudentRoomNumber">Room Number</label>
+                <input id="editStudentRoomNumber" type="text" placeholder="e.g. 204">
+
                 <label for="editStudentCommittee">Committee</label>
                 <select id="editStudentCommittee">
                     <option value="">— No committee assigned —</option>
@@ -218,7 +253,9 @@
                 <div class="panel-body">
                     <div class="student-controls">
                         <input id="studentSearch" type="text" placeholder="Search student name...">
-                        <input id="studentTeamFilter" type="text" placeholder="Filter by team...">
+                        <select id="filterDesignTeam"><option value="">All Design Teams</option></select>
+                        <select id="filterReqTeam"><option value="">All Req Teams</option></select>
+                        <select id="filterHouseTeam"><option value="">All House Teams</option></select>
                     </div>
 
                     <div id="studentList"></div>
