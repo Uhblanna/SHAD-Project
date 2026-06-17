@@ -1470,7 +1470,13 @@ function displayObservations() {
     }
     if (recentBox) {
         recentBox.innerHTML = '';
-        obs.slice(0, 3).forEach(function(o) { recentBox.appendChild(createObservationRow(o)); });
+        // Once an observation has been acknowledged, drop it from Recent Observations
+        var recent = obs.filter(function(o) { return !o.acknowledged; }).slice(0, 3);
+        if (recent.length === 0) {
+            recentBox.innerHTML = '<p class="student-info">No recent observations.</p>';
+        } else {
+            recent.forEach(function(o) { recentBox.appendChild(createObservationRow(o)); });
+        }
     }
     if (fullList) {
         fullList.innerHTML = '';
@@ -1492,10 +1498,12 @@ function createObservationRow(obs) {
         '</div>' +
         '<div class="observation-actions">' +
             '<span class="status ' + obs.mood + '">' + obs.mood.charAt(0).toUpperCase() + obs.mood.slice(1) + '</span>' +
-            '<button class="edit-observation-btn">Edit</button>' +
+            // Edit button edits the acknowledgement note; only shown once acknowledged
+            (obs.acknowledged ? '<button class="edit-observation-btn">Edit</button>' : '') +
         '</div>';
     row.querySelector('.acknowledge-check').addEventListener('change', function() { openAcknowledgeForm(obs.id); });
-    row.querySelector('.edit-observation-btn').addEventListener('click', function() { editObservation(obs.id); });
+    var editBtn = row.querySelector('.edit-observation-btn');
+    if (editBtn) editBtn.addEventListener('click', function() { openAcknowledgeForm(obs.id); });
     return row;
 }
 

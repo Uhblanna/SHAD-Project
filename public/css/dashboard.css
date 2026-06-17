@@ -304,25 +304,43 @@ nav a:hover{
     font-weight:600;
 }
 
+.att-grid tbody tr:hover td{ background:#f8faff; }
+
+.att-grid thead th:first-child,
+.att-name-cell{
+    position:sticky;
+    left:0;
+    z-index:1;
+}
+.att-grid thead th:first-child{ background:#fafafa; z-index:2; }
+.att-name-cell{ background:#fff; }
+.att-grid tbody tr:hover .att-name-cell{ background:#f8faff; }
+
 .att-dot{
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    width:26px;
-    height:26px;
+    width:28px;
+    height:28px;
     border-radius:50%;
-    font-size:11px;
+    font-size:12px;
     font-weight:800;
     line-height:1;
 }
 
-.att-dot.present{ background:#dcfce7; color:#16a34a; }
-.att-dot.absent{  background:#fee2e2; color:#dc2626; }
+.att-dot.present{ background:#e7f6ec; color:#1a9e4b; }
+.att-dot.absent{  background:#fdecec; color:#dc2626; }
 
-.miss-total{
+.miss-pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:28px;
+    height:28px;
+    padding:0 9px;
+    border-radius:99px;
     font-weight:800;
-    font-size:14px;
-    color:#e65100;
+    font-size:13px;
 }
 
 /* Empty state */

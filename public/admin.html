@@ -529,20 +529,34 @@ function loadStaffBreakdown() {
             totalEl.textContent = rows.length + ' total task' + (rows.length === 1 ? '' : 's') + ' completed across all days';
             container.appendChild(totalEl);
 
+            // Render each staff member as a compact circular gauge with their
+            // completed task count in the centre; the ring fills relative to the
+            // top performer. Sized so ~30 staff fit in the same card.
+            var gaugeWrap = document.createElement('div');
+            gaugeWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:12px; margin-top:8px;';
+
+            var radius = 22;
+            var circ = 2 * Math.PI * radius;
+
             sorted.forEach(function(name) {
                 var count = counts[name];
-                var pct = Math.round((count / max) * 100);
+                var dash = (count / max) * circ;
 
-                var row = document.createElement('div');
-                row.style.cssText = 'display:flex; align-items:center; gap:12px;';
-                row.innerHTML =
-                    '<div style="min-width:140px; font-size:14px; font-weight:700; color:#111;">' + escH(name) + '</div>' +
-                    '<div style="flex:1; height:8px; background:#f0f0f0; border-radius:99px; overflow:hidden;">' +
-                        '<div style="height:100%; width:' + pct + '%; background:#146ff8; border-radius:99px; transition:width 0.4s;"></div>' +
-                    '</div>' +
-                    '<div style="font-size:13px; font-weight:700; color:#555; white-space:nowrap;">' + count + ' task' + (count === 1 ? '' : 's') + '</div>';
-                container.appendChild(row);
+                var gauge = document.createElement('div');
+                gauge.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:5px; width:64px;';
+                gauge.innerHTML =
+                    '<svg width="54" height="54" viewBox="0 0 54 54">' +
+                        '<circle cx="27" cy="27" r="' + radius + '" fill="none" stroke="#f0f0f0" stroke-width="6"></circle>' +
+                        '<circle cx="27" cy="27" r="' + radius + '" fill="none" stroke="#146ff8" stroke-width="6" stroke-linecap="round" ' +
+                            'stroke-dasharray="' + circ.toFixed(1) + '" stroke-dashoffset="' + (circ - dash).toFixed(1) + '" ' +
+                            'transform="rotate(-90 27 27)"></circle>' +
+                        '<text x="27" y="27" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="800" fill="#111">' + count + '</text>' +
+                    '</svg>' +
+                    '<div style="font-size:11px; font-weight:700; color:#111; text-align:center; line-height:1.2; word-break:break-word;">' + escH(name) + '</div>';
+                gaugeWrap.appendChild(gauge);
             });
+
+            container.appendChild(gaugeWrap);
         })
         .catch(function() {});
 }

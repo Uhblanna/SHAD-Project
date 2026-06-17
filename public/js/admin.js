@@ -259,23 +259,52 @@ function collapseAllPanels() {
 
 // Collapse/expand each admin card. Clicking the toggle hides the card body
 // and swaps the −/+ glyph.
+//
+// Dual toggle: the narrow (.admin-card, non-wide) cards render two-per-row, side
+// by side. Each such pair is linked so toggling one also toggles its row partner,
+// keeping the row even. Full-width (.admin-card-wide) cards toggle on their own.
 function setupPanelToggles() {
-    document.querySelectorAll(".panel-toggle").forEach(function (btn) {
-        const head = btn.closest(".admin-card-head");
-        const body = head.nextElementSibling;
+    const cards = Array.prototype.slice.call(document.querySelectorAll(".admin-card"));
 
-        function setCollapsed(collapsed) {
-            body.classList.toggle("collapsed", collapsed);
-            btn.textContent = collapsed ? "+" : "−";
-            btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
-            btn.title = collapsed ? "Expand" : "Collapse";
+    // Group cards into rows: consecutive narrow cards pair up two-by-two; a wide
+    // card is its own group and flushes any half-finished narrow pair first.
+    const groups = [];
+    let pendingNarrow = [];
+    cards.forEach(function (card) {
+        if (card.classList.contains("admin-card-wide")) {
+            if (pendingNarrow.length) { groups.push(pendingNarrow); pendingNarrow = []; }
+            groups.push([card]);
+        } else {
+            pendingNarrow.push(card);
+            if (pendingNarrow.length === 2) { groups.push(pendingNarrow); pendingNarrow = []; }
+        }
+    });
+    if (pendingNarrow.length) groups.push(pendingNarrow);
+
+    groups.forEach(function (group) {
+        function setGroupCollapsed(collapsed) {
+            group.forEach(function (card) {
+                const btn = card.querySelector(".panel-toggle");
+                const body = card.querySelector(".admin-card-body");
+                if (!btn || !body) return;
+                body.classList.toggle("collapsed", collapsed);
+                btn.textContent = collapsed ? "+" : "−";
+                btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+                btn.title = collapsed ? "Expand" : "Collapse";
+            });
         }
 
-        btn.addEventListener("click", function () {
-            setCollapsed(!body.classList.contains("collapsed"));
+        group.forEach(function (card) {
+            const btn = card.querySelector(".panel-toggle");
+            const body = card.querySelector(".admin-card-body");
+            if (!btn || !body) return;
+            btn.addEventListener("click", function () {
+                // Toggle the whole row based on this card's current state
+                setGroupCollapsed(!body.classList.contains("collapsed"));
+            });
         });
 
-        setCollapsed(true); // start closed
+        setGroupCollapsed(true); // start closed
     });
 }
 

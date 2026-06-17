@@ -38,35 +38,22 @@
         <p class="mini-title">CONTROL CENTER</p>
         <h2>Operations Dashboard</h2>
         <p class="subtext">Live attendance, alerts, and student data pulled from the portal database.</p>
-        <div class="status-row">
-            <div class="status-box green">
-                <h3 id="db-checkedIn">—</h3>
-                <span>Checked In Today</span>
-            </div>
-            <div class="status-box orange">
-                <h3 id="db-missing">—</h3>
-                <span>Not Yet Checked In</span>
-            </div>
-            <div class="status-box purple">
-                <h3 id="db-total">—</h3>
-                <span>Total Students</span>
-            </div>
-        </div>
+        <div id="db-ops-tiles" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:35px;">Loading...</div>
     </div>
 
     <div class="placeholder-grid">
-        <div class="panel">
+        <div class="panel" style="grid-column:1 / -1;">
             <h3>Attendance Summary</h3>
-            <p id="db-attendance-text" style="font-size:14px;line-height:1.6;color:#555;">Loading...</p>
-            <a href="/public/students.html#attendance" style="display:inline-block;margin-top:12px;color:#146ff8;font-weight:700;font-size:13px;">Go to Attendance →</a>
+            <div id="db-attendance-tiles" style="display:flex;gap:16px;flex-wrap:wrap;">Loading...</div>
+            <a href="/public/students.html#attendance" style="display:inline-block;margin-top:16px;color:#146ff8;font-weight:700;font-size:13px;">Go to Attendance →</a>
         </div>
         <div class="panel">
             <h3>Recent Check-Ins</h3>
-            <div id="db-attendance-feed">Loading...</div>
+            <div id="db-attendance-feed" style="max-height:180px; overflow-y:auto; padding-right:8px;">Loading...</div>
         </div>
         <div class="panel">
             <h3>Alerts</h3>
-            <div id="db-alerts">Loading...</div>
+            <div id="db-alerts" style="max-height:180px; overflow-y:auto; padding-right:8px;">Loading...</div>
         </div>
     </div>
 
@@ -95,26 +82,78 @@
 document.addEventListener('DOMContentLoaded', function() {
     renderDashboard();
     loadTrends();
+    loadOps();
     setInterval(renderDashboard, 30000);
     setInterval(loadTrends, 60000);
+    setInterval(loadOps, 60000);
     window.addEventListener('storage', renderDashboard);
 });
+
+// ── Operations overview ───────────────────────────────────────────────────
+// Pulls live operational counts from the portal APIs and renders clickable
+// metric tiles. Each tile links to the page where that work is handled.
+function loadOps() {
+    var box = document.getElementById('db-ops-tiles');
+    if (!box) return;
+
+    var today = new Date().toISOString().slice(0, 10);
+    Promise.all([
+        fetch('/api/issue-tickets').then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch('/api/todos?date=' + today).then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch('/api/swap-requests').then(function(r) { return r.json(); }).catch(function() { return []; }),
+        fetch('/api/shopping').then(function(r) { return r.json(); }).catch(function() { return []; })
+    ]).then(function(res) {
+        var tickets  = res[0] || [];
+        var todos    = res[1] || [];
+        var swaps    = res[2] || [];
+        var shopping = res[3] || [];
+        var stats    = ShadDB.getDashboardStats();
+
+        var urgentTickets = tickets.filter(function(t) { return t.urgent; }).length;
+        var tasksDone     = todos.filter(function(t) { return t.completed; }).length;
+        var pendingSwaps  = swaps.filter(function(s) { return s.status === 'Pending'; }).length;
+        var openShopping  = shopping.filter(function(i) { return !i.purchased; });
+        var priorityShop  = openShopping.filter(function(i) { return i.priority; }).length;
+
+        function opsTile(href, bg, color, value, label, sub) {
+            return '<a href="' + href + '" style="flex:1;min-width:120px;background:' + bg + ';border-radius:14px;padding:16px 18px;text-decoration:none;display:block;">' +
+                '<div style="font-size:30px;font-weight:900;line-height:1;color:' + color + ';">' + value + '</div>' +
+                '<div style="font-size:12px;font-weight:700;color:' + color + ';margin-top:6px;">' + label + '</div>' +
+                (sub ? '<div style="font-size:11px;font-weight:700;color:#888;margin-top:2px;">' + sub + '</div>' : '') +
+            '</a>';
+        }
+
+        box.innerHTML =
+            opsTile('/public/issues.html',            '#fdecec', '#dc2626', tickets.length,                       'Open tickets',        urgentTickets > 0 ? urgentTickets + ' urgent' : '') +
+            opsTile('/public/tools.html',             '#eef8f0', '#1a9e4b', tasksDone + '/' + todos.length,       'Tasks done today',    '') +
+            opsTile('/public/admin.html',             '#fff5e6', '#b8730a', pendingSwaps,                         'Pending swaps',       '') +
+            opsTile('/public/admin.html',             '#eef2fb', '#146ff8', openShopping.length,                  'Shopping requests',   priorityShop > 0 ? priorityShop + ' priority' : '') +
+            opsTile('/public/students.html#observations', '#fff1e6', '#ff6900', stats.unacknowledged,             'Unack. observations', '') +
+            opsTile('/public/reports.html',           '#f5f0fb', '#7a44c9', stats.reportCount,                    'Incident reports',    '');
+    }).catch(function() {});
+}
 
 function renderDashboard() {
     var stats      = ShadDB.getDashboardStats();
     var students   = ShadDB.getStudents();
     var attendance = ShadDB.getTodayAttendance();
 
-    document.getElementById('db-checkedIn').textContent = stats.checkedIn;
-    document.getElementById('db-missing').textContent   = stats.missing;
-    document.getElementById('db-total').textContent     = stats.totalStudents;
-
-    var attText = document.getElementById('db-attendance-text');
+    var tilesBox = document.getElementById('db-attendance-tiles');
     if (stats.totalStudents === 0) {
-        attText.textContent = 'No students loaded yet. Import a CSV on the Students page.';
+        tilesBox.innerHTML = '<p style="font-size:14px;line-height:1.6;color:#555;margin:0;">No students loaded yet. Import a CSV on the Students page.</p>';
     } else {
-        attText.textContent = stats.checkedIn + ' of ' + stats.totalStudents + ' students checked in. ' +
-            (stats.missing > 0 ? stats.missing + ' still missing.' : 'All accounted for!');
+        var pct = Math.round((stats.checkedIn / stats.totalStudents) * 100);
+        function attTile(bg, color, value, label) {
+            return '<div style="flex:1;min-width:130px;background:' + bg + ';border-radius:16px;padding:18px 22px;">' +
+                '<div style="font-size:38px;font-weight:900;color:' + color + ';line-height:1;">' + value + '</div>' +
+                '<div style="font-size:13px;font-weight:700;color:' + color + ';margin-top:6px;">' + label + '</div>' +
+            '</div>';
+        }
+        tilesBox.innerHTML =
+            attTile('#eef8f0', '#1a9e4b', stats.checkedIn,     'Checked In') +
+            attTile('#fdeeea', '#e0571f', stats.missing,       'Missing') +
+            attTile('#eef2fb', '#146ff8', stats.totalStudents, 'Total Students') +
+            attTile('#f5f0fb', '#7a44c9', pct + '%',           'Attendance');
     }
 
     var feedBox = document.getElementById('db-attendance-feed');
@@ -123,9 +162,10 @@ function renderDashboard() {
     if (checkedStudents.length === 0) {
         feedBox.innerHTML = '<p style="color:#888;font-size:14px;">No check-ins recorded today.</p>';
     } else {
+        // Show every checked-in student (most recent first); the feed scrolls vertically
         var sorted = checkedStudents.slice().sort(function(a,b) {
             return ((attendance[b.id]||{}).time||'').localeCompare((attendance[a.id]||{}).time||'');
-        }).slice(0,5);
+        });
         sorted.forEach(function(s) {
             var t = attendance[s.id].time ? new Date(attendance[s.id].time) : null;
             var row = document.createElement('div');
@@ -133,12 +173,6 @@ function renderDashboard() {
             row.innerHTML = '<span style="font-weight:600;">' + esc(s.name) + '</span><span style="color:#888;">' + (t ? fmtTime(t) : '') + '</span>';
             feedBox.appendChild(row);
         });
-        if (checkedStudents.length > 5) {
-            var more = document.createElement('p');
-            more.style.cssText = 'color:#888;font-size:13px;margin-top:8px;';
-            more.textContent = '+ ' + (checkedStudents.length - 5) + ' more checked in.';
-            feedBox.appendChild(more);
-        }
     }
 
     var alertsBox = document.getElementById('db-alerts');
@@ -147,18 +181,13 @@ function renderDashboard() {
     if (missing.length === 0 && stats.unacknowledged === 0) {
         alertsBox.innerHTML = '<p style="color:#00d084;font-weight:700;font-size:14px;">No active alerts.</p>';
     } else {
-        missing.slice(0,3).forEach(function(s) {
+        // Show every missing student; the alerts feed scrolls vertically
+        missing.forEach(function(s) {
             var row = document.createElement('div');
             row.style.cssText = 'padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px;';
             row.innerHTML = '<span style="color:#ff3b30;font-weight:700;">&#9888; </span><strong>' + esc(s.name) + '</strong> — not checked in';
             alertsBox.appendChild(row);
         });
-        if (missing.length > 3) {
-            var m2 = document.createElement('p');
-            m2.style.cssText = 'color:#888;font-size:13px;margin-top:4px;';
-            m2.textContent = '+ ' + (missing.length - 3) + ' more missing.';
-            alertsBox.appendChild(m2);
-        }
         if (stats.unacknowledged > 0) {
             var o = document.createElement('div');
             o.style.cssText = 'padding:8px 0;font-size:14px;';
@@ -209,73 +238,46 @@ function renderTrends(data) {
     badge.textContent = data.atRisk.length + (data.atRisk.length === 1 ? ' student' : ' students');
     chartWrap.style.display = 'block';
 
-    // ── Bar chart ──────────────────────────────────────────────────────────
-    var canvas = document.getElementById('attendanceChart');
-    var numStudents = data.atRisk.length;
-    canvas.height = Math.max(180, numStudents * 46);
-
+    // ── Concern gauges ─────────────────────────────────────────────────────
+    // One circular gauge per at-risk student; the centre shows their missed
+    // check-in count, the ring fills as a fraction of total recorded sessions,
+    // and the ring colour escalates with severity (amber → orange → red).
     if (_attChart) { _attChart.destroy(); _attChart = null; }
 
-    var barColors = data.atRisk.map(function(s) {
-        if (s.missed >= 7) return '#dc2626';   // red
-        if (s.missed >= 5) return '#f58220';   // orange
-        return '#f59e0b';                       // amber
-    });
+    function concernColor(missed) {
+        if (missed >= 7) return '#dc2626';   // red
+        if (missed >= 5) return '#f58220';   // orange
+        return '#f59e0b';                     // amber
+    }
 
-    _attChart = new Chart(canvas.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: data.atRisk.map(function(s) { return s.name; }),
-            datasets: [{
-                label: 'Missed Check-ins',
-                data:  data.atRisk.map(function(s) { return s.missed; }),
-                backgroundColor: barColors,
-                borderRadius: 8,
-                borderSkipped: false,
-                barThickness: 28
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(ctx) {
-                            return '  ' + ctx.parsed.x + ' missed check-in(s)';
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1,
-                        font: { family: 'Archivo', weight: '700', size: 12 },
-                        color: '#aaa'
-                    },
-                    grid:  { color: '#f5f5f5' },
-                    title: {
-                        display: true,
-                        text: 'Number of Missed Check-ins',
-                        font: { family: 'Archivo', weight: '700', size: 12 },
-                        color: '#aaa',
-                        padding: { top: 8 }
-                    }
-                },
-                y: {
-                    ticks: {
-                        font: { family: 'Archivo', weight: '700', size: 13 },
-                        color: '#111'
-                    },
-                    grid: { display: false }
-                }
-            }
-        }
+    var totalSessions = (data.sessions && data.sessions.length) ? data.sessions.length : 0;
+    var maxMissed = Math.max.apply(null, data.atRisk.map(function(s) { return s.missed; }));
+    var denom = totalSessions > 0 ? totalSessions : (maxMissed || 1);
+
+    var radius = 30;
+    var circ = 2 * Math.PI * radius;
+
+    var gauges = '<div style="display:flex; flex-wrap:wrap; gap:18px;">';
+    data.atRisk.forEach(function(s) {
+        var frac = Math.min(1, s.missed / denom);
+        var dash = frac * circ;
+        var color = concernColor(s.missed);
+        gauges +=
+            '<div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:88px;">' +
+                '<svg width="74" height="74" viewBox="0 0 74 74">' +
+                    '<circle cx="37" cy="37" r="' + radius + '" fill="none" stroke="#f0f0f0" stroke-width="7"></circle>' +
+                    '<circle cx="37" cy="37" r="' + radius + '" fill="none" stroke="' + color + '" stroke-width="7" stroke-linecap="round" ' +
+                        'stroke-dasharray="' + circ.toFixed(1) + '" stroke-dashoffset="' + (circ - dash).toFixed(1) + '" ' +
+                        'transform="rotate(-90 37 37)"></circle>' +
+                    '<text x="37" y="34" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="800" fill="#111">' + s.missed + '</text>' +
+                    '<text x="37" y="49" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="700" fill="#aaa">missed</text>' +
+                '</svg>' +
+                '<div style="font-size:12px; font-weight:700; color:#111; text-align:center; line-height:1.2; word-break:break-word;">' + esc(s.name) + '</div>' +
+                (s.group ? '<div style="font-size:10px; font-weight:600; color:#aaa; text-align:center; line-height:1.2;">' + esc(s.group) + '</div>' : '') +
+            '</div>';
     });
+    gauges += '</div>';
+    chartWrap.innerHTML = gauges;
 
     // ── Session breakdown grid ─────────────────────────────────────────────
     if (!data.sessions || data.sessions.length === 0) {
@@ -302,7 +304,12 @@ function renderTrends(data) {
             html += '<td><span class="att-dot ' + (present ? 'present' : 'absent') + '">' +
                     (present ? '✓' : '✕') + '</span></td>';
         });
-        html += '<td class="miss-total">' + student.missed + '</td></tr>';
+        // Missed count as a severity-coloured pill, matching the concern gauges
+        var mp = student.missed >= 7 ? ['#fdecec', '#dc2626']
+               : student.missed >= 5 ? ['#fff3e6', '#f58220']
+               :                       ['#fff8e6', '#b8730a'];
+        html += '<td><span class="miss-pill" style="background:' + mp[0] + ';color:' + mp[1] + ';">' +
+                student.missed + '</span></td></tr>';
     });
 
     html += '</tbody></table></div>';

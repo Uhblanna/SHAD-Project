@@ -336,6 +336,12 @@ nav a:hover { color: #00d084; }
     font-size: 34px;
     line-height: 1;
 }
+.committee-emoji-logo {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    display: block;
+}
 
 .committee-card h4 {
     font-size: 14px;
@@ -502,7 +508,7 @@ nav a:hover { color: #00d084; }
 <section class="student-hero">
     <p class="mini">STUDENT PORTAL</p>
     <h2>Welcome, SHAD 2026!</h2>
-    <p>Sign up for morning rec activities and join a committee to get involved.</p>
+    <p>Sign up for Morning Rec activities, Explore the Campus Maps, or Join a committee to GET INVOLVED.</p>
 </section>
 
 <div class="student-content">
@@ -945,12 +951,18 @@ function committeeEmoji(name, type, description) {
         ['math','📐'], ['space','🚀'], ['astro','🔭'], ['garden','🌻'],
         ['cook','🍳'], ['food','🍽️'], ['bak','🧁'], ['game','🎮'], ['chess','♟️'],
         ['build','🔨'], ['drama','🎭'], ['theatre','🎭'], ['theater','🎭'],
-        ['volunteer','🤝'], ['community','🤝'], ['book','📚'], ['read','📚']
+        ['volunteer','🤝'], ['community','🤝'], ['book','📚'], ['read','📚'],
+        // Isabelle McLean — keyword matches for the Red Deer 2026 committees
+        ['video','🎥'], ['variety','🎭'], ['show','🎭'], ['special event','🎉'],
+        ['celebration','🎉'], ['announce','📢'], ['social media','📱'],
+        ['alumni','🎓'], ['olympics','🏅'], ['banquet','🍽️'], ['open day','🎉'],
+        ['swag','🧢'], ['month','📅'], ['relations','🤝']
     ];
     for (var i = 0; i < map.length; i++) {
         if (text.indexOf(map[i][0]) !== -1) return map[i][1];
     }
-    return '🧠';
+    // Isabelle McLean — fall back to the SHAD logo when no keyword matches
+    return '<img src="/public/img/shad-logo.png" alt="SHAD" class="committee-emoji-logo">';
 }
 
 function renderCommitteeCard(c) {
@@ -997,7 +1009,7 @@ function decoratePlaceholderEmojis() {
         var desc = descEl ? descEl.textContent : '';
         var em = document.createElement('div');
         em.className = 'committee-emoji';
-        em.textContent = committeeEmoji(name, '', desc);
+        em.innerHTML = committeeEmoji(name, '', desc);
         card.insertBefore(em, card.firstChild);
     });
 }

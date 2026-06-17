@@ -3,5 +3,20 @@
     "id": "mmq4tbyelsuhh",
     "label": "Whole Campus",
     "file": "mmq4tbyelsuhh.png"
+  },
+  {
+    "id": "mmqhbb834x29k",
+    "label": "Main Campus",
+    "file": "mmqhbb834x29k.png"
+  },
+  {
+    "id": "mmqhba2v9pxqd",
+    "label": "GWH First Floor",
+    "file": "mmqhba2v9pxqd.png"
+  },
+  {
+    "id": "mmqhbaqpcjq08",
+    "label": "GWH Second & Third",
+    "file": "mmqhbaqpcjq08.png"
   }
 ]

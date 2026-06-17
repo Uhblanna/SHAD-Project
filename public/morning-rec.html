@@ -194,6 +194,20 @@ nav a:hover { color: #00d084; }
     transition: 0.2s;
 }
 .sign-up-another:hover { background: #00d084; color: white; }
+.exit-btn {
+    margin-top: 4px;
+    padding: 12px 28px;
+    background: transparent;
+    color: #888;
+    font-family: 'Archivo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.exit-btn:hover { background: #f2f2f2; color: #555; border-color: #ccc; }
 
 /* BOTTOM */
 .bottom-bar {
@@ -256,6 +270,7 @@ nav a:hover { color: #00d084; }
             <h3>You're Signed Up!</h3>
             <p id="successName">See you at morning rec tomorrow.</p>
             <button class="sign-up-another" onclick="resetForm()">Sign up another person</button>
+            <button class="exit-btn" onclick="window.location.href='/public/student.html'">Exit</button>
         </div>
 
     </div>
