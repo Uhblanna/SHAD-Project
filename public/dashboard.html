@@ -57,6 +57,31 @@
         </div>
     </div>
 
+    <!-- Observation Leaderboard -->
+    <div class="panel" style="margin-bottom:24px;">
+        <h3 style="margin-bottom:4px;">Observation Leaderboard</h3>
+        <p style="font-size:14px;color:#888;margin-bottom:20px;">Top 3 students by positive and negative observations, plus a full per-student breakdown.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;" id="obsLeaderGrid">
+            <div>
+                <p style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#5a9a20;margin-bottom:14px;">🏆 Top Positive</p>
+                <div id="dbObsTopPos"></div>
+            </div>
+            <div>
+                <p style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#d12c2c;margin-bottom:14px;">⚠ Top Negative</p>
+                <div id="dbObsTopNeg"></div>
+            </div>
+        </div>
+
+        <div style="margin-top:24px;border-top:1px solid #f0f0f0;padding-top:18px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;" id="dbObsBreakdownToggle">
+                <p style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#aaa;margin:0;">Full Student Breakdown</p>
+                <span id="dbObsBreakdownChevron" style="font-size:18px;color:#aaa;font-weight:700;line-height:1;">+</span>
+            </div>
+            <div id="dbObsBreakdown" style="display:none;margin-top:14px;"></div>
+        </div>
+    </div>
+
     <!-- Attendance Trends -->
     <div class="trends-card" id="trendsCard">
         <div class="trends-head">
@@ -83,10 +108,24 @@ document.addEventListener('DOMContentLoaded', function() {
     renderDashboard();
     loadTrends();
     loadOps();
+    renderObsLeaderboard();
     setInterval(renderDashboard, 30000);
     setInterval(loadTrends, 60000);
     setInterval(loadOps, 60000);
-    window.addEventListener('storage', renderDashboard);
+    setInterval(renderObsLeaderboard, 60000);
+    window.addEventListener('storage', function() { renderDashboard(); renderObsLeaderboard(); });
+
+    // Full breakdown toggle
+    var toggle = document.getElementById('dbObsBreakdownToggle');
+    var panel  = document.getElementById('dbObsBreakdown');
+    var chev   = document.getElementById('dbObsBreakdownChevron');
+    if (toggle) {
+        toggle.addEventListener('click', function() {
+            var open = panel.style.display !== 'none';
+            panel.style.display = open ? 'none' : 'block';
+            chev.textContent = open ? '+' : '−';
+        });
+    }
 });
 
 // ── Operations overview ───────────────────────────────────────────────────
@@ -204,6 +243,98 @@ function fmtTime(d) {
     return h + ':' + m + ' ' + ampm;
 }
 function esc(s) { return !s ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── OBSERVATION LEADERBOARD ──────────────────────────────────────────────────
+function renderObsLeaderboard() {
+    var posBox = document.getElementById('dbObsTopPos');
+    var negBox = document.getElementById('dbObsTopNeg');
+    var brkBox = document.getElementById('dbObsBreakdown');
+    if (!posBox || !negBox) return;
+
+    var obs = ShadDB.getObservations();
+
+    if (!obs || obs.length === 0) {
+        posBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No observations recorded yet.</p>';
+        negBox.innerHTML = '';
+        if (brkBox) brkBox.innerHTML = '';
+        return;
+    }
+
+    // Tally per student
+    var tally = {};
+    obs.forEach(function(o) {
+        if (!o.student) return;
+        if (!tally[o.student]) tally[o.student] = { pos: 0, neg: 0 };
+        if (o.mood === 'positive') tally[o.student].pos++;
+        else if (o.mood === 'negative') tally[o.student].neg++;
+    });
+
+    var names = Object.keys(tally);
+    var maxPos = Math.max(1, Math.max.apply(null, names.map(function(n) { return tally[n].pos; })));
+    var maxNeg = Math.max(1, Math.max.apply(null, names.map(function(n) { return tally[n].neg; })));
+
+    var byPos = names.slice().sort(function(a,b){ return tally[b].pos - tally[a].pos; }).slice(0,3);
+    var byNeg = names.slice().sort(function(a,b){ return tally[b].neg - tally[a].neg; }).slice(0,3);
+    var medals = ['🥇','🥈','🥉'];
+
+    function makeBar(name, count, maxCount, colour, rank) {
+        var pct = Math.round((count / maxCount) * 100);
+        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+            '<span style="font-size:20px;flex:0 0 26px;text-align:center;">' + medals[rank] + '</span>' +
+            '<div style="flex:1;">' +
+                '<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
+                    '<span style="font-size:14px;font-weight:800;color:#111;">' + esc(name) + '</span>' +
+                    '<span style="font-size:14px;font-weight:800;color:' + colour + ';">' + count + '</span>' +
+                '</div>' +
+                '<div style="height:9px;background:#f0f0f0;border-radius:99px;overflow:hidden;">' +
+                    '<div style="height:100%;width:' + pct + '%;background:' + colour + ';border-radius:99px;transition:width 0.5s;"></div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    // Top positive
+    var posFiltered = byPos.filter(function(n){ return tally[n].pos > 0; });
+    posBox.innerHTML = posFiltered.length
+        ? posFiltered.map(function(n,i){ return makeBar(n, tally[n].pos, maxPos, '#5a9a20', i); }).join('')
+        : '<p style="color:#aaa;font-size:13px;font-weight:600;">No positive observations yet.</p>';
+
+    // Top negative
+    var negFiltered = byNeg.filter(function(n){ return tally[n].neg > 0; });
+    negBox.innerHTML = negFiltered.length
+        ? negFiltered.map(function(n,i){ return makeBar(n, tally[n].neg, maxNeg, '#d12c2c', i); }).join('')
+        : '<p style="color:#aaa;font-size:13px;font-weight:600;">No negative observations yet.</p>';
+
+    // Full breakdown — all students sorted by total, dual-colour bar
+    if (brkBox) {
+        var allSorted = names.slice().sort(function(a,b){
+            return (tally[b].pos + tally[b].neg) - (tally[a].pos + tally[a].neg);
+        });
+        brkBox.innerHTML = allSorted.map(function(name) {
+            var p = tally[name].pos, n = tally[name].neg, total = p + n;
+            if (total === 0) return '';
+            var pPct = Math.round((p / total) * 100);
+            return '<div style="display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid #f5f5f5;flex-wrap:wrap;">' +
+                '<span style="font-size:13px;font-weight:800;color:#111;min-width:150px;flex:0 0 150px;">' + esc(name) + '</span>' +
+                '<div style="flex:1;min-width:120px;">' +
+                    '<div style="display:flex;height:10px;border-radius:99px;overflow:hidden;">' +
+                        '<div title="Positive: ' + p + '" style="width:' + pPct + '%;background:#8bc53f;border-radius:99px 0 0 99px;"></div>' +
+                        '<div title="Negative: ' + n + '" style="width:' + (100-pPct) + '%;background:#e74c3c;border-radius:0 99px 99px 0;"></div>' +
+                    '</div>' +
+                '</div>' +
+                '<span style="font-size:12px;font-weight:800;color:#5a9a20;min-width:32px;text-align:right;">+' + p + '</span>' +
+                '<span style="font-size:12px;font-weight:800;color:#d12c2c;min-width:32px;text-align:right;">−' + n + '</span>' +
+            '</div>';
+        }).join('');
+    }
+}
+
+// Add responsive stacking for the leaderboard columns on mobile
+(function() {
+    var style = document.createElement('style');
+    style.textContent = '@media(max-width:700px){#obsLeaderGrid{grid-template-columns:1fr!important;}}';
+    document.head.appendChild(style);
+}());
 
 // ── ATTENDANCE TRENDS ────────────────────────────────────────────────────────
 var _attChart = null;
