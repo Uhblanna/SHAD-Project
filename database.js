@@ -231,8 +231,30 @@ db.serialize(() => {
     db.run(`ALTER TABLE students ADD COLUMN allergies TEXT DEFAULT ''`, function() {});
     db.run(`ALTER TABLE students ADD COLUMN epipen TEXT DEFAULT ''`, function() {});
 
+    // Migrate observations: admin follow-up fields
+    db.run(`ALTER TABLE observations ADD COLUMN admin_note TEXT NOT NULL DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE observations ADD COLUMN admin_dismissed INTEGER NOT NULL DEFAULT 0`, function() {});
+
+    // Purchase receipts: uploaded by staff after a shopping trip
+    db.run(`
+        CREATE TABLE IF NOT EXISTS receipts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            purchased_by TEXT NOT NULL,
+            total_cost REAL NOT NULL DEFAULT 0,
+            image_data BLOB,
+            image_type TEXT DEFAULT '',
+            image_name TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Migrate existing databases: add checked_in_by to medkits
+    db.run(`ALTER TABLE medkits ADD COLUMN checked_in_by TEXT NOT NULL DEFAULT ''`, function() {});
+
     // Migrate existing databases that pre-date the completed_at column
     db.run(`ALTER TABLE daily_todos ADD COLUMN completed_at TEXT NOT NULL DEFAULT ''`, function() {});
+    // Migrate: add claimed_by for "I'm doing it" pending state
+    db.run(`ALTER TABLE daily_todos ADD COLUMN claimed_by TEXT NOT NULL DEFAULT ''`, function() {});
     // Migrate existing databases that pre-date the date column; backfill with today so old tasks don't disappear
     db.run(`ALTER TABLE daily_todos ADD COLUMN date TEXT NOT NULL DEFAULT ''`, function() {
         db.run(`UPDATE daily_todos SET date = date('now') WHERE date = ''`);
