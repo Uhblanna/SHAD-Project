@@ -99,9 +99,7 @@ body {
     letter-spacing: 0.5px;
 }
 
-.todo-list {
-    list-style: none;
-}
+.todo-list { list-style: none; }
 
 .todo-item {
     display: flex;
@@ -112,9 +110,10 @@ body {
     transition: background 0.15s;
 }
 .todo-item:last-child { border-bottom: none; }
+.todo-item.pending-item { background: #fffdf5; }
 .todo-item.done { background: #fafffe; }
 
-/* Custom checkbox */
+/* Custom checkbox (used in Pending Tasks) */
 .todo-check {
     width: 22px;
     height: 22px;
@@ -150,7 +149,6 @@ body {
     font-weight: 600;
     color: #111;
     line-height: 1.4;
-    transition: color 0.2s;
 }
 .todo-item.done .todo-task {
     color: #bbb;
@@ -162,8 +160,54 @@ body {
     color: #5a9a20;
     margin-top: 3px;
 }
+.todo-doing-by {
+    font-size: 12px;
+    font-weight: 700;
+    color: #ff9500;
+    margin-top: 3px;
+}
 
-/* Staff dropdown — hidden until item is checked */
+/* "I'm doing it" claim button */
+.claim-btn {
+    padding: 8px 16px;
+    background: #146ff8;
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+}
+.claim-btn:hover { opacity: 0.85; }
+
+/* Inline claim form (shown after clicking "I'm doing it") */
+.claim-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+}
+.staff-search-input {
+    padding: 7px 10px;
+    border: 2px solid #e5e5e5;
+    border-radius: 9px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111;
+    outline: none;
+    width: 170px;
+    transition: border-color 0.2s;
+    background: white;
+}
+.staff-search-input:focus { border-color: #146ff8; }
+
+/* Staff dropdown — shown in Pending Tasks when marking done */
 .todo-staff-wrap {
     flex-shrink: 0;
     display: none;
@@ -187,7 +231,7 @@ body {
 
 .confirm-btn {
     padding: 7px 14px;
-    background: #146ff8;
+    background: #5a9a20;
     color: white;
     border: none;
     border-radius: 9px;
@@ -199,6 +243,21 @@ body {
     transition: opacity 0.2s;
 }
 .confirm-btn:hover { opacity: 0.85; }
+
+.cancel-btn {
+    padding: 7px 10px;
+    background: transparent;
+    color: #aaa;
+    border: 2px solid #e5e5e5;
+    border-radius: 9px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: 0.2s;
+}
+.cancel-btn:hover { border-color: #aaa; color: #555; }
 
 .undo-btn {
     padding: 7px 12px;
@@ -212,9 +271,7 @@ body {
     cursor: pointer;
     flex-shrink: 0;
     transition: 0.2s;
-    display: none;
 }
-.todo-item.done .undo-btn { display: block; }
 .undo-btn:hover { border-color: #aaa; color: #555; }
 
 /* Empty / all done states */
@@ -273,6 +330,17 @@ body {
     background: #146ff8;
     border-color: #146ff8;
     color: white;
+}
+.tab-badge {
+    display: inline-block;
+    background: #ff9500;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 20px;
+    padding: 1px 7px;
+    margin-left: 6px;
+    vertical-align: middle;
 }
 
 /* HISTORY LIST */
@@ -333,6 +401,8 @@ body {
 @media (max-width: 600px) {
     .page-header h2 { font-size: 30px; }
     .todo-item { flex-wrap: wrap; gap: 12px; }
+    .claim-form { width: 100%; }
+    .staff-search-input { width: 100%; flex: 1; }
     .todo-staff-wrap { width: 100%; }
     .history-item { flex-wrap: wrap; gap: 8px; }
 }
@@ -364,18 +434,18 @@ body {
     <div class="page-header">
         <p class="mini-title">STAFF TOOLS</p>
         <h2>Daily To-Do List</h2>
-        <p class="subtext">Check off each task when it's done and select your name from the dropdown.</p>
+        <p class="subtext">Claim a task to let the team know you're on it, then mark it done when finished.</p>
     </div>
 
     <!-- Tab switcher -->
     <div class="tab-row">
         <button class="tab-btn active" id="tabTodo" onclick="switchTab('todo')">Today's Tasks</button>
+        <button class="tab-btn" id="tabPending" onclick="switchTab('pending')">Pending Tasks<span class="tab-badge" id="pendingBadge" style="display:none;"></span></button>
         <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">Completion History</button>
     </div>
 
-    <!-- ── TO-DO TAB ── -->
+    <!-- ── TODAY'S TASKS TAB ── -->
     <div id="todoTab">
-        <!-- Progress summary -->
         <div class="progress-row">
             <span>Completed:</span>
             <strong id="doneCount">0</strong>
@@ -394,6 +464,19 @@ body {
             </div>
             <ul class="todo-list" id="todoList">
                 <li class="empty-state">Loading...</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ── PENDING TASKS TAB ── -->
+    <div id="pendingTab" style="display:none;">
+        <div class="todo-card">
+            <div class="todo-card-header">
+                <h3>In Progress</h3>
+                <span class="todo-date">Check off when done</span>
+            </div>
+            <ul class="todo-list" id="pendingList">
+                <li class="empty-state">No tasks in progress yet.</li>
             </ul>
         </div>
     </div>
@@ -417,15 +500,15 @@ body {
 
 <script>
 var staffNames = [];
+var _currentTab = 'todo';
 
-// Isabelle — Switches between the Today's Tasks tab and the Completion History tab; history only loads when first opened
 function switchTab(tab) {
-    var isTodo = tab === 'todo';
-    document.getElementById('todoTab').style.display     = isTodo ? 'block' : 'none';
-    document.getElementById('historyTab').style.display  = isTodo ? 'none'  : 'block';
-    document.getElementById('tabTodo').classList.toggle('active', isTodo);
-    document.getElementById('tabHistory').classList.toggle('active', !isTodo);
-    if (!isTodo) loadHistory();
+    _currentTab = tab;
+    ['todo', 'pending', 'history'].forEach(function(t) {
+        document.getElementById(t + 'Tab').style.display = t === tab ? 'block' : 'none';
+        document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+    });
+    if (tab === 'history') loadHistory();
 }
 
 // Today's date label
@@ -438,7 +521,7 @@ function escH(s) {
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Load staff names first, then render todos so dropdowns are populated
+// Load staff names first, then render todos
 function loadStaff() {
     fetch('/api/staff')
         .then(function(r) { return r.json(); })
@@ -446,7 +529,7 @@ function loadStaff() {
             staffNames = staff.map(function(s) { return s.name; });
             loadTodos();
         })
-        .catch(function() { loadTodos(); }); // still show tasks even if staff fetch fails
+        .catch(function() { loadTodos(); });
 }
 
 function buildStaffOptions(selectedName) {
@@ -457,10 +540,17 @@ function buildStaffOptions(selectedName) {
     return html;
 }
 
+function buildStaffDatalist(id) {
+    var html = '<datalist id="dl_' + id + '">';
+    staffNames.forEach(function(name) { html += '<option value="' + escH(name) + '">'; });
+    html += '</datalist>';
+    return html;
+}
+
 function updateProgress(todos) {
-    var done = todos.filter(function(t) { return t.completed; }).length;
+    var done  = todos.filter(function(t) { return t.completed; }).length;
     var total = todos.length;
-    document.getElementById('doneCount').textContent = done;
+    document.getElementById('doneCount').textContent  = done;
     document.getElementById('totalCount').textContent = total;
     var pct = total > 0 ? Math.round((done / total) * 100) : 0;
     document.getElementById('progressFill').style.width = pct + '%';
@@ -472,54 +562,18 @@ function loadTodos() {
         .then(function(r) { return r.json(); })
         .then(function(todos) {
             updateProgress(todos);
-            var list = document.getElementById('todoList');
 
-            if (todos.length === 0) {
-                list.innerHTML = '<li class="empty-state">No tasks posted yet. Check back later.</li>';
-                return;
-            }
+            var unclaimed = todos.filter(function(t) { return !t.completed && !t.claimed_by; });
+            var pending   = todos.filter(function(t) { return !t.completed && t.claimed_by; });
 
-            var allDone = todos.every(function(t) { return t.completed; });
-            if (allDone && todos.length > 0) {
-                list.innerHTML =
-                    '<li class="all-done-state">' +
-                    '<div class="checkmark">✓</div>' +
-                    '<h4>All done for today!</h4>' +
-                    '<p>Every task has been completed. Great work!</p>' +
-                    '</li>';
-                // Still render the completed items below so staff can undo if needed
-            }
+            renderTodaysTasks(unclaimed);
+            renderPendingTasks(pending);
 
-            list.innerHTML = '';
-            todos.forEach(function(t) {
-                var li = document.createElement('li');
-                li.className = 'todo-item' + (t.completed ? ' done' : '');
-                li.dataset.id = t.id;
-
-                li.innerHTML =
-                    '<div class="todo-check' + (t.completed ? ' checked' : '') + '" onclick="onCheckClick(' + t.id + ', this)"></div>' +
-                    '<div class="todo-body">' +
-                        '<div class="todo-task">' + escH(t.task) + '</div>' +
-                        (t.completed && t.completed_by ? '<div class="todo-done-by">✓ Done by ' + escH(t.completed_by) + '</div>' : '') +
-                    '</div>' +
-                    '<div class="todo-staff-wrap">' +
-                        '<select class="staff-select" id="staffSel_' + t.id + '">' + buildStaffOptions() + '</select>' +
-                        '<button class="confirm-btn" onclick="confirmCheck(' + t.id + ')">Confirm</button>' +
-                    '</div>' +
-                    '<button class="undo-btn" onclick="undoCheck(' + t.id + ')">Undo</button>';
-
-                list.appendChild(li);
-            });
-
-            if (allDone && todos.length > 0) {
-                // Insert "all done" banner at the top
-                var banner = document.createElement('li');
-                banner.className = 'all-done-state';
-                banner.innerHTML =
-                    '<div class="checkmark">✓</div>' +
-                    '<h4>All done for today!</h4>' +
-                    '<p>Every task has been completed. Great work!</p>';
-                list.insertBefore(banner, list.firstChild);
+            // Update pending badge
+            var badge = document.getElementById('pendingBadge');
+            if (badge) {
+                badge.textContent = pending.length;
+                badge.style.display = pending.length > 0 ? 'inline-block' : 'none';
             }
         })
         .catch(function() {
@@ -527,26 +581,110 @@ function loadTodos() {
         });
 }
 
-// Clicking the checkbox puts the item into "checking" mode — shows the staff dropdown
-function onCheckClick(id, checkEl) {
-    var li = checkEl.closest('.todo-item');
-    if (li.classList.contains('done')) return; // already done — use undo button instead
-    if (li.classList.contains('checking')) {
-        // Toggle off if they click again
-        li.classList.remove('checking');
-        checkEl.classList.remove('checked');
+// ── TODAY'S TASKS ────────────────────────────────────────────────────────────
+
+function renderTodaysTasks(tasks) {
+    var list = document.getElementById('todoList');
+    if (tasks.length === 0) {
+        list.innerHTML = '<li class="empty-state">All tasks are claimed — check Pending Tasks!</li>';
         return;
     }
-    li.classList.add('checking');
-    checkEl.classList.add('checked');
+    list.innerHTML = '';
+    tasks.forEach(function(t) {
+        var li = document.createElement('li');
+        li.className = 'todo-item';
+        li.dataset.id = t.id;
+        li.innerHTML =
+            '<div class="todo-body">' +
+                '<div class="todo-task">' + escH(t.task) + '</div>' +
+            '</div>' +
+            '<div id="claimArea_' + t.id + '">' +
+                '<button class="claim-btn" onclick="showClaimForm(' + t.id + ')">I\'m doing it</button>' +
+            '</div>';
+        list.appendChild(li);
+    });
 }
 
-function confirmCheck(id) {
-    var sel = document.getElementById('staffSel_' + id);
+function showClaimForm(id) {
+    var area = document.getElementById('claimArea_' + id);
+    if (!area) return;
+    area.innerHTML =
+        buildStaffDatalist(id) +
+        '<div class="claim-form">' +
+            '<input type="text" class="staff-search-input" id="claimInput_' + id + '" list="dl_' + id + '" placeholder="Search your name..." autocomplete="off">' +
+            '<button class="confirm-btn" onclick="submitClaim(' + id + ')">Submit</button>' +
+            '<button class="cancel-btn" onclick="cancelClaim(' + id + ')">✕</button>' +
+        '</div>';
+    var inp = document.getElementById('claimInput_' + id);
+    if (inp) inp.focus();
+}
+
+function cancelClaim(id) {
+    var area = document.getElementById('claimArea_' + id);
+    if (area) area.innerHTML = '<button class="claim-btn" onclick="showClaimForm(' + id + ')">I\'m doing it</button>';
+}
+
+function submitClaim(id) {
+    var input = document.getElementById('claimInput_' + id);
+    var name = (input ? input.value : '').trim();
+    if (!name) {
+        if (input) { input.style.borderColor = '#ff3b30'; setTimeout(function() { input.style.borderColor = ''; }, 1200); }
+        return;
+    }
+    fetch('/api/todos/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claimed_by: name })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { loadTodos(); switchTab('pending'); })
+    .catch(function() { alert('Could not claim task. Please try again.'); });
+}
+
+// ── PENDING TASKS ────────────────────────────────────────────────────────────
+
+function renderPendingTasks(tasks) {
+    var list = document.getElementById('pendingList');
+    if (tasks.length === 0) {
+        list.innerHTML = '<li class="empty-state">No tasks in progress yet.</li>';
+        return;
+    }
+    list.innerHTML = '';
+    tasks.forEach(function(t) {
+        var li = document.createElement('li');
+        li.className = 'todo-item pending-item';
+        li.dataset.id = t.id;
+        li.innerHTML =
+            '<div class="todo-check" onclick="onPendingCheck(' + t.id + ', this)"></div>' +
+            '<div class="todo-body">' +
+                '<div class="todo-task">' + escH(t.task) + '</div>' +
+                '<div class="todo-doing-by">🔄 ' + escH(t.claimed_by) + ' is on it</div>' +
+            '</div>' +
+            '<div class="todo-staff-wrap" id="pendingStaffWrap_' + t.id + '">' +
+                '<select class="staff-select" id="pendingSel_' + t.id + '">' + buildStaffOptions(t.claimed_by) + '</select>' +
+                '<button class="confirm-btn" onclick="confirmPending(' + t.id + ')">Mark Done</button>' +
+            '</div>' +
+            '<button class="undo-btn" onclick="unclaimTask(' + t.id + ')">← Unclaim</button>';
+        list.appendChild(li);
+    });
+}
+
+function onPendingCheck(id, checkEl) {
+    var li = checkEl.closest('.todo-item');
+    if (li.classList.contains('checking')) {
+        li.classList.remove('checking');
+        checkEl.classList.remove('checked');
+    } else {
+        li.classList.add('checking');
+        checkEl.classList.add('checked');
+    }
+}
+
+function confirmPending(id) {
+    var sel = document.getElementById('pendingSel_' + id);
     var staffName = sel ? sel.value : '';
     if (!staffName) {
-        sel.style.borderColor = '#ff3b30';
-        setTimeout(function() { sel.style.borderColor = ''; }, 1200);
+        if (sel) { sel.style.borderColor = '#ff3b30'; setTimeout(function() { sel.style.borderColor = ''; }, 1200); }
         return;
     }
     fetch('/api/todos/' + id, {
@@ -559,39 +697,36 @@ function confirmCheck(id) {
     .catch(function() { alert('Could not save. Please try again.'); });
 }
 
-function undoCheck(id) {
+function unclaimTask(id) {
     fetch('/api/todos/' + id, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: false, completed_by: '' })
+        body: JSON.stringify({ claimed_by: '' })
     })
     .then(function(r) { return r.json(); })
-    .then(function() { loadTodos(); })
-    .catch(function() { alert('Could not undo. Please try again.'); });
+    .then(function() { loadTodos(); switchTab('todo'); })
+    .catch(function() { alert('Could not unclaim. Please try again.'); });
 }
 
-// Isabelle — Fetches permanent task history from /api/task-history; shows each completed task with who did it, the date, and time
+// ── COMPLETION HISTORY ───────────────────────────────────────────────────────
+
 function loadHistory() {
     fetch('/api/task-history')
         .then(function(r) { return r.json(); })
         .then(function(rows) {
             var list = document.getElementById('historyList');
-
             if (rows.length === 0) {
                 list.innerHTML = '<li class="empty-state">No completed tasks yet.</li>';
                 return;
             }
-
             list.innerHTML = '';
             rows.forEach(function(t) {
-                var timeStr = '';
-                var dateStr = '';
+                var timeStr = '', dateStr = '';
                 if (t.completed_at) {
                     var d = new Date(t.completed_at);
                     timeStr = d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
                     dateStr = d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
                 }
-
                 var li = document.createElement('li');
                 li.className = 'history-item';
                 li.innerHTML =
