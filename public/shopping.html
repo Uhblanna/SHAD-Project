@@ -46,15 +46,42 @@
 
     <div class="page-header">
 
-        <div>
-            <p class="mini-title">SUPPLY MANAGEMENT</p>
-            <h2>Shopping Requests</h2>
-            <p class="subtext">
-                Keep a live running list of items needed for students, staff,
-                events, and daily operations.
-            </p>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+            <div>
+                <p class="mini-title">SUPPLY MANAGEMENT</p>
+                <h2>Shopping Requests</h2>
+                <p class="subtext">
+                    Keep a live running list of items needed for students, staff,
+                    events, and daily operations.
+                </p>
+            </div>
+            <button id="openReceiptModalBtn" style="padding:12px 22px; background:#5a9a20; color:white; border:none; border-radius:14px; font-family:'Archivo',sans-serif; font-size:15px; font-weight:800; cursor:pointer; white-space:nowrap; margin-top:8px;">📎 Upload Receipt</button>
         </div>
 
+    </div>
+
+    <!-- Upload Receipt Modal -->
+    <div id="receiptModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:20px; padding:36px; box-shadow:0 24px 60px rgba(0,0,0,0.18); width:100%; max-width:440px; margin:0 16px;">
+            <h3 style="font-family:'Archivo',sans-serif; font-size:22px; font-weight:800; margin-bottom:4px; color:#111;">Upload Receipt</h3>
+            <p style="font-size:14px; color:#888; font-weight:600; margin-bottom:24px;">Record a purchase and attach the receipt image.</p>
+
+            <label style="font-size:13px; font-weight:700; color:#555; display:block; margin-bottom:6px;">Who purchased it?</label>
+            <input type="text" id="receiptPurchaserInput" placeholder="Your name" style="width:100%; padding:12px 14px; border:2px solid #e5e5e5; border-radius:12px; font-family:'Archivo',sans-serif; font-size:15px; font-weight:600; color:#111; outline:none; margin-bottom:16px; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:700; color:#555; display:block; margin-bottom:6px;">Total Cost ($)</label>
+            <input type="number" id="receiptCostInput" placeholder="0.00" min="0" step="0.01" style="width:100%; padding:12px 14px; border:2px solid #e5e5e5; border-radius:12px; font-family:'Archivo',sans-serif; font-size:15px; font-weight:600; color:#111; outline:none; margin-bottom:16px; box-sizing:border-box;">
+
+            <label style="font-size:13px; font-weight:700; color:#555; display:block; margin-bottom:6px;">Receipt Image</label>
+            <input type="file" id="receiptImageInput" accept="image/*,.pdf" style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:12px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#555; outline:none; margin-bottom:24px; box-sizing:border-box; cursor:pointer;">
+
+            <div id="receiptModalMsg" style="font-size:13px; font-weight:700; margin-bottom:12px; display:none;"></div>
+
+            <div style="display:flex; gap:10px;">
+                <button id="submitReceiptBtn" style="flex:1; padding:13px; background:#5a9a20; color:white; border:none; border-radius:12px; font-family:'Archivo',sans-serif; font-size:15px; font-weight:800; cursor:pointer;">Save Receipt</button>
+                <button id="cancelReceiptModalBtn" style="padding:13px 20px; background:#f0f0f0; color:#555; border:none; border-radius:12px; font-family:'Archivo',sans-serif; font-size:15px; font-weight:700; cursor:pointer;">Cancel</button>
+            </div>
+        </div>
     </div>
 
 
