@@ -4,6 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     loadShoppingList();
     setupAddItemForm();
     document.getElementById("savePurchasedBtn").addEventListener("click", savePurchasedItems);
+
+    // Receipt modal
+    document.getElementById("openReceiptModalBtn").addEventListener("click", openReceiptModal);
+    document.getElementById("cancelReceiptModalBtn").addEventListener("click", closeReceiptModal);
+    document.getElementById("submitReceiptBtn").addEventListener("click", submitReceipt);
+    document.getElementById("receiptModal").addEventListener("click", function(e) {
+        if (e.target === this) closeReceiptModal();
+    });
 });
 
 function loadShoppingList() {
@@ -128,6 +136,60 @@ function savePurchasedItems() {
 
 function escH(s) {
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── RECEIPT MODAL ─────────────────────────────────────────────────────────────
+
+function openReceiptModal() {
+    document.getElementById('receiptModal').style.display = 'flex';
+    document.getElementById('receiptPurchaserInput').focus();
+}
+
+function closeReceiptModal() {
+    document.getElementById('receiptModal').style.display = 'none';
+    document.getElementById('receiptPurchaserInput').value = '';
+    document.getElementById('receiptCostInput').value = '';
+    document.getElementById('receiptImageInput').value = '';
+    var msg = document.getElementById('receiptModalMsg');
+    msg.style.display = 'none';
+    msg.textContent = '';
+}
+
+function submitReceipt() {
+    var purchaser = document.getElementById('receiptPurchaserInput').value.trim();
+    var cost      = document.getElementById('receiptCostInput').value.trim();
+    var fileInput = document.getElementById('receiptImageInput');
+    var file      = fileInput.files[0];
+    var msg       = document.getElementById('receiptModalMsg');
+    var btn       = document.getElementById('submitReceiptBtn');
+
+    if (!purchaser) { showReceiptMsg('Please enter who purchased the items.', 'error'); return; }
+    if (!cost)      { showReceiptMsg('Please enter the total cost.', 'error'); return; }
+
+    var fd = new FormData();
+    fd.append('purchased_by', purchaser);
+    fd.append('total_cost', cost);
+    if (file) fd.append('receipt_image', file);
+
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    fetch('/api/receipts', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) { showReceiptMsg(data.error, 'error'); return; }
+            showMessage('Receipt saved!', 'success');
+            closeReceiptModal();
+        })
+        .catch(function() { showReceiptMsg('Could not save receipt. Please try again.', 'error'); })
+        .finally(function() { btn.disabled = false; btn.textContent = 'Save Receipt'; });
+}
+
+function showReceiptMsg(text, type) {
+    var msg = document.getElementById('receiptModalMsg');
+    msg.textContent = text;
+    msg.style.display = 'block';
+    msg.style.color = type === 'error' ? '#d12c2c' : '#5a9a20';
 }
 
 function showMessage(text, type) {
