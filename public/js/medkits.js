@@ -1,5 +1,9 @@
 let medKits = [];
 let qrScanner = null;
+let staffNames = [];
+
+// QR code that was just scanned/entered — held until "Who is holding it?" is confirmed
+let _pendingQrCode = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("showAddKitBtn").addEventListener("click", toggleAddForm);
@@ -10,11 +14,28 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("stopScannerBtn").addEventListener("click", stopScanner);
     document.getElementById("resetCheckinsBtn").addEventListener("click", resetCheckins);
 
+    // Modal confirm/cancel
+    document.getElementById("holderConfirmBtn").addEventListener("click", confirmHolder);
+    document.getElementById("holderCancelBtn").addEventListener("click", cancelHolder);
+
     const printAllBtn = document.getElementById("printAllMedkitQRBtn");
     if (printAllBtn) printAllBtn.addEventListener("click", () => printMedkitQR(medKits));
 
-    loadMedKits();
+    loadStaff().then(loadMedKits);
 });
+
+function loadStaff() {
+    return fetch("/api/staff")
+        .then(r => r.json())
+        .then(staff => {
+            staffNames = staff.map(s => s.name);
+            const dl = document.getElementById("holderDatalist");
+            if (dl) {
+                dl.innerHTML = staffNames.map(n => `<option value="${esc(n)}">`).join("");
+            }
+        })
+        .catch(() => {});
+}
 
 function apiRequest(method, url, data) {
     return fetch(url, {
@@ -33,6 +54,107 @@ function loadMedKits() {
             renderCheckinSummary();
         });
 }
+
+// ── WHO IS HOLDING IT? MODAL ─────────────────────────────────────────────────
+
+function showHolderModal(qrCode) {
+    _pendingQrCode = qrCode;
+    const modal = document.getElementById("holderModal");
+    const input = document.getElementById("holderInput");
+    if (input) input.value = "";
+    if (modal) modal.style.display = "flex";
+    if (input) input.focus();
+}
+
+function confirmHolder() {
+    const input = document.getElementById("holderInput");
+    const heldBy = (input ? input.value : "").trim();
+    if (!heldBy) {
+        if (input) { input.style.borderColor = "#ff3b30"; setTimeout(() => { input.style.borderColor = ""; }, 1200); }
+        return;
+    }
+    closeHolderModal();
+    doCheckIn(_pendingQrCode, heldBy);
+    _pendingQrCode = null;
+}
+
+function cancelHolder() {
+    closeHolderModal();
+    _pendingQrCode = null;
+    const message = document.getElementById("scanMessage");
+    if (message) { message.textContent = "Check-in cancelled."; message.className = "scan-message"; }
+}
+
+function closeHolderModal() {
+    const modal = document.getElementById("holderModal");
+    if (modal) modal.style.display = "none";
+}
+
+// Keyboard: Enter confirms, Escape cancels
+document.addEventListener("keydown", e => {
+    const modal = document.getElementById("holderModal");
+    if (!modal || modal.style.display === "none") return;
+    if (e.key === "Enter") confirmHolder();
+    if (e.key === "Escape") cancelHolder();
+});
+
+// ── CHECK-IN FLOW ────────────────────────────────────────────────────────────
+
+function manualCheckIn() {
+    const qrCode = document.getElementById("manualQrCode").value.trim();
+    if (!qrCode) { alert("Please enter a QR code."); return; }
+    showHolderModal(qrCode);
+}
+
+// Called by scanner — queue the modal
+function checkInMedKit(qrCode) {
+    // Stop scanner from repeatedly firing on the same code
+    if (_pendingQrCode) return;
+    showHolderModal(qrCode);
+}
+
+function doCheckIn(qrCode, heldBy) {
+    apiRequest("POST", "/api/medkits/check-in", { qrCode, heldBy })
+        .then(result => {
+            const message = document.getElementById("scanMessage");
+            if (result.error) {
+                message.textContent = result.error;
+                message.className = "scan-message error";
+                return;
+            }
+            message.textContent = `${result.name} checked in — held by ${heldBy}.`;
+            message.className = "scan-message success";
+            document.getElementById("manualQrCode").value = "";
+            loadMedKits();
+        });
+}
+
+// ── SCANNER ──────────────────────────────────────────────────────────────────
+
+function startScanner() {
+    if (qrScanner) return;
+    qrScanner = new Html5Qrcode("qr-reader");
+    qrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        decodedText => { checkInMedKit(decodedText); },
+        () => {}
+    ).catch(() => {
+        document.getElementById("scanMessage").textContent =
+            "Camera could not start. Try manual entry or check browser permissions.";
+        document.getElementById("scanMessage").className = "scan-message error";
+    });
+}
+
+function stopScanner() {
+    if (!qrScanner) return;
+    qrScanner.stop().then(() => {
+        qrScanner.clear();
+        qrScanner = null;
+    });
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
 
 function renderKits() {
     const kitList = document.getElementById("kit-list");
@@ -55,10 +177,11 @@ function renderKits() {
         if (kit.status === "Needs Restock") statusClass = "restock";
         if (kit.status === "Missing") statusClass = "missing";
 
-        // Only show optional fields if they have values
-        const staffLine = kit.assignedStaff ? `<p><strong>Assigned Staff:</strong> ${esc(kit.assignedStaff)}</p>` : "";
-        const locationLine = kit.location ? `<p><strong>Location:</strong> ${esc(kit.location)}</p>` : "";
-        const descLine = kit.supplies ? `<p><strong>Description:</strong> ${esc(kit.supplies)}</p>` : "";
+        const staffLine    = kit.assignedStaff ? `<p><strong>Assigned Staff:</strong> ${esc(kit.assignedStaff)}</p>` : "";
+        const locationLine = kit.location      ? `<p><strong>Location:</strong> ${esc(kit.location)}</p>` : "";
+        const descLine     = kit.supplies      ? `<p><strong>Description:</strong> ${esc(kit.supplies)}</p>` : "";
+        const holderLine   = kit.checkedIn && kit.checkedInBy
+            ? `<p><strong>Held by:</strong> ${esc(kit.checkedInBy)}</p>` : "";
 
         const uncheckBtn = kit.checkedIn
             ? `<button class="uncheck-btn" style="padding:7px 16px;background:#fff1e0;color:#cc7a00;border:none;border-radius:9px;font-family:'Archivo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">↩ Uncheck</button>`
@@ -76,6 +199,7 @@ function renderKits() {
                     ${staffLine}
                     ${locationLine}
                     ${descLine}
+                    ${holderLine}
                 </div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -98,7 +222,7 @@ function renderKits() {
         card.querySelector(".print-qr-btn").addEventListener("click", () => printMedkitQR([kit]));
 
         const uncheckEl = card.querySelector(".uncheck-btn");
-        if (uncheckEl) {
+        if (uncheckEl && kit.checkedIn) {
             uncheckEl.addEventListener("click", () => {
                 uncheckEl.disabled = true;
                 uncheckEl.textContent = "Unchecking…";
@@ -123,7 +247,7 @@ function renderCheckinSummary() {
         return;
     }
 
-    const checkedIn = medKits.filter(k => k.checkedIn);
+    const checkedIn  = medKits.filter(k => k.checkedIn);
     const notChecked = medKits.filter(k => !k.checkedIn);
 
     container.innerHTML = "";
@@ -147,7 +271,10 @@ function renderCheckinSummary() {
         checkedIn.forEach(kit => {
             const row = document.createElement("div");
             row.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px 14px;background:#e6f9ef;border-radius:12px;margin-bottom:8px;";
-            row.innerHTML = `<span style="font-size:13px;font-weight:700;color:#5f8c1d;flex:1;">${esc(kit.name)}</span><span style="font-size:11px;font-weight:700;color:#5f8c1d;">✓</span>`;
+            const holderBit = kit.checkedInBy
+                ? `<span style="font-size:11px;font-weight:700;color:#5f8c1d;white-space:nowrap;">✓ ${esc(kit.checkedInBy)}</span>`
+                : `<span style="font-size:11px;font-weight:700;color:#5f8c1d;">✓</span>`;
+            row.innerHTML = `<span style="font-size:13px;font-weight:700;color:#5f8c1d;flex:1;">${esc(kit.name)}</span>${holderBit}`;
             container.appendChild(row);
         });
     }
@@ -168,13 +295,14 @@ function renderCheckinSummary() {
     }
 }
 
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
 function esc(s) {
     return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function toggleAddForm() {
-    const form = document.getElementById("addKitForm");
-    form.classList.toggle("show");
+    document.getElementById("addKitForm").classList.toggle("show");
 }
 
 function hideAddForm() {
@@ -182,33 +310,30 @@ function hideAddForm() {
 }
 
 function addKit() {
-    const qrCode = document.getElementById("qrCode").value.trim();
-    const name = document.getElementById("kitName").value.trim();
+    const qrCode       = document.getElementById("qrCode").value.trim();
+    const name         = document.getElementById("kitName").value.trim();
     const assignedStaff = document.getElementById("assignedStaff").value.trim();
-    const location = document.getElementById("location").value.trim();
-    const status = document.getElementById("status").value;
-    const supplies = document.getElementById("supplies").value.trim();
+    const location     = document.getElementById("location").value.trim();
+    const status       = document.getElementById("status").value;
+    const supplies     = document.getElementById("supplies").value.trim();
 
     if (!qrCode || !name) {
         alert("Please enter at least the QR code and kit name.");
         return;
     }
 
-    apiRequest("POST", "/api/medkits", {
-        qrCode, name, assignedStaff, location, status, supplies
-    }).then(result => {
-        if (result.error) { alert(result.error); return; }
-
-        document.getElementById("qrCode").value = "";
-        document.getElementById("kitName").value = "";
-        document.getElementById("assignedStaff").value = "";
-        document.getElementById("location").value = "";
-        document.getElementById("status").value = "Ready";
-        document.getElementById("supplies").value = "";
-
-        hideAddForm();
-        loadMedKits();
-    });
+    apiRequest("POST", "/api/medkits", { qrCode, name, assignedStaff, location, status, supplies })
+        .then(result => {
+            if (result.error) { alert(result.error); return; }
+            document.getElementById("qrCode").value       = "";
+            document.getElementById("kitName").value      = "";
+            document.getElementById("assignedStaff").value = "";
+            document.getElementById("location").value     = "";
+            document.getElementById("status").value       = "Ready";
+            document.getElementById("supplies").value     = "";
+            hideAddForm();
+            loadMedKits();
+        });
 }
 
 function resetCheckins() {
@@ -216,51 +341,6 @@ function resetCheckins() {
     apiRequest("POST", "/api/medkits/reset-checkins")
         .then(() => loadMedKits())
         .catch(() => alert("Failed to reset check-ins. Please try again."));
-}
-
-function manualCheckIn() {
-    const qrCode = document.getElementById("manualQrCode").value.trim();
-    if (!qrCode) { alert("Please enter a QR code."); return; }
-    checkInMedKit(qrCode);
-}
-
-function checkInMedKit(qrCode) {
-    apiRequest("POST", "/api/medkits/check-in", { qrCode })
-        .then(result => {
-            const message = document.getElementById("scanMessage");
-            if (result.error) {
-                message.textContent = result.error;
-                message.className = "scan-message error";
-                return;
-            }
-            message.textContent = `${result.name} checked in successfully.`;
-            message.className = "scan-message success";
-            document.getElementById("manualQrCode").value = "";
-            loadMedKits();
-        });
-}
-
-function startScanner() {
-    if (qrScanner) return;
-    qrScanner = new Html5Qrcode("qr-reader");
-    qrScanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        decodedText => { checkInMedKit(decodedText); },
-        () => {}
-    ).catch(() => {
-        document.getElementById("scanMessage").textContent =
-            "Camera could not start. Try manual entry or check browser permissions.";
-        document.getElementById("scanMessage").className = "scan-message error";
-    });
-}
-
-function stopScanner() {
-    if (!qrScanner) return;
-    qrScanner.stop().then(() => {
-        qrScanner.clear();
-        qrScanner = null;
-    });
 }
 
 function deleteKit(id) {
