@@ -99,6 +99,20 @@
 
     <div class="admin-grid">
 
+        <!-- Needs Attention: acknowledged "needs attention" observations escalated from student hub -->
+        <div class="admin-card admin-card-wide" id="needsAttentionCard">
+            <div class="admin-card-head">
+                <h3 style="color:#d12c2c;">⚠ Needs Attention</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Acknowledged "Needs Attention" observations escalated from the student hub. These are hidden from staff view.</p>
+                <div id="adminNeedsAttentionList" style="margin-top:16px; display:flex; flex-direction:column; gap:10px; min-height:32px;">
+                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Daily To-Do List management — only accessible from admin -->
         <div class="admin-card admin-card-wide">
             <div class="admin-card-head">
@@ -185,6 +199,36 @@
                     <button class="danger-btn" onclick="clearAllShopping()">Clear Entire List</button>
                 </div>
             </div>
+        </div>
+
+        <!-- Purchase Receipts: uploaded from the Shopping page; admin can view, download, and delete -->
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Purchase Receipts</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>All receipts uploaded by staff after shopping trips. Click "View" to open the image; use "Download All" to save every receipt as a zip.</p>
+
+                <div id="adminReceiptsList" style="margin-top:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:10px; min-height:32px;">
+                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                </div>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <span id="adminReceiptsTotal" style="font-size:14px; font-weight:800; color:#111;"></span>
+                    <button id="downloadAllReceiptsBtn" onclick="downloadAllReceipts()" style="padding:10px 20px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer;">⬇ Download All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Receipt image lightbox -->
+        <div id="receiptLightbox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
+            <div style="display:flex; gap:12px; margin-bottom:4px;">
+                <a id="receiptDownloadLink" download style="padding:10px 22px; background:#146ff8; color:white; border-radius:12px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:800; text-decoration:none; cursor:pointer;">⬇ Download</a>
+                <button onclick="closeReceiptLightbox()" style="padding:10px 22px; background:#fff; color:#111; border:none; border-radius:12px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:800; cursor:pointer;">✕ Close</button>
+            </div>
+            <img id="receiptLightboxImg" src="" alt="Receipt" style="max-width:90vw; max-height:80vh; border-radius:12px; object-fit:contain; background:#fff;">
+            <p id="receiptLightboxLabel" style="color:rgba(255,255,255,0.7); font-size:13px; font-weight:700;"></p>
         </div>
 
         <!-- Isabelle McLean — Committee enrollment window: admin sets the open and close dates here; student portal reads them from the API -->
@@ -692,9 +736,11 @@ function exportTaskCompletion() {
         .catch(function() { alert('Failed to export. Please try again.'); });
 }
 
+loadNeedsAttention();
 loadAdminTodos();
 loadStaffBreakdown();
 loadAdminShopping();
+loadAdminReceipts();
 loadBulkStudentList();
 loadReqTeamRenameList();
 
@@ -1147,6 +1193,273 @@ function exportShoppingCSV() {
         URL.revokeObjectURL(url);
     })
     .catch(function() { alert('Failed to export. Please try again.'); });
+}
+
+// ── PURCHASE RECEIPTS ─────────────────────────────────────────────────────────
+
+function loadAdminReceipts() {
+    fetch('/api/receipts')
+        .then(function(r) { return r.json(); })
+        .then(function(receipts) {
+            var container = document.getElementById('adminReceiptsList');
+            var totalEl   = document.getElementById('adminReceiptsTotal');
+
+            if (!receipts || receipts.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">No receipts uploaded yet.</p>';
+                if (totalEl) totalEl.textContent = '';
+                return;
+            }
+
+            // Running total
+            var total = receipts.reduce(function(sum, r) { return sum + (parseFloat(r.total_cost) || 0); }, 0);
+            if (totalEl) totalEl.textContent = 'Total: $' + total.toFixed(2);
+
+            container.innerHTML = '';
+
+            // Header row
+            var hdr = document.createElement('div');
+            hdr.style.cssText = 'display:grid; grid-template-columns:1fr auto auto auto; gap:10px; padding:8px 14px; background:#f8f8f8; border-radius:10px; font-size:12px; font-weight:800; color:#888; letter-spacing:0.5px; text-transform:uppercase;';
+            hdr.innerHTML = '<span>Purchased By</span><span style="text-align:right;">Amount</span><span style="text-align:center;">Date</span><span></span>';
+            container.appendChild(hdr);
+
+            receipts.forEach(function(receipt) {
+                var dateStr = receipt.created_at ? new Date(receipt.created_at).toLocaleDateString('en-CA', { month:'short', day:'numeric', year:'numeric' }) : '—';
+                var hasImg  = receipt.image_type && receipt.image_type.length > 0;
+
+                var row = document.createElement('div');
+                row.style.cssText = 'display:grid; grid-template-columns:1fr auto auto auto; gap:10px; align-items:center; padding:12px 14px; background:white; border:1px solid #eee; border-radius:12px;';
+                row.innerHTML =
+                    '<div>' +
+                        '<div style="font-size:14px; font-weight:700; color:#111;">' + escAdm(receipt.purchased_by) + '</div>' +
+                        (receipt.image_name ? '<div style="font-size:11px; color:#aaa; font-weight:600; margin-top:2px;">' + escAdm(receipt.image_name) + '</div>' : '') +
+                    '</div>' +
+                    '<div style="font-size:15px; font-weight:800; color:#111; text-align:right; white-space:nowrap;">$' + parseFloat(receipt.total_cost || 0).toFixed(2) + '</div>' +
+                    '<div style="font-size:12px; font-weight:700; color:#888; text-align:center; white-space:nowrap;">' + dateStr + '</div>' +
+                    '<div style="display:flex; gap:6px;">' +
+                        (hasImg
+                            ? '<button onclick="viewReceipt(' + receipt.id + ',\'' + escAdm(receipt.purchased_by) + '\',' + parseFloat(receipt.total_cost||0).toFixed(2) + ',\'' + escAdm(receipt.image_name||'') + '\')" style="padding:6px 12px; background:#146ff8; color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;">View</button>'
+                            : '<span style="font-size:12px; color:#ccc; font-weight:600; padding:6px 12px;">No image</span>') +
+                        '<button onclick="deleteReceipt(' + receipt.id + ', this)" style="padding:6px 12px; background:#ffe7e7; color:#d12c2c; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;">✕</button>' +
+                    '</div>';
+                container.appendChild(row);
+            });
+        })
+        .catch(function() {
+            document.getElementById('adminReceiptsList').innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">Could not load receipts.</p>';
+        });
+}
+
+function viewReceipt(id, purchaser, cost, filename) {
+    var lightbox = document.getElementById('receiptLightbox');
+    var img      = document.getElementById('receiptLightboxImg');
+    var link     = document.getElementById('receiptDownloadLink');
+    var label    = document.getElementById('receiptLightboxLabel');
+
+    var url = '/api/receipts/' + id + '/image';
+    img.src  = url;
+    link.href = url;
+    link.download = filename || ('receipt-' + id);
+    label.textContent = purchaser + ' — $' + parseFloat(cost).toFixed(2);
+    lightbox.style.display = 'flex';
+}
+
+function closeReceiptLightbox() {
+    var lightbox = document.getElementById('receiptLightbox');
+    lightbox.style.display = 'none';
+    document.getElementById('receiptLightboxImg').src = '';
+}
+
+// Close lightbox on backdrop click
+document.getElementById('receiptLightbox').addEventListener('click', function(e) {
+    if (e.target === this) closeReceiptLightbox();
+});
+
+function deleteReceipt(id, btn) {
+    if (!confirm('Delete this receipt? This cannot be undone.')) return;
+    btn.disabled = true;
+    fetch('/api/receipts/' + id, { method: 'DELETE' })
+        .then(function() { loadAdminReceipts(); })
+        .catch(function() { alert('Could not delete receipt.'); btn.disabled = false; });
+}
+
+function downloadAllReceipts() {
+    fetch('/api/receipts')
+        .then(function(r) { return r.json(); })
+        .then(function(receipts) {
+            var withImg = receipts.filter(function(r) { return r.image_type && r.image_type.length > 0; });
+            if (withImg.length === 0) { alert('No receipt images to download.'); return; }
+
+            // Download each image sequentially with a short delay
+            var btn = document.getElementById('downloadAllReceiptsBtn');
+            btn.disabled = true;
+            btn.textContent = 'Downloading...';
+
+            var idx = 0;
+            function downloadNext() {
+                if (idx >= withImg.length) {
+                    btn.disabled = false;
+                    btn.textContent = '⬇ Download All';
+                    return;
+                }
+                var receipt = withImg[idx++];
+                var ext = (receipt.image_name || '').split('.').pop() || 'jpg';
+                var filename = 'receipt-' + receipt.purchased_by.replace(/\s+/g,'-') + '-$' + parseFloat(receipt.total_cost||0).toFixed(2) + '.' + ext;
+
+                fetch('/api/receipts/' + receipt.id + '/image')
+                    .then(function(r) { return r.blob(); })
+                    .then(function(blob) {
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        setTimeout(downloadNext, 600);
+                    })
+                    .catch(function() { setTimeout(downloadNext, 600); });
+            }
+            downloadNext();
+        })
+        .catch(function() { alert('Could not fetch receipts.'); });
+}
+
+function escAdm(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── NEEDS ATTENTION ───────────────────────────────────────────────────────────
+// Shows acknowledged "needs attention" (mood=negative) observations — hidden from staff
+
+function loadNeedsAttention() {
+    var container = document.getElementById('adminNeedsAttentionList');
+    if (!container) return;
+
+    fetch('/api/observations')
+        .then(function(r) { return r.json(); })
+        .then(function(obs) {
+            // Show acknowledged "needs attention" obs that haven't been admin-dismissed
+            var escalated = obs.filter(function(o) {
+                return o.mood === 'negative' && o.acknowledged && !o.admin_dismissed;
+            });
+
+            if (escalated.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">No active needs attention observations.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            escalated.forEach(function(o) {
+                var dateStr = '';
+                if (o.created_at) {
+                    var d = new Date(o.created_at);
+                    dateStr = d.toLocaleDateString('en-CA', { month:'short', day:'numeric', year:'numeric' }) +
+                              ' · ' + d.toLocaleTimeString('en-CA', { hour:'2-digit', minute:'2-digit' });
+                }
+
+                var card = document.createElement('div');
+                card.style.cssText = 'background:#fff5f5;border:1.5px solid #ffd0d0;border-radius:14px;overflow:hidden;';
+
+                // Main info row
+                var main = document.createElement('div');
+                main.style.cssText = 'display:flex;align-items:flex-start;gap:16px;padding:16px 18px;';
+                main.innerHTML =
+                    '<div style="flex-shrink:0;width:10px;height:10px;border-radius:50%;background:#d12c2c;margin-top:5px;"></div>' +
+                    '<div style="flex:1;min-width:0;">' +
+                        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">' +
+                            '<span style="font-size:15px;font-weight:800;color:#111;">' + escAdm(o.student) + '</span>' +
+                            '<span style="font-size:11px;font-weight:700;color:#d12c2c;background:#ffe0e0;padding:4px 10px;border-radius:99px;">Needs Attention</span>' +
+                        '</div>' +
+                        (o.type ? '<p style="font-size:12px;font-weight:700;color:#888;margin-bottom:4px;">' + escAdm(o.type) + '</p>' : '') +
+                        '<p style="font-size:14px;font-weight:600;color:#333;margin-bottom:8px;line-height:1.5;">' + escAdm(o.details) + '</p>' +
+                        (o.acknowledgement_note
+                            ? '<div style="padding:10px 12px;background:#fff;border:1px solid #f0c0c0;border-radius:10px;margin-bottom:8px;">' +
+                                  '<p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#888;margin-bottom:4px;">Staff Note</p>' +
+                                  '<p style="font-size:13px;font-weight:600;color:#333;">' + escAdm(o.acknowledgement_note) + '</p>' +
+                              '</div>'
+                            : '') +
+                        (o.admin_note
+                            ? '<div style="padding:10px 12px;background:#f0f7ff;border:1px solid #c0d8ff;border-radius:10px;margin-bottom:8px;">' +
+                                  '<p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#146ff8;margin-bottom:4px;">Admin Steps Taken</p>' +
+                                  '<p style="font-size:13px;font-weight:600;color:#333;" id="adminNoteDisplay_' + o.id + '">' + escAdm(o.admin_note) + '</p>' +
+                              '</div>'
+                            : '') +
+                        (dateStr ? '<p style="font-size:11px;font-weight:700;color:#bbb;">' + dateStr + '</p>' : '') +
+                    '</div>';
+                card.appendChild(main);
+
+                // Action bar
+                var actions = document.createElement('div');
+                actions.style.cssText = 'display:flex;gap:10px;padding:12px 18px 14px 44px;border-top:1px solid #ffd0d0;flex-wrap:wrap;';
+                actions.innerHTML =
+                    '<button onclick="openAdminAck(' + o.id + ', this)" style="padding:8px 16px;background:#146ff8;color:#fff;border:none;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">' +
+                        (o.admin_note ? 'Edit Steps Taken' : 'Admin Acknowledgement') +
+                    '</button>' +
+                    '<button onclick="dismissNeedsAttention(' + o.id + ', this)" style="padding:8px 16px;background:#f0f0f0;color:#555;border:none;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Dismiss</button>';
+                card.appendChild(actions);
+
+                // Inline admin ack form (hidden by default)
+                var form = document.createElement('div');
+                form.id = 'adminAckForm_' + o.id;
+                form.style.cssText = 'display:none;padding:14px 18px 18px 44px;border-top:1px solid #ffd0d0;background:#fafafa;';
+                form.innerHTML =
+                    '<p style="font-size:13px;font-weight:800;color:#111;margin-bottom:8px;">Steps Taken</p>' +
+                    '<textarea id="adminAckText_' + o.id + '" placeholder="Describe the steps taken to address this observation…" ' +
+                        'style="width:100%;padding:11px 13px;border:2px solid #e5e5e5;border-radius:10px;font-family:\'Archivo\',sans-serif;font-size:14px;font-weight:600;color:#111;outline:none;resize:vertical;min-height:90px;box-sizing:border-box;margin-bottom:10px;">' +
+                        escAdm(o.admin_note) +
+                    '</textarea>' +
+                    '<div style="display:flex;gap:8px;">' +
+                        '<button onclick="saveAdminAck(' + o.id + ')" style="padding:9px 18px;background:#146ff8;color:#fff;border:none;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Save</button>' +
+                        '<button onclick="cancelAdminAck(' + o.id + ')" style="padding:9px 14px;background:transparent;color:#aaa;border:2px solid #e5e5e5;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>' +
+                    '</div>';
+                card.appendChild(form);
+
+                container.appendChild(card);
+            });
+        })
+        .catch(function() {
+            container.innerHTML = '<p style="color:#aaa; font-size:13px; font-weight:600;">Could not load observations. Please refresh.</p>';
+        });
+}
+
+function openAdminAck(id, btn) {
+    var form = document.getElementById('adminAckForm_' + id);
+    if (!form) return;
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    var ta = document.getElementById('adminAckText_' + id);
+    if (ta && form.style.display !== 'none') ta.focus();
+}
+
+function cancelAdminAck(id) {
+    var form = document.getElementById('adminAckForm_' + id);
+    if (form) form.style.display = 'none';
+}
+
+function saveAdminAck(id) {
+    var ta = document.getElementById('adminAckText_' + id);
+    var note = ta ? ta.value.trim() : '';
+    if (!note) { if (ta) { ta.style.borderColor = '#ff3b30'; setTimeout(function() { ta.style.borderColor = ''; }, 1200); } return; }
+
+    fetch('/api/observations/' + id + '/admin', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminNote: note })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { loadNeedsAttention(); })
+    .catch(function() { alert('Could not save. Please try again.'); });
+}
+
+function dismissNeedsAttention(id, btn) {
+    if (!confirm('Dismiss this observation from the Needs Attention list? It will no longer appear here.')) return;
+    btn.disabled = true;
+    fetch('/api/observations/' + id + '/admin', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dismissed: true })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { loadNeedsAttention(); })
+    .catch(function() { alert('Could not dismiss. Please try again.'); btn.disabled = false; });
 }
 </script>
 
