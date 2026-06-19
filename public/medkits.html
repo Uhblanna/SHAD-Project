@@ -17,6 +17,84 @@
 <script src="https://unpkg.com/html5-qrcode" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="/public/js/medkits.js" defer></script>
+<style>
+/* ── Who is holding it? modal ─────────────────────────────────── */
+#holderModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.holder-modal-box {
+    background: white;
+    border-radius: 20px;
+    padding: 32px 36px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+    width: 100%;
+    max-width: 400px;
+    margin: 0 16px;
+}
+.holder-modal-box h3 {
+    font-family: 'Archivo', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    color: #111;
+}
+.holder-modal-box p {
+    font-size: 14px;
+    color: #888;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+.holder-modal-box input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+    outline: none;
+    margin-bottom: 18px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.holder-modal-box input:focus { border-color: #146ff8; }
+.holder-modal-btns {
+    display: flex;
+    gap: 10px;
+}
+#holderConfirmBtn {
+    flex: 1;
+    padding: 13px;
+    background: #146ff8;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+#holderConfirmBtn:hover { opacity: 0.85; }
+#holderCancelBtn {
+    padding: 13px 20px;
+    background: #f0f0f0;
+    color: #555;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Archivo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+</style>
 
 </head>
 <body>
@@ -135,6 +213,26 @@
     </div>
 
 </section>
+
+<!-- Who is holding it? modal -->
+<div id="holderModal">
+    <div class="holder-modal-box">
+        <h3>Who is holding it?</h3>
+        <p>Select the staff member who will carry this med kit.</p>
+        <input
+            type="text"
+            id="holderInput"
+            list="holderDatalist"
+            placeholder="Search staff name…"
+            autocomplete="off"
+        >
+        <datalist id="holderDatalist"></datalist>
+        <div class="holder-modal-btns">
+            <button id="holderConfirmBtn">Confirm Check-In</button>
+            <button id="holderCancelBtn">Cancel</button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
