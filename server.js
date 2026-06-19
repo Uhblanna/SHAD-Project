@@ -4,7 +4,11 @@ const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
 const session = require("express-session");
+const multer = require("multer");
 const db = require("./database");
+
+// Multer — memory storage for receipt images (stored as BLOBs in SQLite)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
 const app = express();
 const transporter = nodemailer.createTransport({
@@ -101,7 +105,8 @@ function rowToMedkit(row) {
         status: row.status || "Ready",
         supplies: row.supplies || "",
         checkedIn: row.checked_in === 1,
-        checkedInTime: row.checked_in_time || ""
+        checkedInTime: row.checked_in_time || "",
+        checkedInBy: row.checked_in_by || ""
     };
 }
 
@@ -162,8 +167,10 @@ function rowToObservation(row) {
         mood: row.mood,
         details: row.details,
         acknowledged: row.acknowledged === 1,
-        acknowledgementNote: row.acknowledgement_note || "",
-        createdAt: row.created_at
+        acknowledgement_note: row.acknowledgement_note || "",
+        admin_note: row.admin_note || "",
+        admin_dismissed: row.admin_dismissed === 1,
+        created_at: row.created_at
     };
 }
 
@@ -496,6 +503,30 @@ app.put("/api/observations/:id", (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ updated: this.changes });
     });
+});
+
+// Admin-only: save follow-up note or dismiss a needs-attention observation
+app.patch("/api/observations/:id/admin", (req, res) => {
+    const { adminNote, dismissed } = req.body;
+    const id = req.params.id;
+
+    if (dismissed === true) {
+        db.run("UPDATE observations SET admin_dismissed = 1 WHERE id = ?", [id], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id, admin_dismissed: 1 });
+        });
+        return;
+    }
+
+    if (adminNote !== undefined) {
+        db.run("UPDATE observations SET admin_note = ? WHERE id = ?", [(adminNote || "").trim(), id], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id, admin_note: (adminNote || "").trim() });
+        });
+        return;
+    }
+
+    res.status(400).json({ error: "No action specified." });
 });
 
 app.delete("/api/observations/:id", (req, res) => {
@@ -1370,6 +1401,7 @@ app.delete("/api/medkits/all", (req, res) => {
 
 app.post("/api/medkits/check-in", (req, res) => {
     const qrCode = (req.body.qrCode || "").trim();
+    const heldBy = (req.body.heldBy || "").trim();
 
     if (!qrCode) {
         return res.status(400).json({ error: "QR code is required." });
@@ -1378,9 +1410,10 @@ app.post("/api/medkits/check-in", (req, res) => {
     db.run(`
         UPDATE medkits
         SET checked_in = 1,
-            checked_in_time = ?
+            checked_in_time = ?,
+            checked_in_by = ?
         WHERE qr_code = ?
-    `, [new Date().toISOString(), qrCode], function(err) {
+    `, [new Date().toISOString(), heldBy, qrCode], function(err) {
         if (err) return res.status(500).json({ error: err.message });
 
         if (this.changes === 0) {
@@ -1395,7 +1428,7 @@ app.post("/api/medkits/check-in", (req, res) => {
 });
 
 app.post("/api/medkits/uncheck/:id", (req, res) => {
-    db.run(`UPDATE medkits SET checked_in = 0, checked_in_time = NULL WHERE id = ?`,
+    db.run(`UPDATE medkits SET checked_in = 0, checked_in_time = NULL, checked_in_by = '' WHERE id = ?`,
         [req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         if (this.changes === 0) return res.status(404).json({ error: "Med kit not found." });
@@ -1410,7 +1443,8 @@ app.post("/api/medkits/reset-checkins", (req, res) => {
     db.run(`
         UPDATE medkits
         SET checked_in = 0,
-            checked_in_time = NULL
+            checked_in_time = NULL,
+            checked_in_by = ''
     `, [], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ reset: this.changes });
@@ -1457,19 +1491,30 @@ app.post("/api/todos", (req, res) => {
 });
 
 app.patch("/api/todos/:id", (req, res) => {
-    const { completed, completed_by } = req.body;
+    const { completed, completed_by, claimed_by } = req.body;
     const id = req.params.id;
+
+    // Claim / unclaim action (no completed flag sent)
+    if (claimed_by !== undefined && completed === undefined) {
+        const claimName = (claimed_by || "").trim();
+        db.run("UPDATE daily_todos SET claimed_by = ? WHERE id = ?", [claimName, id], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id, claimed_by: claimName });
+        });
+        return;
+    }
+
+    // Complete / undo action
     const now = completed ? new Date().toISOString() : "";
     const name = completed ? (completed_by || "").trim() : "";
 
     db.run(
-        "UPDATE daily_todos SET completed = ?, completed_by = ?, completed_at = ? WHERE id = ?",
-        [completed ? 1 : 0, name, now, id],
+        "UPDATE daily_todos SET completed = ?, completed_by = ?, completed_at = ?, claimed_by = ? WHERE id = ?",
+        [completed ? 1 : 0, name, now, "", id],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
 
             if (completed) {
-                // Write a permanent history record when a task is checked off
                 db.get("SELECT task FROM daily_todos WHERE id = ?", [id], (err2, row) => {
                     if (!err2 && row) {
                         db.run(
@@ -1479,7 +1524,6 @@ app.patch("/api/todos/:id", (req, res) => {
                     }
                 });
             } else {
-                // Remove the history record if the staff member undoes the completion
                 db.run("DELETE FROM task_history WHERE todo_id = ?", [id]);
             }
 
@@ -1876,6 +1920,65 @@ app.delete("/api/shopping/all/items", (req, res) => {
             if (err2) return res.status(500).json({ error: err2.message });
             res.json({ cleared: this.changes });
         });
+    });
+});
+
+// ── RECEIPTS ──────────────────────────────────────────────────────────────────
+
+// Upload a receipt (multipart form: purchased_by, total_cost, receipt_image)
+app.post("/api/receipts", upload.single("receipt_image"), (req, res) => {
+    const purchasedBy = (req.body.purchased_by || "").trim();
+    const totalCost   = parseFloat(req.body.total_cost || "0");
+    const file        = req.file;
+
+    if (!purchasedBy) return res.status(400).json({ error: "Purchaser name is required." });
+    if (isNaN(totalCost)) return res.status(400).json({ error: "Total cost must be a number." });
+
+    db.run(
+        `INSERT INTO receipts (purchased_by, total_cost, image_data, image_type, image_name)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+            purchasedBy,
+            totalCost,
+            file ? file.buffer : null,
+            file ? file.mimetype : "",
+            file ? file.originalname : ""
+        ],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID, purchased_by: purchasedBy, total_cost: totalCost });
+        }
+    );
+});
+
+// List all receipts (metadata only — no image blobs)
+app.get("/api/receipts", (req, res) => {
+    db.all(
+        "SELECT id, purchased_by, total_cost, image_name, image_type, created_at FROM receipts ORDER BY created_at DESC",
+        [],
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(rows);
+        }
+    );
+});
+
+// Serve one receipt image inline
+app.get("/api/receipts/:id/image", (req, res) => {
+    db.get("SELECT image_data, image_type, image_name FROM receipts WHERE id = ?", [req.params.id], (err, row) => {
+        if (err || !row) return res.status(404).json({ error: "Not found." });
+        if (!row.image_data) return res.status(404).json({ error: "No image for this receipt." });
+        res.set("Content-Type", row.image_type || "application/octet-stream");
+        res.set("Content-Disposition", `inline; filename="${row.image_name || "receipt"}"`);
+        res.send(row.image_data);
+    });
+});
+
+// Delete one receipt
+app.delete("/api/receipts/:id", (req, res) => {
+    db.run("DELETE FROM receipts WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ deleted: this.changes });
     });
 });
 
