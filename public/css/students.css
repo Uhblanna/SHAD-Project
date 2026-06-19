@@ -430,6 +430,7 @@ header nav a:hover{
 #editStudentHouseTeam,
 #editStudentDesignTeam,
 #editStudentReqTeam,
+#editStudentRoomNumber,
 #editStudentCommittee,
 #editStudentAge,
 #editStudentInstrument,
@@ -452,6 +453,7 @@ header nav a:hover{
 #editStudentHouseTeam:focus,
 #editStudentDesignTeam:focus,
 #editStudentReqTeam:focus,
+#editStudentRoomNumber:focus,
 #editStudentCommittee:focus,
 #editStudentAge:focus,
 #editStudentInstrument:focus,
@@ -666,11 +668,11 @@ header nav a:hover{
 }
 
 .observation-controls{
-    display:grid;
-    grid-template-columns:1.2fr 1fr 1fr;
-    gap:12px;
+    display:flex;
+    flex-wrap:nowrap;
+    align-items:center;
+    gap:8px;
     width:100%;
-    max-width:760px;
 }
 
 /* Search/filter controls now live inside the collapsible body, above the
@@ -680,9 +682,31 @@ header nav a:hover{
     margin-bottom:22px;
 }
 
-#observationSearch,
+#observationSearch{
+    flex:1 1 160px;
+    min-width:0;
+    padding:9px 12px;
+    border:1px solid #e5e5e5;
+    border-radius:10px;
+    background:#f7fafc;
+    font-family:'Archivo',sans-serif;
+    font-size:13px;
+}
+
 #observationFilter,
-#observationSort,
+#observationAckFilter,
+#observationSort{
+    flex:0 0 auto;
+    width:auto;
+    padding:9px 10px;
+    border:1px solid #e5e5e5;
+    border-radius:10px;
+    background:#f7fafc;
+    font-family:'Archivo',sans-serif;
+    font-size:13px;
+    cursor:pointer;
+}
+
 #dietarySearch{
     width:100%;
     padding:14px 16px;
@@ -693,10 +717,12 @@ header nav a:hover{
     font-size:15px;
 }
 
-@media(max-width:900px){
+@media(max-width:700px){
     .observation-controls{
-        grid-template-columns:1fr;
-        max-width:100%;
+        flex-wrap:wrap;
+    }
+    #observationSearch{
+        flex:1 1 100%;
     }
 }
 
