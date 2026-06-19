@@ -1641,7 +1641,7 @@ function displayObsLeaderboard() {
         negBox.innerHTML = '';
         var filteredNeg = byNeg.filter(function(n) { return tally[n].neg > 0; });
         if (filteredNeg.length === 0) {
-            negBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No negative observations yet.</p>';
+            negBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No needs attention observations yet.</p>';
         } else {
             filteredNeg.forEach(function(name, i) {
                 negBox.appendChild(makeTopRow(name, tally[name].neg, maxNeg, '#d12c2c', i));
@@ -1667,7 +1667,7 @@ function displayObsLeaderboard() {
                 '<div style="flex:1;min-width:120px;">' +
                     '<div style="display:flex;height:10px;border-radius:99px;overflow:hidden;gap:2px;">' +
                         '<div title="Positive: ' + p + '" style="width:' + pPct + '%;background:#8bc53f;transition:width 0.3s;border-radius:99px 0 0 99px;"></div>' +
-                        '<div title="Negative: ' + n + '" style="width:' + nPct + '%;background:#e74c3c;transition:width 0.3s;border-radius:0 99px 99px 0;"></div>' +
+                        '<div title="Needs Attention: ' + n + '" style="width:' + nPct + '%;background:#e74c3c;transition:width 0.3s;border-radius:0 99px 99px 0;"></div>' +
                     '</div>' +
                 '</div>' +
                 '<span style="font-size:12px;font-weight:700;color:#5a9a20;min-width:36px;text-align:right;">+' + p + '</span>' +
@@ -1699,11 +1699,18 @@ function displayObservations() {
     var recentBox = el('recentObservations'), fullList = el('observationList');
     var searchText = (el('observationSearch') || {}).value || '';
     var filterMood = (el('observationFilter') || {}).value || 'all';
+    var filterAck  = (el('observationAckFilter') || {}).value || 'all';
     var sortMode   = (el('observationSort') || {}).value || 'recent';
     var obs = ShadDB.getObservations();
     var filtered = obs.filter(function(o) {
-        return o.student.toLowerCase().includes(searchText.toLowerCase()) &&
-               (filterMood === 'all' || o.mood === filterMood);
+        // Acknowledged "needs attention" observations are escalated to admin — hide from staff view entirely
+        if (o.mood === 'negative' && o.acknowledged) return false;
+        var matchesSearch = o.student.toLowerCase().includes(searchText.toLowerCase());
+        var matchesMood   = filterMood === 'all' || o.mood === filterMood;
+        var matchesAck    = filterAck === 'all' ||
+                            (filterAck === 'acknowledged'   &&  o.acknowledged) ||
+                            (filterAck === 'unacknowledged' && !o.acknowledged);
+        return matchesSearch && matchesMood && matchesAck;
     });
     if (sortMode !== 'recent') {
         filtered = filtered.sort(function(a, b) {
@@ -1741,7 +1748,7 @@ function createObservationRow(obs) {
             (obs.acknowledged && obs.acknowledgementNote ? '<p class="acknowledgement-note"><strong>Acknowledged:</strong> ' + esc(obs.acknowledgementNote) + '</p>' : '') +
         '</div>' +
         '<div class="observation-actions">' +
-            '<span class="status ' + obs.mood + '">' + obs.mood.charAt(0).toUpperCase() + obs.mood.slice(1) + '</span>' +
+            '<span class="status ' + obs.mood + '">' + (obs.mood === 'negative' ? 'Needs Attention' : obs.mood.charAt(0).toUpperCase() + obs.mood.slice(1)) + '</span>' +
             // Edit button edits the acknowledgement note; only shown once acknowledged
             (obs.acknowledged ? '<button class="edit-observation-btn">Edit</button>' : '') +
         '</div>';
@@ -1752,7 +1759,7 @@ function createObservationRow(obs) {
 }
 
 function setupObservationControls() {
-    ['observationSearch','observationFilter','observationSort'].forEach(function(id) {
+    ['observationSearch','observationFilter','observationAckFilter','observationSort'].forEach(function(id) {
         var e2 = el(id);
         if (e2) e2.addEventListener(id === 'observationSearch' ? 'input' : 'change', displayObservations);
     });
@@ -1831,7 +1838,7 @@ function setupObservationForm() {
         var checked = document.querySelectorAll('.checkbox-grid input:checked');
         var types   = Array.from(checked).map(function(cb) { return cb.value; });
         var moodEl  = document.querySelector('input[name="observationMood"]:checked');
-        if (!moodEl) { alert('Please choose positive, neutral, or negative.'); return; }
+        if (!moodEl) { alert('Please choose positive, neutral, or needs attention.'); return; }
         if (!types.length || !details) { alert('Please choose a type and enter details.'); return; }
         if (editingObsId !== null) {
             ShadDB.updateObservation(editingObsId, { student: student, type: types.join(', '), mood: moodEl.value, details: details });
