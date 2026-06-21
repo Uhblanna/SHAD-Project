@@ -126,23 +126,6 @@ nav a:hover { color: #00d084; }
 }
 .form-select:focus { border-color: #00d084; }
 
-.submit-btn {
-    width: 100%;
-    padding: 15px;
-    background: #00d084;
-    color: white;
-    font-family: 'Archivo', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: 0.25s;
-    box-shadow: 0 8px 22px rgba(139,197,63,0.3);
-    margin-bottom: 12px;
-}
-.submit-btn:hover { opacity: 0.9; transform: translateY(-2px); }
-.submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 .msg {
     font-size: 14px;
@@ -209,6 +192,57 @@ nav a:hover { color: #00d084; }
 }
 .exit-btn:hover { background: #f2f2f2; color: #555; border-color: #ccc; }
 
+/* QR SCANNER */
+.scanner-wrap {
+    margin-bottom: 16px;
+}
+.scan-btn {
+    width: 100%;
+    padding: 15px;
+    background: #6f2da8;
+    color: white;
+    font-family: 'Archivo', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.25s;
+    box-shadow: 0 8px 22px rgba(111,45,168,0.25);
+    margin-bottom: 10px;
+}
+.scan-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+.scan-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.stop-scan-btn {
+    width: 100%;
+    padding: 12px;
+    background: #e5e5e5;
+    color: #444;
+    font-family: 'Archivo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: none;
+    margin-bottom: 10px;
+}
+#qrStatus {
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 8px;
+    min-height: 20px;
+}
+#qrVideo {
+    width: 100%;
+    border-radius: 12px;
+    display: none;
+    background: #000;
+    margin-bottom: 10px;
+}
+#qrCanvas { display: none; }
+
 /* BOTTOM */
 .bottom-bar {
     text-align: center;
@@ -243,7 +277,7 @@ nav a:hover { color: #00d084; }
             <!-- Isabelle McLean — Sign-up is for the NEXT day's morning rec; date label below shows tomorrow's date -->
             <h2>Sign Up for Tomorrow</h2>
             <p class="date-line" id="dateDisplay"></p>
-            <p class="sub" id="spotsLine">Select your name below to sign up for tomorrow morning's recreation activities.</p>
+            <p class="sub" id="spotsLine">Scan your QR code below to sign up for tomorrow morning's recreation activities.</p>
 
             <!-- Isabelle — fullState banner shown when sign-up session is at capacity; hides the form so no more names can be submitted -->
             <div id="fullState" style="display:none; background:#fff0ef; border-radius:12px; padding:16px; margin-bottom:16px; text-align:center;">
@@ -251,16 +285,17 @@ nav a:hover { color: #00d084; }
                 <p style="font-size:13px; color:#888; margin-top:6px; font-weight:600;">All spots have been filled for tomorrow's morning rec.</p>
             </div>
 
-            <!-- Isabelle McLean — Replaced dropdown with typeahead: students type to filter the list, then click their name to select it -->
-            <div style="position:relative; margin-bottom:16px;" id="recNamePickerWrap">
-                <input type="text" class="form-select" id="recNameSearch" style="margin-bottom:0; cursor:text;"
-                    placeholder="Type your name..." autocomplete="off" oninput="filterRecNames()" onfocus="showRecNameList()">
-                <div id="recNameDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:2px solid #e5e5e5; border-top:none; border-radius:0 0 12px 12px; max-height:220px; overflow-y:auto; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,0.1);"></div>
+            <!-- QR scanner: student scans their QR code instead of typing their name -->
+            <div class="scanner-wrap" id="recNamePickerWrap">
+                <div id="qrStatus">Camera not started</div>
+                <video id="qrVideo" autoplay muted playsinline></video>
+                <canvas id="qrCanvas"></canvas>
+                <button class="scan-btn" id="startScanBtn" onclick="startMorningRecScanner()">📷 Scan QR Code</button>
+                <button class="stop-scan-btn" id="stopScanBtn" onclick="stopMorningRecScanner()">Stop Camera</button>
             </div>
             <input type="hidden" id="studentSelect">
 
             <p class="msg" id="msgEl"></p>
-            <button class="submit-btn" id="submitBtn" onclick="submitSignup()">Sign Me Up →</button>
         </div>
 
         <!-- Isabelle McLean — Success state: shown after a successful signup; "Sign up another person" button resets the form -->
@@ -268,7 +303,7 @@ nav a:hover { color: #00d084; }
         <div class="success-state" id="successState">
             <div class="check">✓</div>
             <h3>You're Signed Up!</h3>
-            <p id="successName">See you at morning rec tomorrow.</p>
+            <p id="successName">See you at Morning Rec tomorrow.</p>
             <button class="sign-up-another" onclick="resetForm()">Sign up another person</button>
             <button class="exit-btn" onclick="window.location.href='/public/student.html'">Exit</button>
         </div>
@@ -304,25 +339,21 @@ function loadCapacityAndStatus() {
         var spotsLeft = currentCapacity - currentSignupCount;
         var spotsLine = document.getElementById('spotsLine');
         var fullState = document.getElementById('fullState');
-        var submitBtn = document.getElementById('submitBtn');
         var namePickerWrap = document.getElementById('recNamePickerWrap');
 
         if (spotsLeft <= 0) {
-            // Session is full — hide the form controls, show full message
             fullState.style.display = 'block';
             namePickerWrap.style.display = 'none';
-            submitBtn.style.display = 'none';
             spotsLine.style.display = 'none';
         } else {
             fullState.style.display = 'none';
             namePickerWrap.style.display = '';
-            submitBtn.style.display = '';
             if (spotsLeft <= 5) {
-                spotsLine.textContent = 'Only ' + spotsLeft + ' spot' + (spotsLeft === 1 ? '' : 's') + ' left! Select your name to sign up.';
+                spotsLine.textContent = 'Only ' + spotsLeft + ' spot' + (spotsLeft === 1 ? '' : 's') + ' left! Scan your QR code to sign up.';
                 spotsLine.style.color = '#d93025';
                 spotsLine.style.fontWeight = '700';
             } else {
-                spotsLine.textContent = spotsLeft + ' of ' + currentCapacity + ' spots remaining. Select your name to sign up.';
+                spotsLine.textContent = spotsLeft + ' of ' + currentCapacity + ' spots remaining. Scan your QR code to sign up.';
                 spotsLine.style.color = '';
                 spotsLine.style.fontWeight = '';
             }
@@ -330,83 +361,133 @@ function loadCapacityAndStatus() {
     }).catch(function() {});
 }
 
-var allRecStudentNames = [];
+var allRecStudents = [];
+var mrQRStream = null;
+var mrQRAnimFrame = null;
 
 function loadStudents() {
     fetch('/api/students')
         .then(function(r) { return r.json(); })
-        .then(function(students) {
-            allRecStudentNames = students.map(function(s) { return s.name; }).sort();
-            document.getElementById('recNameSearch').placeholder = allRecStudentNames.length === 0
-                ? 'No students loaded yet'
-                : 'Type your name...';
-        })
-        .catch(function() {
-            document.getElementById('recNameSearch').placeholder = 'Could not load names';
-        });
+        .then(function(students) { allRecStudents = students; })
+        .catch(function() {});
 }
 
-function showRecNameList() {
-    filterRecNames();
-}
+function startMorningRecScanner() {
+    var status = document.getElementById('qrStatus');
+    var video = document.getElementById('qrVideo');
+    var canvas = document.getElementById('qrCanvas');
 
-function filterRecNames() {
-    var query = document.getElementById('recNameSearch').value.toLowerCase().trim();
-    var dropdown = document.getElementById('recNameDropdown');
-    var matches = query
-        ? allRecStudentNames.filter(function(n) { return n.toLowerCase().indexOf(query) !== -1; })
-        : allRecStudentNames;
+    status.textContent = 'Requesting camera…';
+    status.style.color = '#f58220';
 
-    if (matches.length === 0) {
-        dropdown.style.display = 'none';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        status.textContent = '⚠️ Camera unavailable. Page must be served over HTTPS.';
+        status.style.color = '#d12c2c';
         return;
     }
 
-    dropdown.innerHTML = '';
-    matches.forEach(function(name) {
-        var item = document.createElement('div');
-        item.textContent = name;
-        item.style.cssText = 'padding:12px 16px; font-size:15px; font-weight:600; color:#111; cursor:pointer; transition:background 0.15s;';
-        item.addEventListener('mouseenter', function() { this.style.background = '#f0fff8'; });
-        item.addEventListener('mouseleave', function() { this.style.background = 'white'; });
-        item.addEventListener('mousedown', function(e) {
-            e.preventDefault();
-            selectRecStudent(name);
+    function doStart() {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(stream) {
+            mrQRStream = stream;
+            video.srcObject = stream;
+            video.style.display = 'block';
+            document.getElementById('startScanBtn').style.display = 'none';
+            document.getElementById('stopScanBtn').style.display = 'block';
+            status.textContent = '🟢 Scanning — hold your QR code up to the camera';
+            status.style.color = '#8bc53f';
+            video.addEventListener('loadedmetadata', function() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                scanMorningRecFrame(video, canvas, status);
+            });
+        }).catch(function(err) {
+            status.textContent = '⚠️ ' + (err.name === 'NotAllowedError' ? 'Camera permission denied.' : err.message);
+            status.style.color = '#d12c2c';
         });
-        dropdown.appendChild(item);
-    });
-    dropdown.style.display = 'block';
-}
-
-function selectRecStudent(name) {
-    document.getElementById('recNameSearch').value = name;
-    document.getElementById('studentSelect').value = name;
-    document.getElementById('recNameDropdown').style.display = 'none';
-}
-
-document.addEventListener('click', function(e) {
-    var wrap = document.getElementById('recNamePickerWrap');
-    if (wrap && !wrap.contains(e.target)) {
-        document.getElementById('recNameDropdown').style.display = 'none';
     }
-});
+
+    if (typeof jsQR === 'undefined') {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+        s.onload = doStart;
+        s.onerror = function() { status.textContent = 'Failed to load QR library.'; status.style.color = '#d12c2c'; };
+        document.head.appendChild(s);
+    } else { doStart(); }
+}
+
+function scanMorningRecFrame(video, canvas, status) {
+    var ctx = canvas.getContext('2d');
+    function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var code = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
+            if (code) {
+                handleMorningRecQR(code.data, status, video, canvas);
+                return;
+            }
+        }
+        mrQRAnimFrame = requestAnimationFrame(tick);
+    }
+    mrQRAnimFrame = requestAnimationFrame(tick);
+}
+
+function handleMorningRecQR(data, status, video, canvas) {
+    var student = null;
+    if (data.startsWith('SHAD_STUDENT:')) {
+        var idStr = data.replace('SHAD_STUDENT:', '').trim();
+        student = allRecStudents.find(function(s) { return String(s.id) === idStr; });
+    }
+    if (!student) {
+        student = allRecStudents.find(function(s) { return s.name.toLowerCase() === data.trim().toLowerCase(); });
+    }
+
+    if (student) {
+        document.getElementById('studentSelect').value = student.name;
+        status.textContent = '✅ Scanned: ' + student.name;
+        status.style.color = '#8bc53f';
+        stopMorningRecScanner();
+        submitSignup();
+    } else {
+        status.textContent = '❓ Unknown QR code — try again';
+        status.style.color = '#d12c2c';
+        // Resume scanning after a brief pause
+        setTimeout(function() {
+            status.textContent = '🟢 Scanning — hold your QR code up to the camera';
+            status.style.color = '#8bc53f';
+            scanMorningRecFrame(video, canvas, status);
+        }, 1500);
+    }
+}
+
+function stopMorningRecScanner() {
+    if (mrQRAnimFrame) { cancelAnimationFrame(mrQRAnimFrame); mrQRAnimFrame = null; }
+    if (mrQRStream) { mrQRStream.getTracks().forEach(function(t) { t.stop(); }); mrQRStream = null; }
+    var video = document.getElementById('qrVideo');
+    if (video) { video.srcObject = null; video.style.display = 'none'; }
+    document.getElementById('startScanBtn').style.display = 'block';
+    document.getElementById('stopScanBtn').style.display = 'none';
+    var status = document.getElementById('qrStatus');
+    if (status.textContent.startsWith('🟢')) {
+        status.textContent = 'Camera not started';
+        status.style.color = '#888';
+    }
+}
 
 function submitSignup() {
     var name = document.getElementById('studentSelect').value;
     var msgEl = document.getElementById('msgEl');
-    var btn = document.getElementById('submitBtn');
 
     msgEl.className = 'msg';
     msgEl.textContent = '';
 
     if (!name) {
         msgEl.className = 'msg error';
-        msgEl.textContent = 'Please select your name.';
+        msgEl.textContent = 'Could not read student name from QR code.';
         return;
     }
-
-    btn.textContent = 'Signing up...';
-    btn.disabled = true;
 
     fetch('/api/morning-rec', {
         method: 'POST',
@@ -418,9 +499,6 @@ function submitSignup() {
         if (data.error) {
             msgEl.className = 'msg error';
             msgEl.textContent = data.error;
-            btn.textContent = 'Sign Me Up →';
-            btn.disabled = false;
-            // Re-check capacity in case it just filled up
             loadCapacityAndStatus();
         } else {
             document.getElementById('formState').style.display = 'none';
@@ -431,20 +509,17 @@ function submitSignup() {
     .catch(function() {
         msgEl.className = 'msg error';
         msgEl.textContent = 'Connection error. Please try again.';
-        btn.textContent = 'Sign Me Up →';
-        btn.disabled = false;
     });
 }
 
 function resetForm() {
+    stopMorningRecScanner();
     document.getElementById('successState').style.display = 'none';
     document.getElementById('formState').style.display = 'block';
     document.getElementById('studentSelect').value = '';
-    document.getElementById('recNameSearch').value = '';
-    document.getElementById('recNameDropdown').style.display = 'none';
+    document.getElementById('qrStatus').textContent = 'Camera not started';
+    document.getElementById('qrStatus').style.color = '#888';
     document.getElementById('msgEl').textContent = '';
-    document.getElementById('submitBtn').textContent = 'Sign Me Up →';
-    document.getElementById('submitBtn').disabled = false;
     loadCapacityAndStatus();
 }
 
