@@ -434,6 +434,12 @@ function scanMorningRecFrame(video, canvas, status) {
     mrQRAnimFrame = requestAnimationFrame(tick);
 }
 
+// Isabelle McLean — Always show the preferred name; fall back to the stored name only when there's no preferred name
+function displayName(student) {
+    if (student && student.prefName) return student.prefName + (student.lastName ? ' ' + student.lastName : '');
+    return student ? student.name : '';
+}
+
 function handleMorningRecQR(data, status, video, canvas) {
     var student = null;
     if (data.startsWith('SHAD_STUDENT:')) {
@@ -445,8 +451,8 @@ function handleMorningRecQR(data, status, video, canvas) {
     }
 
     if (student) {
-        document.getElementById('studentSelect').value = student.name;
-        status.textContent = '✅ Scanned: ' + student.name;
+        document.getElementById('studentSelect').value = displayName(student);
+        status.textContent = '✅ Scanned: ' + displayName(student);
         status.style.color = '#8bc53f';
         stopMorningRecScanner();
         submitSignup();

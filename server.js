@@ -1237,6 +1237,85 @@ app.delete("/api/maps/:id", (req, res) => {
     res.json({ ok: true, id: removed.id });
 });
 
+// Isabelle McLean — Electives API: admin creates/deletes electives; students sign up by name; section hidden on student portal when empty
+app.get("/api/electives", (req, res) => {
+    db.all("SELECT * FROM electives ORDER BY created_at ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/electives", (req, res) => {
+    const { name, description, capacity } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: "Name is required." });
+    const cap = capacity ? parseInt(capacity, 10) : null;
+    db.run("INSERT INTO electives (name, description, capacity) VALUES (?, ?, ?)", [name.trim(), (description || "").trim(), cap], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID, name: name.trim(), description: (description || "").trim(), capacity: cap });
+    });
+});
+
+app.put("/api/electives/:id", (req, res) => {
+    const { name, description, capacity } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: "Name is required." });
+    const cap = capacity ? parseInt(capacity, 10) : null;
+    db.run("UPDATE electives SET name = ?, description = ?, capacity = ? WHERE id = ?",
+        [name.trim(), (description || "").trim(), cap, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ok: true });
+    });
+});
+
+app.delete("/api/electives/:id", (req, res) => {
+    db.run("DELETE FROM electives WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ok: true });
+    });
+});
+
+app.get("/api/electives/:id/signups", (req, res) => {
+    db.all("SELECT * FROM elective_signups WHERE elective_id = ? ORDER BY created_at ASC", [req.params.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/electives/:id/signups", (req, res) => {
+    const { student_name } = req.body;
+    if (!student_name || !student_name.trim()) return res.status(400).json({ error: "Student name is required." });
+    const eid = req.params.id;
+    db.get("SELECT capacity FROM electives WHERE id = ?", [eid], (err, elective) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!elective) return res.status(404).json({ error: "Elective not found." });
+        if (elective.capacity) {
+            db.get("SELECT COUNT(*) AS cnt FROM elective_signups WHERE elective_id = ?", [eid], (err2, row) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                if (row.cnt >= elective.capacity) return res.status(409).json({ error: "This elective is full." });
+                insertElectiveSignup(eid, student_name.trim(), res);
+            });
+        } else {
+            insertElectiveSignup(eid, student_name.trim(), res);
+        }
+    });
+});
+
+function insertElectiveSignup(eid, name, res) {
+    db.run("INSERT INTO elective_signups (elective_id, student_name) VALUES (?, ?)", [eid, name], function(err) {
+        if (err) {
+            if (err.message.includes("UNIQUE")) return res.status(409).json({ error: "You're already signed up for this elective." });
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ id: this.lastID, elective_id: Number(eid), student_name: name });
+    });
+}
+
+app.delete("/api/electives/:id/signups/:signupId", (req, res) => {
+    db.run("DELETE FROM elective_signups WHERE id = ? AND elective_id = ?", [req.params.signupId, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ok: true });
+    });
+});
+
 // Isabelle McLean — Committee signup API routes: fetch all signups, submit a new one (blocks duplicate student+committee combos), remove by ID
 // COMMITTEE SIGNUPS
 app.get("/api/committee-signups", (req, res) => {
