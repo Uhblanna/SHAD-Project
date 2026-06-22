@@ -1266,6 +1266,16 @@ function submitElectiveSignup() {
 loadStudents();
 loadElectives();
 
+// Isabelle McLean — Auto-refresh the committee + elective lists so admin additions/removals appear without a manual reload.
+// Skips refreshing while a sign-up modal is open so it never disrupts a student mid-selection.
+setInterval(function() {
+    var committeeOpen = document.getElementById('committeeModal').classList.contains('active');
+    var electiveOpen  = document.getElementById('electiveModal').classList.contains('active');
+    if (committeeOpen || electiveOpen) return;
+    loadCommitteeOptions();
+    loadElectives();
+}, 15000);
+
 // Isabelle McLean — Build the map tabs + layers from /api/maps (managed in the admin panel).
 // Hides the whole section when there are no maps. Version stamp busts the image cache.
 function loadMaps() {

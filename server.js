@@ -1051,6 +1051,17 @@ app.get("/api/committee-options", (req, res) => {
     });
 });
 
+// Isabelle McLean — Add a single committee option without replacing the whole list (used by the "Add a Committee" form on the admin page)
+app.post("/api/committee-options", (req, res) => {
+    const { name, type, description } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: "Committee name is required." });
+    db.run("INSERT INTO committee_options (name, type, description) VALUES (?, ?, ?)",
+        [name.trim(), (type || "Project").trim(), (description || "").trim()], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID, name: name.trim(), type: (type || "Project").trim(), description: (description || "").trim() });
+    });
+});
+
 // Isabelle McLean — Delete a single committee option by ID (used by the "Remove a Committee" button on the admin page)
 app.delete("/api/committee-options/:id", (req, res) => {
     db.get("SELECT name FROM committee_options WHERE id = ?", [req.params.id], (err, row) => {

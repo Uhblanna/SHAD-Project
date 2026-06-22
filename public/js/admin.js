@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Isabelle McLean — Wires up the Remove a Committee button + confirm remove button
     document.getElementById("removeCommitteeBtn").addEventListener("click", openRemoveCommitteePanel);
     document.getElementById("confirmRemoveCommitteeBtn").addEventListener("click", confirmRemoveCommittee);
+    // Isabelle McLean — Wires up the Add a single committee button
+    document.getElementById("addCommitteeBtn").addEventListener("click", addSingleCommittee);
     document.getElementById("clearCommitteeSignupsBtn").addEventListener("click", clearCommitteeSignups);
     document.getElementById("clearCommitteesBtn").addEventListener("click", clearAllCommittees);
     document.getElementById("uploadMedkitsBtn").addEventListener("click", uploadMedkitsCSV);
@@ -584,6 +586,34 @@ function uploadCommitteeOptionsCSV() {
                 input.value = "";
             });
     });
+}
+
+// Isabelle McLean — Adds a single committee without touching the rest of the list or any student selections
+function addSingleCommittee() {
+    const nameInput = document.getElementById("newCommitteeName");
+    const descInput = document.getElementById("newCommitteeDesc");
+    const status = document.getElementById("addCommitteeStatus");
+    const name = nameInput.value.trim();
+    const description = descInput.value.trim();
+
+    if (!name) {
+        status.textContent = "Please enter a committee name.";
+        status.style.color = "#d93025";
+        return;
+    }
+
+    apiRequest("POST", "/api/committee-options", { name, description })
+        .then(() => {
+            nameInput.value = "";
+            descInput.value = "";
+            status.textContent = '✓ "' + name + '" added.';
+            status.style.color = "#5a9a20";
+            setTimeout(() => { status.textContent = ""; }, 2500);
+        })
+        .catch(() => {
+            status.textContent = "Could not add committee. Please try again.";
+            status.style.color = "#d93025";
+        });
 }
 
 // Isabelle McLean — Loads the current committees into the dropdown, then reveals the remove panel
