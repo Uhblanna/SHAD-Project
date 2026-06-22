@@ -14,6 +14,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("confirmRemoveCommitteeBtn").addEventListener("click", confirmRemoveCommittee);
     // Isabelle McLean — Wires up the Add a single committee button
     document.getElementById("addCommitteeBtn").addEventListener("click", addSingleCommittee);
+    // Isabelle McLean — Wires up the password-change buttons
+    document.getElementById("changeStaffPassBtn").addEventListener("click", function() { changePassword("staff"); });
+    document.getElementById("changeAdminPassBtn").addEventListener("click", function() { changePassword("admin"); });
     document.getElementById("clearCommitteeSignupsBtn").addEventListener("click", clearCommitteeSignups);
     document.getElementById("clearCommitteesBtn").addEventListener("click", clearAllCommittees);
     document.getElementById("uploadMedkitsBtn").addEventListener("click", uploadMedkitsCSV);
@@ -585,6 +588,54 @@ function uploadCommitteeOptionsCSV() {
                 alert(committees.length + " committee option(s) uploaded. All previous student selections have been cleared.");
                 input.value = "";
             });
+    });
+}
+
+// Isabelle McLean — Changes the staff or admin password; requires the current admin password to authorize
+function changePassword(which) {
+    var currentId = which === "staff" ? "staffCurrentAdminPass" : "adminCurrentAdminPass";
+    var newId     = which === "staff" ? "staffNewPass" : "adminNewPass";
+    var statusId  = which === "staff" ? "staffPassStatus" : "adminPassStatus";
+
+    var currentAdminPassword = document.getElementById(currentId).value;
+    var newPassword = document.getElementById(newId).value;
+    var status = document.getElementById(statusId);
+
+    if (!currentAdminPassword) {
+        status.textContent = "Enter the current admin password to confirm.";
+        status.style.color = "#d93025";
+        return;
+    }
+    if (!newPassword || newPassword.length < 4) {
+        status.textContent = "New password must be at least 4 characters.";
+        status.style.color = "#d93025";
+        return;
+    }
+
+    status.textContent = "Saving…";
+    status.style.color = "#888";
+
+    fetch("/api/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ which: which, currentAdminPassword: currentAdminPassword, newPassword: newPassword })
+    })
+    .then(function(r) { return r.json().then(function(body) { return { ok: r.ok, body: body }; }); })
+    .then(function(res) {
+        if (!res.ok) {
+            status.textContent = res.body.error || "Could not update password.";
+            status.style.color = "#d93025";
+            return;
+        }
+        document.getElementById(currentId).value = "";
+        document.getElementById(newId).value = "";
+        status.textContent = "✓ " + (which === "staff" ? "Staff" : "Admin") + " password updated.";
+        status.style.color = "#5a9a20";
+        setTimeout(function() { status.textContent = ""; }, 3500);
+    })
+    .catch(function() {
+        status.textContent = "Connection error. Please try again.";
+        status.style.color = "#d93025";
     });
 }
 

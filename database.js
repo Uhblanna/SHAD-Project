@@ -361,6 +361,14 @@ db.serialize(() => {
         )
     `);
 
+    // Isabelle McLean — App settings: simple key/value store; currently holds the staff + admin passwords so they can be changed from the admin panel
+    db.run(`
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    `);
+
     // Isabelle McLean — Electives: admin-created sign-up opportunities separate from the main committees
     db.run(`
         CREATE TABLE IF NOT EXISTS electives (
