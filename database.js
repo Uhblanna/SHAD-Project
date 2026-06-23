@@ -248,6 +248,11 @@ db.serialize(() => {
         )
     `);
 
+    // Migrate staff: individual login credentials
+    db.run(`ALTER TABLE staff ADD COLUMN username TEXT NOT NULL DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE staff ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''`, function() {});
+    db.run(`ALTER TABLE staff ADD COLUMN access_revoked INTEGER NOT NULL DEFAULT 0`, function() {});
+
     // Migrate existing databases: add checked_in_by to medkits
     db.run(`ALTER TABLE medkits ADD COLUMN checked_in_by TEXT NOT NULL DEFAULT ''`, function() {});
 
