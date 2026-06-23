@@ -149,6 +149,7 @@ function closeReceiptModal() {
     document.getElementById('receiptModal').style.display = 'none';
     document.getElementById('receiptPurchaserInput').value = '';
     document.getElementById('receiptCostInput').value = '';
+    document.getElementById('receiptDescInput').value = '';
     document.getElementById('receiptImageInput').value = '';
     var msg = document.getElementById('receiptModalMsg');
     msg.style.display = 'none';
@@ -158,6 +159,7 @@ function closeReceiptModal() {
 function submitReceipt() {
     var purchaser = document.getElementById('receiptPurchaserInput').value.trim();
     var cost      = document.getElementById('receiptCostInput').value.trim();
+    var desc      = document.getElementById('receiptDescInput').value.trim();
     var fileInput = document.getElementById('receiptImageInput');
     var file      = fileInput.files[0];
     var msg       = document.getElementById('receiptModalMsg');
@@ -169,6 +171,7 @@ function submitReceipt() {
     var fd = new FormData();
     fd.append('purchased_by', purchaser);
     fd.append('total_cost', cost);
+    fd.append('description', desc);
     if (file) fd.append('receipt_image', file);
 
     btn.disabled = true;
