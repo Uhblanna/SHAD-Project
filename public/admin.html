@@ -22,53 +22,57 @@
 <script src="/public/js/admin.js" defer></script>
 
 <style>
-/* Isabelle McLean — Committee admin: grouped sub-sections so upload / add / remove / danger are visually distinct */
+/* Committee admin: grouped sub-sections — upload / add / remove / danger */
 .committee-group-box {
-    padding: 16px; border: 1px solid #ececec; border-radius: 12px; background: #fafafa; margin-bottom: 14px;
+    padding: 18px;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    background: #f7fafc;
+    margin-bottom: 14px;
 }
 .committee-group-box:last-child { margin-bottom: 0; }
 .committee-group-title {
-    font-size: 12px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
-    color: #146ff8; margin: 0 0 4px;
+    font-size: 12px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+    color: #146ff8; margin: 0 0 6px;
 }
-.committee-group-hint { font-size: 13px; color: #888; line-height: 1.5; margin: 0 0 10px; }
+.committee-group-hint { font-size: 13px; color: #888; line-height: 1.5; margin: 0 0 12px; }
 .committee-group-status { font-size: 13px; font-weight: 700; min-height: 18px; margin: 8px 0 0; }
-.committee-danger-box { background: #fff6f6; border-color: #f6dada; }
+.committee-danger-box { background: #fff6f6; border-color: #fecaca; }
 .committee-danger-box .committee-group-title { color: #d93025; }
 
-/* Isabelle McLean — Campus Maps card: a label spot + an upload spot per map */
+/* Campus Maps card */
 .map-upload-grid { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
 .map-upload-row {
-    padding: 14px; border: 1px solid #ececec; border-radius: 12px; background: #fafafa;
+    padding: 16px; border: 1px solid #e5e5e5; border-radius: 14px; background: #f7fafc;
 }
 .map-add {
-    padding: 16px; border: 2px dashed #cfe0ff; border-radius: 12px; background: #f5f9ff;
-    display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px;
+    padding: 18px; border: 2px dashed #bcd4fb; border-radius: 14px; background: #f0f6ff;
+    display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px;
 }
 .map-field-label { font-size: 12px; font-weight: 800; letter-spacing: 0.3px; color: #888; text-transform: uppercase; }
 .map-label-input {
-    padding: 10px 12px; border: 2px solid #e5e5e5; border-radius: 10px;
-    font-family: 'Archivo', sans-serif; font-size: 14px; font-weight: 700; color: #111; outline: none;
+    padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 14px; background: #fff;
+    font-family: 'Archivo', sans-serif; font-size: 15px; font-weight: 600; color: #111; outline: none;
+    transition: border-color 0.2s;
 }
 .map-label-input:focus { border-color: #146ff8; }
 .map-upload-status { margin: 2px 0 0; min-height: 16px; }
-.map-list-head { font-size: 12px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #aaa; margin-bottom: 8px; }
+.map-list-head { font-size: 12px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #aaa; margin-bottom: 10px; }
 .map-row-main { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .map-row-main .map-label-input { flex: 1; min-width: 160px; }
-/* Arrange (up/down) controls — 3-class selector to outrank shad-base's .admin-card button:not(.danger-btn) */
 .map-arrange { display: flex; flex-direction: column; gap: 3px; flex: 0 0 auto; }
 .map-row-main .map-arrange .map-move-btn {
     width: 28px; height: 19px; padding: 0; margin: 0;
     background: #e7eefb; color: #146ff8; border: none; border-radius: 6px;
-    font-size: 10px; line-height: 1; cursor: pointer;
+    font-size: 10px; line-height: 1; cursor: pointer; box-shadow: none;
+    transform: none !important;
 }
 .map-row-main .map-arrange .map-move-btn:hover { background: #d6e4fd; }
 .map-row-main .map-arrange .map-move-btn:disabled { opacity: 0.3; cursor: default; }
-/* Override the admin-card defaults (full-width buttons / grey inputs) for the maps UI */
 .map-add .map-label-input, .map-add .map-upload-input { margin-bottom: 0; width: 100%; }
 .map-row-main .map-label-input { margin-bottom: 0; }
 .map-row-main .map-save-btn, .map-row-main .map-remove-btn {
-    width: auto; flex: 0 0 auto; margin-bottom: 0; padding: 9px 16px; border-radius: 9px; font-size: 13px;
+    width: auto; flex: 0 0 auto; margin-bottom: 0; padding: 10px 16px; border-radius: 12px; font-size: 13px; box-shadow: none; transform: none !important;
 }
 </style>
 </head>
@@ -95,553 +99,547 @@
     </nav>
 </header>
 
-<section class="admin-page">
-
-    <div class="page-header">
-        <p class="mini-title">ADMIN TOOLS</p>
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
-            <h2>Admin Panel</h2>
-            <div style="display:flex; gap:10px;">
-                <button onclick="expandAllPanels()" style="padding:9px 18px; background:#f0f0f0; color:#333; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">Expand All</button>
-                <button onclick="collapseAllPanels()" style="padding:9px 18px; background:#f0f0f0; color:#333; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">Collapse All</button>
-            </div>
-        </div>
-        <p class="subtext">
-            Clear system issue tickets, upload staff contacts, and upload the staff schedule.
-        </p>
+<!-- Receipt image lightbox — lives at body level so it works across all screens -->
+<div id="receiptLightbox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
+    <div style="display:flex; gap:12px; margin-bottom:4px;">
+        <a id="receiptDownloadLink" download style="padding:10px 22px; background:#146ff8; color:white; border-radius:12px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:800; text-decoration:none; cursor:pointer;">⬇ Download</a>
+        <button onclick="closeReceiptLightbox()" style="padding:10px 22px; background:#fff; color:#111; border:none; border-radius:12px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:800; cursor:pointer;">✕ Close</button>
     </div>
+    <img id="receiptLightboxImg" src="" alt="Receipt" style="max-width:90vw; max-height:80vh; border-radius:12px; object-fit:contain; background:#fff;">
+    <p id="receiptLightboxLabel" style="color:rgba(255,255,255,0.7); font-size:13px; font-weight:700;"></p>
+</div>
 
-    <div class="admin-grid">
+<div class="admin-hub">
 
-        <!-- Needs Attention: acknowledged "needs attention" observations escalated from student hub -->
-        <div class="admin-card admin-card-wide" id="needsAttentionCard">
-            <div class="admin-card-head">
-                <h3 style="color:#d12c2c;">⚠ Needs Attention</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
+    <!-- ── SIDEBAR ── -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <button class="admin-menu-btn" id="adminMenuBtn">☰</button>
+        <div class="admin-sidebar-title">Admin</div>
+
+        <button class="admin-nav active" data-screen="needsAttentionScreen">
+            <span>⚠</span><span class="admin-nav-label">Needs Attention</span>
+        </button>
+        <button class="admin-nav" data-screen="csvUploadsScreen">
+            <span>📂</span><span class="admin-nav-label">CSV Uploads</span>
+        </button>
+        <button class="admin-nav" data-screen="shoppingScreen">
+            <span>🛒</span><span class="admin-nav-label">Shopping</span>
+        </button>
+        <button class="admin-nav" data-screen="todoScreen">
+            <span>✓</span><span class="admin-nav-label">To-Do</span>
+        </button>
+        <button class="admin-nav" data-screen="committeesScreen">
+            <span>🏅</span><span class="admin-nav-label">Committees</span>
+        </button>
+        <button class="admin-nav" data-screen="loginsScreen">
+            <span>🔑</span><span class="admin-nav-label">Log ins</span>
+        </button>
+        <button class="admin-nav" data-screen="systemIssuesScreen">
+            <span>🚨</span><span class="admin-nav-label">System Issues</span>
+        </button>
+    </aside>
+
+    <!-- ── MAIN CONTENT ── -->
+    <main class="admin-main">
+
+        <!-- ════════════════ NEEDS ATTENTION ════════════════ -->
+        <div id="needsAttentionScreen" class="admin-screen active">
+            <div class="admin-screen-header">
+                <h2>⚠ Needs Attention</h2>
                 <p>Acknowledged "Needs Attention" observations escalated from the student hub. These are hidden from staff view.</p>
-                <div id="adminNeedsAttentionList" style="margin-top:16px; display:flex; flex-direction:column; gap:10px; min-height:32px;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
-                </div>
             </div>
-        </div>
-
-        <!-- Daily To-Do List management — only accessible from admin -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Daily Staff To-Do List</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Add tasks for staff to complete today. Staff will see this list in the <strong>Tools</strong> section and can check off items with their name.</p>
-
-                <div class="button-row" style="margin-bottom:12px;">
-                    <input id="todoInput" type="text" placeholder="E.g. Place masking tape on floor before 10am"
-                        style="flex:1; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none;"
-                        onkeydown="if(event.key==='Enter') addTodoItem()">
-                    <button onclick="addTodoItem()">Add Task</button>
-                </div>
-
-                <div id="adminTodoList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; min-height:32px;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
-                </div>
-
-                <button class="danger-btn" onclick="clearAllTodos()">Clear Entire To-Do List</button>
-            </div>
-        </div>
-
-        <!-- Staff task completion breakdown — shows how many tasks each person has done -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Staff Task Completion</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>A breakdown of completed tasks by staff member across all days.</p>
-                <div id="staffBreakdown" style="display:flex; flex-direction:column; gap:10px; margin-top:14px; margin-bottom:16px;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
-                </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button onclick="exportTaskCompletion()" style="padding:10px 20px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer;">Export CSV</button>
-                    <button class="danger-btn" onclick="clearTaskHistory()">Clear Completion History</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Issue Tickets</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Clear all submitted System Issues tickets.</p>
-
-                <div id="ticketList" class="ticket-list"></div>
-
-                <button id="clearTicketsBtn" class="danger-btn">Clear All Tickets</button>
-            </div>
-        </div>
-
-        <!-- Shift Swap Requests — admin approval section -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Shift Swap Requests <span id="swapAdminBadge" style="display:none; background:#146ff8; color:#fff; font-size:11px; font-weight:800; padding:2px 8px; border-radius:20px; margin-left:8px;"></span></h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Review and approve or deny pending shift swap requests submitted by staff. Approved swaps auto-clear at midnight.</p>
-                <div id="swapAdminList" style="display:flex; flex-direction:column; gap:10px; margin-top:14px; margin-bottom:16px;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Isabelle McLean — Shopping list admin: view, export, and clear the shared shopping request list -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Shopping Requests</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>View and manage the shared shopping request list. Export to CSV or clear all items.</p>
-                <div id="adminShoppingList" style="display:flex; flex-direction:column; gap:8px; margin-top:14px; margin-bottom:16px; min-height:32px;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
-                </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button onclick="exportShoppingCSV()" style="padding:10px 20px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer;">Export CSV</button>
-                    <button class="danger-btn" onclick="clearAllShopping()">Clear Entire List</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Purchase Receipts: uploaded from the Shopping page; admin can view, download, and delete -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Purchase Receipts</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>All receipts uploaded by staff after shopping trips. Click "View" to open the image; use "Download All" to save every receipt as a zip.</p>
-
-                <div id="adminReceiptsList" style="margin-top:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:10px; min-height:32px;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
-                </div>
-
-                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                    <span id="adminReceiptsTotal" style="font-size:14px; font-weight:800; color:#111;"></span>
-                    <button id="downloadAllReceiptsBtn" onclick="downloadAllReceipts()" style="padding:10px 20px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer;">⬇ Download All</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Receipt image lightbox -->
-        <div id="receiptLightbox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
-            <div style="display:flex; gap:12px; margin-bottom:4px;">
-                <a id="receiptDownloadLink" download style="padding:10px 22px; background:#146ff8; color:white; border-radius:12px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:800; text-decoration:none; cursor:pointer;">⬇ Download</a>
-                <button onclick="closeReceiptLightbox()" style="padding:10px 22px; background:#fff; color:#111; border:none; border-radius:12px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:800; cursor:pointer;">✕ Close</button>
-            </div>
-            <img id="receiptLightboxImg" src="" alt="Receipt" style="max-width:90vw; max-height:80vh; border-radius:12px; object-fit:contain; background:#fff;">
-            <p id="receiptLightboxLabel" style="color:rgba(255,255,255,0.7); font-size:13px; font-weight:700;"></p>
-        </div>
-
-        <!-- Isabelle McLean — Committee enrollment window: admin sets the open and close dates here; student portal reads them from the API -->
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Committee Sign-Up Window</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Set when students can sign up for committees. The student portal enforces these dates automatically.</p>
-
-                <div style="display:flex; flex-direction:column; gap:14px; margin:16px 0;">
-                    <div class="enroll-row" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                        <label style="font-size:13px; font-weight:700; color:#555; min-width:80px;">Opens:</label>
-                        <input type="date" id="enrollOpenDate"
-                            style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none;">
-                        <input type="time" id="enrollOpenTime"
-                            style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; width:130px;">
+            <div class="admin-cards">
+                <div class="admin-card" id="needsAttentionCard">
+                    <div id="adminNeedsAttentionList" style="display:flex; flex-direction:column; gap:10px; min-height:32px;">
+                        <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
                     </div>
-                    <div class="enroll-row" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                        <label style="font-size:13px; font-weight:700; color:#555; min-width:80px;">Closes:</label>
-                        <input type="date" id="enrollCloseDate"
-                            style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none;">
-                        <input type="time" id="enrollCloseTime"
-                            style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; width:130px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════ CSV UPLOADS ════════════════ -->
+        <div id="csvUploadsScreen" class="admin-screen">
+            <div class="admin-screen-header">
+                <h2>📂 CSV Uploads</h2>
+                <p>Upload and manage all data files for students, staff, schedules, med kits, and campus maps.</p>
+            </div>
+            <div class="admin-cards">
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Upload Student CSV</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Upload the SHAD application export CSV directly — all fields are captured automatically. Required columns: <strong>FirstName, LastName</strong>.</p>
+                        <p style="font-size:12px; color:#888; font-weight:600; margin:8px 0 4px;">Recognized columns:</p>
+                        <p style="font-size:12px; color:#aaa; font-weight:500; line-height:1.7; margin:0 0 12px;">Campus · AppID · LastName · FirstName · PrefName · Gender · Self-ID Gender · Pronoun · Self-ID Pronoun · DOB · Age Start Prog · Notes for PD to be aware of · City · Prov · Email · Phone · School · Grade · Ethnicity · Self-Desc Ethnicity · Indig? · Self-Des Indig. · Language Pref · Parent First Name · Parent Last Name · Relationship To Applicant · Parent Email Address · Parent Phone # · 2SLGBTQ+ · City Size · Region · Hoodie Size · Dietary Restrictions And/Or Intolerances · Allergies · Epipen?</p>
+                        <input id="studentCsvInput" type="file" accept=".csv">
+                        <div class="button-row">
+                            <button id="uploadStudentsReplaceBtn">Replace Students</button>
+                            <button id="uploadStudentsAddBtn">Add Students</button>
+                        </div>
+                        <div class="button-row">
+                            <button id="exportStudentsBtn">Export Students CSV</button>
+                        </div>
+                        <button id="clearStudentsAdminBtn" class="danger-btn">Clear All Students</button>
                     </div>
                 </div>
 
-                <div class="button-row">
-                    <button id="saveEnrollmentWindowBtn">Save Sign-Up Window</button>
-                </div>
-                <p class="example">Students will not be able to sign up before the open date or after the close date.</p>
-            </div>
-        </div>
-
-        <!-- Admin password management -->
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Passwords</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p class="committee-group-hint" style="margin-bottom:14px;">Changing the admin password takes effect immediately. You must enter the current admin password to confirm.</p>
-
-                <!-- Change admin password -->
-                <div class="committee-group-box">
-                    <p class="committee-group-title">Admin password</p>
-                    <p class="committee-group-hint">Gates access to this admin panel (the second password layer).</p>
-                    <input type="password" id="adminCurrentAdminPass" placeholder="Current admin password" autocomplete="off">
-                    <input type="password" id="adminNewPass" placeholder="New admin password" autocomplete="new-password" style="margin-top:8px;">
-                    <button id="changeAdminPassBtn" style="width:100%; margin-top:10px;">Update Admin Password</button>
-                    <p class="committee-group-status" id="adminPassStatus"></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Isabelle McLean — Upload Committee Options CSV: populates the committees students can sign up for on the student portal -->
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Manage Committees</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-
-                <!-- Isabelle McLean — Group 1: bulk upload from CSV (full replace) -->
-                <div class="committee-group-box">
-                    <p class="committee-group-title">Bulk upload from CSV</p>
-                    <p class="committee-group-hint">Columns required: <strong>Name, Description</strong>. Replaces the entire list and clears all student selections.</p>
-                    <input id="committeeCsvInput" type="file" accept=".csv">
-                    <button id="uploadCommitteeBtn" style="width:100%; margin-top:10px;">Upload &amp; Replace All</button>
-                    <p class="committee-group-hint" style="margin-top:8px;">Example: <em>Shad Red Deer News, Daily news and announcements for the cohort</em></p>
-                </div>
-
-                <!-- Isabelle McLean — Group 2: add a single committee without re-uploading the whole CSV -->
-                <div class="committee-group-box">
-                    <p class="committee-group-title">Add a single committee</p>
-                    <p class="committee-group-hint">Adds one committee without affecting the existing list or student selections.</p>
-                    <input type="text" id="newCommitteeName" placeholder="Committee name" maxlength="80">
-                    <input type="text" id="newCommitteeDesc" placeholder="Description (optional)" maxlength="200" style="margin-top:8px;">
-                    <button id="addCommitteeBtn" style="width:100%; margin-top:10px;">+ Add Committee</button>
-                    <p class="committee-group-status" id="addCommitteeStatus"></p>
-                </div>
-
-                <!-- Isabelle McLean — Group 3: remove a single committee -->
-                <div class="committee-group-box">
-                    <p class="committee-group-title">Remove a single committee</p>
-                    <p class="committee-group-hint">Removes one committee and clears its sign-ups, leaving the rest intact.</p>
-                    <button id="removeCommitteeBtn" style="width:100%;">Choose a Committee to Remove</button>
-                    <div id="removeCommitteePanel" style="display:none; margin-top:10px;">
-                        <select id="removeCommitteeSelect" style="margin-bottom:10px;">
-                            <option value="">Choose a committee...</option>
-                        </select>
-                        <button id="confirmRemoveCommitteeBtn" class="danger-btn" style="width:100%;">Remove Selected</button>
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Upload Room Numbers CSV</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>CSV columns required: <strong>FirstName, LastName, RoomNumber</strong>. Students are matched by first + last name.</p>
+                        <input id="roomCsvInput" type="file" accept=".csv">
+                        <div class="button-row">
+                            <button id="uploadRoomsBtn">Upload Room Numbers</button>
+                        </div>
+                        <p id="roomUploadStatus" style="font-size:13px;font-weight:700;min-height:18px;margin-top:6px;"></p>
+                        <p class="example">Example: Jane,Smith,204</p>
                     </div>
                 </div>
 
-                <!-- Isabelle McLean — Group 4: destructive bulk actions -->
-                <div class="committee-group-box committee-danger-box">
-                    <p class="committee-group-title">Danger zone</p>
-                    <button id="clearCommitteeSignupsBtn" class="danger-btn" style="width:100%;">Clear All Student Selections</button>
-                    <button id="clearCommitteesBtn" class="danger-btn" style="width:100%; margin-top:8px;">Clear All Committees</button>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Isabelle McLean — Electives: admin creates sign-up opportunities that appear above regular committees on the student portal; hidden when none exist -->
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Electives</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Add sign-up opportunities that appear on the student portal above the regular committees. Students can join as many as they like. The section is hidden from students until at least one elective exists.</p>
-
-                <label class="map-field-label" style="margin-top:10px;">Name</label>
-                <input type="text" id="newElectiveName" placeholder="e.g. Photography Workshop" maxlength="80">
-
-                <label class="map-field-label" style="margin-top:8px;">Description</label>
-                <input type="text" id="newElectiveDesc" placeholder="Brief description (optional)" maxlength="200">
-
-                <label class="map-field-label" style="margin-top:8px;">Max spots</label>
-                <input type="number" id="newElectiveCap" min="1" placeholder="Leave blank for unlimited">
-
-                <div class="button-row" style="margin-top:10px;">
-                    <button id="addElectiveBtn">Add Elective</button>
-                </div>
-                <p class="example" id="addElectiveStatus"></p>
-
-                <div class="map-list-head" style="margin-top:16px;">Current Electives</div>
-                <div id="electiveList">
-                    <p class="example">No electives yet.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Isabelle McLean — Upload Campus Maps: replaces the 4 map images shown on the student portal; accepts images or PDFs (PDF's first page is rendered to an image in the browser) -->
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Campus Maps</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Add as many campus maps as you like — each becomes a tab on the student portal. Images accept <strong>PNG, JPG, or PDF</strong> (the first page of a PDF is used).</p>
-
-                <!-- Single upload point: label + image → Add Map -->
-                <div class="map-add">
-                    <label class="map-field-label">Label</label>
-                    <input type="text" id="newMapLabel" class="map-label-input" maxlength="40" placeholder="e.g. Whole Campus">
-                    <label class="map-field-label">Map image</label>
-                    <input type="file" id="newMapFile" class="map-upload-input" accept=".png,.jpg,.jpeg,.webp,.pdf">
-                    <div class="button-row"><button type="button" id="addMapBtn">Add Map</button></div>
-                    <p class="map-upload-status example" id="newMapStatus"></p>
-                </div>
-
-                <div class="map-list-head">Current maps</div>
-                <div id="mapList" class="map-upload-grid">
-                    <p class="example">Loading maps…</p>
-                </div>
-                <button type="button" id="clearAllMapsBtn" class="danger-btn">Clear All Maps</button>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Upload Schedule CSV</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>
-                    Upload the PA weekly schedule CSV exported from Excel.
-                    The file should include rows like <strong>Sunday 2026-07-05</strong>,
-                    followed by <strong>Time Block, Activity, PA1, PA2...</strong>
-                </p>
-                <input id="scheduleCsvInput" type="file" accept=".csv">
-                <div class="button-row">
-                    <button id="uploadScheduleBtn">Upload Schedule</button>
-                </div>
-                <button id="clearScheduleBtn" class="danger-btn">Clear Schedule</button>
-                <p class="example">Example format: Week 1 Schedule, then Sunday 2026-07-05, then Time Block, Activity, PA1, PA2...</p>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>SHAD 2026 Program Schedule</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>
-                    Upload one CSV per week. The file should use the timetable grid format:
-                    first row is day names, first column is the time, cells contain activity names.
-                    Each upload replaces any existing data for that week label.
-                </p>
-                <label style="display:block;font-weight:700;margin-bottom:6px;">Week Label</label>
-                <input id="shadScheduleWeekLabel" type="text" placeholder="e.g. Week 0, Week 1…"
-                       style="width:100%;max-width:280px;padding:10px 14px;border:1px solid #e5e5e5;border-radius:10px;font-family:'Archivo',sans-serif;font-size:14px;margin-bottom:12px;">
-                <input id="shadScheduleCsvInput" type="file" accept=".csv">
-                <div class="button-row">
-                    <button id="uploadShadScheduleBtn">Upload Week</button>
-                </div>
-                <button id="clearShadScheduleBtn" class="danger-btn">Clear All SHAD Schedule Data</button>
-                <p class="example">CSV format: first row = day names (Sunday…Saturday), first column = time (6:00, 7:00…), cells = activity text.</p>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Upload Staff CSV</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>CSV columns required: <strong>Name, Email, Slack</strong></p>
-
-                <input id="staffCsvInput" type="file" accept=".csv">
-                <div class="button-row">
-                    <button id="uploadStaffBtn">Upload Staff</button>
-                </div>
-                <button id="clearStaffBtn" class="danger-btn">Clear Staff</button>
-                <p class="example">Example: Sarah Kim,sarah@email.com,https://slack.com/...</p>
-            </div>
-        </div>
-
-        <!-- Staff Credentials: set usernames, passwords, and revoke access -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Staff Login Credentials</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Set a username and password for each staff member so they can log in individually. Revoke access instantly if needed.</p>
-                <div id="staffCredentialsList" style="margin-top:16px; display:flex; flex-direction:column; gap:10px;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading staff...</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Upload Student CSV</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Upload the SHAD application export CSV directly — all fields are captured automatically. Required columns: <strong>FirstName, LastName</strong>. All other columns below are stored if present.</p>
-                <p style="font-size:12px; color:#888; font-weight:600; margin:8px 0 4px;">Recognized columns:</p>
-                <p style="font-size:12px; color:#aaa; font-weight:500; line-height:1.7; margin:0 0 12px;">Campus · AppID · LastName · FirstName · PrefName · Gender · Self-ID Gender · Pronoun · Self-ID Pronoun · DOB · Age Start Prog · Notes for PD to be aware of · City · Prov · Email · Phone · School · Grade · Ethnicity · Self-Desc Ethnicity · Indig? · Self-Des Indig. · Language Pref · Parent First Name · Parent Last Name · Relationship To Applicant · Parent Email Address · Parent Phone # · 2SLGBTQ+ · City Size · Region · Hoodie Size · Dietary Restrictions And/Or Intolerances · Allergies · Epipen?</p>
-
-                <input id="studentCsvInput" type="file" accept=".csv">
-
-                <div class="button-row">
-                    <button id="uploadStudentsReplaceBtn">Replace Students</button>
-                    <button id="uploadStudentsAddBtn">Add Students</button>
-                </div>
-
-                <div class="button-row">
-                    <button id="exportStudentsBtn">Export Students CSV</button>
-                </div>
-
-                <button id="clearStudentsAdminBtn" class="danger-btn">Clear All Students</button>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Upload Room Numbers CSV</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>CSV columns required: <strong>FirstName, LastName, RoomNumber</strong>. Students are matched by first + last name.</p>
-                <input id="roomCsvInput" type="file" accept=".csv">
-                <div class="button-row">
-                    <button id="uploadRoomsBtn">Upload Room Numbers</button>
-                </div>
-                <p id="roomUploadStatus" style="font-size:13px;font-weight:700;min-height:18px;margin-top:6px;"></p>
-                <p class="example">Example: Jane,Smith,204</p>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <div class="admin-card-head">
-                <h3>Upload Med Kits CSV</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-
-            <div class="admin-card-body">
-                <p>CSV columns required: <strong>Name, Description</strong> — QR codes are generated automatically.</p>
-
-                <input id="medkitCsvInput" type="file" accept=".csv">
-                <div class="button-row">
-                    <button id="uploadMedkitsBtn">Upload Med Kits</button>
-                </div>
-                <button id="clearMedkitsBtn" class="danger-btn">Clear Med Kits</button>
-                <p class="example">Example: Main Med Kit,General first aid supplies for field trips</p>
-            </div>
-        </div>
-
-        <!-- Upload Team Assignment CSVs — one CSV per team type, names matched against student DB -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Upload Team Assignment CSVs</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Upload one CSV per team type. Each CSV lists a team name, then student first and last names below it — repeat for each team. Students are matched by name against the database.</p>
-
-                <div style="display:flex; flex-direction:column; gap:18px; margin:18px 0;">
-                    <!-- Design Team -->
-                    <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
-                        <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">Design Team CSV</div>
-                        <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: team letter/name on its own line, then student names below it.</p>
-                        <p class="example" style="margin-bottom:8px;">A<br>Jane Smith<br>Bob Lee<br>B<br>Alice Chen</p>
-                        <input id="csvDesignInput" type="file" accept=".csv,.txt">
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Upload Med Kits CSV</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                     </div>
-
-                    <!-- Req Team -->
-                    <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
-                        <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">Rec Team CSV</div>
-                        <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: team name on its own line, then student names below it.</p>
-                        <p class="example" style="margin-bottom:8px;">Rec Team A<br>Jane Smith<br>B<br>Bob Lee</p>
-                        <input id="csvReqInput" type="file" accept=".csv,.txt">
-                    </div>
-
-                    <!-- House Team -->
-                    <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
-                        <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">House Team CSV</div>
-                        <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: house number/name on its own line, then student names below it.</p>
-                        <p class="example" style="margin-bottom:8px;">House 1<br>Jane Smith<br>House 2<br>Bob Lee<br>Alice Chen</p>
-                        <input id="csvHouseInput" type="file" accept=".csv,.txt">
+                    <div class="admin-card-body">
+                        <p>CSV columns required: <strong>Name, Description</strong> — QR codes are generated automatically.</p>
+                        <input id="medkitCsvInput" type="file" accept=".csv">
+                        <div class="button-row">
+                            <button id="uploadMedkitsBtn">Upload Med Kits</button>
+                        </div>
+                        <button id="clearMedkitsBtn" class="danger-btn">Clear Med Kits</button>
+                        <p class="example">Example: Main Med Kit,General first aid supplies for field trips</p>
                     </div>
                 </div>
 
-                <button id="csvApplyBtn" onclick="applyTeamCSVs()" style="padding:12px 28px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Upload &amp; Apply Teams</button>
-                <p id="csvStatus" style="margin-top:10px; font-size:13px; font-weight:700; color:#5a9a20; min-height:18px;"></p>
-                <div id="csvPreview" style="margin-top:12px; font-size:13px; font-weight:600; color:#555; white-space:pre-wrap; font-family:'Archivo',sans-serif;"></div>
-            </div>
-        </div>
-
-        <!-- Rename Req Teams — edit existing req team names without re-uploading a CSV -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Rename Rec Teams</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Rename any existing Rec Team without touching the CSV. Every student on that team is updated instantly.</p>
-                <div id="reqTeamRenameList" style="display:flex; flex-direction:column; gap:8px; margin:16px 0; min-height:32px;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading…</p>
-                </div>
-                <button onclick="loadReqTeamRenameList()" style="padding:7px 16px; background:#e7eefb; color:#146ff8; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">↺ Refresh</button>
-            </div>
-        </div>
-
-        <!-- Bulk Team Assignment — mass-select students and set their Design / Req / House teams -->
-        <div class="admin-card admin-card-wide">
-            <div class="admin-card-head">
-                <h3>Bulk Team Assignment</h3>
-                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-            </div>
-            <div class="admin-card-body">
-                <p>Select students and assign them to Design Team, Rec Team, and/or House Team in one go. Leave a field blank to leave that team unchanged.</p>
-
-                <!-- Team input fields -->
-                <div style="display:flex; flex-wrap:wrap; gap:14px; margin:18px 0;">
-                    <div style="flex:1; min-width:160px;">
-                        <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">Design Team</label>
-                        <input id="bulkDesignTeam" type="text" placeholder="e.g. Design Team A"
-                            style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Upload Schedule CSV</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                     </div>
-                    <div style="flex:1; min-width:160px;">
-                        <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">Rec Team</label>
-                        <input id="bulkReqTeam" type="text" placeholder="e.g. Rec Team B"
-                            style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
-                    </div>
-                    <div style="flex:1; min-width:160px;">
-                        <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">House Team</label>
-                        <input id="bulkHouseTeam" type="text" placeholder="e.g. House 1"
-                            style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
+                    <div class="admin-card-body">
+                        <p>Upload the PA weekly schedule CSV exported from Excel. The file should include rows like <strong>Sunday 2026-07-05</strong>, followed by <strong>Time Block, Activity, PA1, PA2...</strong></p>
+                        <input id="scheduleCsvInput" type="file" accept=".csv">
+                        <div class="button-row">
+                            <button id="uploadScheduleBtn">Upload Schedule</button>
+                        </div>
+                        <button id="clearScheduleBtn" class="danger-btn">Clear Schedule</button>
                     </div>
                 </div>
 
-                <!-- Select all / deselect all controls -->
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
-                    <button onclick="bulkSelectAll()" style="padding:7px 16px; background:#e7eefb; color:#146ff8; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Select All</button>
-                    <button onclick="bulkDeselectAll()" style="padding:7px 16px; background:#f0f0f0; color:#555; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Deselect All</button>
-                    <span id="bulkSelectionCount" style="font-size:13px; font-weight:700; color:#888;">0 selected</span>
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>SHAD 2026 Program Schedule</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Upload one CSV per week. First row = day names, first column = time, cells = activity names. Each upload replaces data for that week label.</p>
+                        <label style="display:block;font-weight:700;margin-bottom:6px;">Week Label</label>
+                        <input id="shadScheduleWeekLabel" type="text" placeholder="e.g. Week 0, Week 1…" style="width:100%;max-width:280px;padding:10px 14px;border:1px solid #e5e5e5;border-radius:10px;font-family:'Archivo',sans-serif;font-size:14px;margin-bottom:12px;">
+                        <input id="shadScheduleCsvInput" type="file" accept=".csv">
+                        <div class="button-row">
+                            <button id="uploadShadScheduleBtn">Upload Week</button>
+                        </div>
+                        <button id="clearShadScheduleBtn" class="danger-btn">Clear All SHAD Schedule Data</button>
+                    </div>
                 </div>
 
-                <!-- Student list with checkboxes -->
-                <div id="bulkStudentList" style="display:flex; flex-direction:column; gap:6px; max-height:340px; overflow-y:auto; border:2px solid #f0f0f0; border-radius:12px; padding:10px; margin-bottom:16px; background:#fafafa;">
-                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading students…</p>
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Campus Maps</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Add as many campus maps as you like — each becomes a tab on the student portal. Accepts <strong>PNG, JPG, or PDF</strong>.</p>
+                        <div class="map-add">
+                            <label class="map-field-label">Label</label>
+                            <input type="text" id="newMapLabel" class="map-label-input" maxlength="40" placeholder="e.g. Whole Campus">
+                            <label class="map-field-label">Map image</label>
+                            <input type="file" id="newMapFile" class="map-upload-input" accept=".png,.jpg,.jpeg,.webp,.pdf">
+                            <div class="button-row"><button type="button" id="addMapBtn">Add Map</button></div>
+                            <p class="map-upload-status example" id="newMapStatus"></p>
+                        </div>
+                        <div class="map-list-head">Current maps</div>
+                        <div id="mapList" class="map-upload-grid"><p class="example">Loading maps…</p></div>
+                        <button type="button" id="clearAllMapsBtn" class="danger-btn">Clear All Maps</button>
+                    </div>
                 </div>
 
-                <button id="bulkApplyBtn" onclick="bulkApplyTeams()" style="padding:12px 28px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Apply to Selected</button>
-                <p id="bulkStatus" style="margin-top:10px; font-size:13px; font-weight:700; color:#5a9a20; min-height:18px;"></p>
             </div>
         </div>
-    </div>
 
-</section>
+        <!-- ════════════════ SHOPPING ════════════════ -->
+        <div id="shoppingScreen" class="admin-screen">
+            <div class="admin-screen-header">
+                <h2>🛒 Shopping</h2>
+                <p>Manage the shared shopping request list and view purchase receipts submitted by staff.</p>
+            </div>
+            <div class="admin-cards">
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Shopping Requests</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>View and manage the shared shopping request list. Export to CSV or clear all items.</p>
+                        <div id="adminShoppingList" style="display:flex; flex-direction:column; gap:8px; margin-top:14px; margin-bottom:16px; min-height:32px;">
+                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button onclick="exportShoppingCSV()" style="padding:10px 20px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer;">Export CSV</button>
+                            <button class="danger-btn" onclick="clearAllShopping()">Clear Entire List</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Purchase Receipts</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>All receipts uploaded by staff after shopping trips. Click "View" to open the image; use "Download All" to save every receipt.</p>
+                        <div id="adminReceiptsList" style="margin-top:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:10px; min-height:32px;">
+                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                            <span id="adminReceiptsTotal" style="font-size:14px; font-weight:800; color:#111;"></span>
+                            <button id="downloadAllReceiptsBtn" onclick="downloadAllReceipts()" style="padding:10px 20px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer;">⬇ Download All</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ════════════════ TO-DO ════════════════ -->
+        <div id="todoScreen" class="admin-screen">
+            <div class="admin-screen-header">
+                <h2>✓ To-Do</h2>
+                <p>Post daily tasks for staff and track who has completed them.</p>
+            </div>
+            <div class="admin-cards">
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Daily Staff To-Do List</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Add tasks for staff to complete today. Staff will see this list in the <strong>Daily Tasks</strong> section and can check off items with their name.</p>
+                        <div class="button-row" style="margin-bottom:12px;">
+                            <input id="todoInput" type="text" placeholder="E.g. Place masking tape on floor before 10am"
+                                style="flex:1; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none;"
+                                onkeydown="if(event.key==='Enter') addTodoItem()">
+                            <button onclick="addTodoItem()">Add Task</button>
+                        </div>
+                        <div id="adminTodoList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; min-height:32px;">
+                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                        </div>
+                        <button class="danger-btn" onclick="clearAllTodos()">Clear Entire To-Do List</button>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Staff Task Completion</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>A breakdown of completed tasks by staff member across all days.</p>
+                        <div id="staffBreakdown" style="display:flex; flex-direction:column; gap:10px; margin-top:14px; margin-bottom:16px;">
+                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button onclick="exportTaskCompletion()" style="padding:10px 20px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer;">Export CSV</button>
+                            <button class="danger-btn" onclick="clearTaskHistory()">Clear Completion History</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ════════════════ COMMITTEES ════════════════ -->
+        <div id="committeesScreen" class="admin-screen">
+            <div class="admin-screen-header">
+                <h2>🏅 Committees</h2>
+                <p>Manage committee sign-up windows, options, electives, and team assignments.</p>
+            </div>
+            <div class="admin-cards">
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Committee Sign-Up Window</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Set when students can sign up for committees. The student portal enforces these dates automatically.</p>
+                        <div style="display:flex; flex-direction:column; gap:14px; margin:16px 0;">
+                            <div class="enroll-row" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                <label style="font-size:13px; font-weight:700; color:#555; min-width:80px;">Opens:</label>
+                                <input type="date" id="enrollOpenDate" style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none;">
+                                <input type="time" id="enrollOpenTime" style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; width:130px;">
+                            </div>
+                            <div class="enroll-row" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                <label style="font-size:13px; font-weight:700; color:#555; min-width:80px;">Closes:</label>
+                                <input type="date" id="enrollCloseDate" style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none;">
+                                <input type="time" id="enrollCloseTime" style="padding:9px 12px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; width:130px;">
+                            </div>
+                        </div>
+                        <div class="button-row">
+                            <button id="saveEnrollmentWindowBtn">Save Sign-Up Window</button>
+                        </div>
+                        <p class="example">Students cannot sign up before the open date or after the close date.</p>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Manage Committees</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <div class="committee-group-box">
+                            <p class="committee-group-title">Bulk upload from CSV</p>
+                            <p class="committee-group-hint">Columns required: <strong>Name, Description</strong>. Replaces the entire list and clears all student selections.</p>
+                            <input id="committeeCsvInput" type="file" accept=".csv">
+                            <button id="uploadCommitteeBtn" style="width:100%; margin-top:10px;">Upload &amp; Replace All</button>
+                            <p class="committee-group-hint" style="margin-top:8px;">Example: <em>Shad Red Deer News, Daily news and announcements for the cohort</em></p>
+                        </div>
+                        <div class="committee-group-box">
+                            <p class="committee-group-title">Add a single committee</p>
+                            <p class="committee-group-hint">Adds one committee without affecting the existing list or student selections.</p>
+                            <input type="text" id="newCommitteeName" placeholder="Committee name" maxlength="80">
+                            <input type="text" id="newCommitteeDesc" placeholder="Description (optional)" maxlength="200" style="margin-top:8px;">
+                            <button id="addCommitteeBtn" style="width:100%; margin-top:10px;">+ Add Committee</button>
+                            <p class="committee-group-status" id="addCommitteeStatus"></p>
+                        </div>
+                        <div class="committee-group-box">
+                            <p class="committee-group-title">Remove a single committee</p>
+                            <p class="committee-group-hint">Removes one committee and clears its sign-ups, leaving the rest intact.</p>
+                            <button id="removeCommitteeBtn" style="width:100%;">Choose a Committee to Remove</button>
+                            <div id="removeCommitteePanel" style="display:none; margin-top:10px;">
+                                <select id="removeCommitteeSelect" style="margin-bottom:10px;"><option value="">Choose a committee...</option></select>
+                                <button id="confirmRemoveCommitteeBtn" class="danger-btn" style="width:100%;">Remove Selected</button>
+                            </div>
+                        </div>
+                        <div class="committee-group-box committee-danger-box">
+                            <p class="committee-group-title">Danger zone</p>
+                            <button id="clearCommitteeSignupsBtn" class="danger-btn" style="width:100%;">Clear All Student Selections</button>
+                            <button id="clearCommitteesBtn" class="danger-btn" style="width:100%; margin-top:8px;">Clear All Committees</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Electives</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Add sign-up opportunities that appear on the student portal above the regular committees. The section is hidden from students until at least one elective exists.</p>
+                        <label class="map-field-label" style="margin-top:10px;">Name</label>
+                        <input type="text" id="newElectiveName" placeholder="e.g. Photography Workshop" maxlength="80">
+                        <label class="map-field-label" style="margin-top:8px;">Description</label>
+                        <input type="text" id="newElectiveDesc" placeholder="Brief description (optional)" maxlength="200">
+                        <label class="map-field-label" style="margin-top:8px;">Max spots</label>
+                        <input type="number" id="newElectiveCap" min="1" placeholder="Leave blank for unlimited">
+                        <div class="button-row" style="margin-top:10px;">
+                            <button id="addElectiveBtn">Add Elective</button>
+                        </div>
+                        <p class="example" id="addElectiveStatus"></p>
+                        <div class="map-list-head" style="margin-top:16px;">Current Electives</div>
+                        <div id="electiveList"><p class="example">No electives yet.</p></div>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Upload Team Assignment CSVs</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Upload one CSV per team type. Each CSV lists a team name, then student names below it. Students are matched by name against the database.</p>
+                        <div style="display:flex; flex-direction:column; gap:18px; margin:18px 0;">
+                            <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
+                                <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">Design Team CSV</div>
+                                <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: team letter/name on its own line, then student names below it.</p>
+                                <p class="example" style="margin-bottom:8px;">A<br>Jane Smith<br>Bob Lee<br>B<br>Alice Chen</p>
+                                <input id="csvDesignInput" type="file" accept=".csv,.txt">
+                            </div>
+                            <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
+                                <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">Rec Team CSV</div>
+                                <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: team name on its own line, then student names below it.</p>
+                                <p class="example" style="margin-bottom:8px;">Rec Team A<br>Jane Smith<br>B<br>Bob Lee</p>
+                                <input id="csvReqInput" type="file" accept=".csv,.txt">
+                            </div>
+                            <div style="padding:14px; border:1px solid #ececec; border-radius:12px; background:#fafafa;">
+                                <div style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:8px;">House Team CSV</div>
+                                <p style="font-size:12px; font-weight:600; color:#aaa; margin-bottom:8px;">Format: house number/name on its own line, then student names below it.</p>
+                                <p class="example" style="margin-bottom:8px;">House 1<br>Jane Smith<br>House 2<br>Bob Lee<br>Alice Chen</p>
+                                <input id="csvHouseInput" type="file" accept=".csv,.txt">
+                            </div>
+                        </div>
+                        <button id="csvApplyBtn" onclick="applyTeamCSVs()" style="padding:12px 28px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Upload &amp; Apply Teams</button>
+                        <p id="csvStatus" style="margin-top:10px; font-size:13px; font-weight:700; color:#5a9a20; min-height:18px;"></p>
+                        <div id="csvPreview" style="margin-top:12px; font-size:13px; font-weight:600; color:#555; white-space:pre-wrap; font-family:'Archivo',sans-serif;"></div>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Rename Rec Teams</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Rename any existing Rec Team without touching the CSV. Every student on that team is updated instantly.</p>
+                        <div id="reqTeamRenameList" style="display:flex; flex-direction:column; gap:8px; margin:16px 0; min-height:32px;">
+                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading…</p>
+                        </div>
+                        <button onclick="loadReqTeamRenameList()" style="padding:7px 16px; background:#e7eefb; color:#146ff8; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">↺ Refresh</button>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Bulk Team Assignment</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Select students and assign them to Design Team, Rec Team, and/or House Team in one go. Leave a field blank to leave that team unchanged.</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:14px; margin:18px 0;">
+                            <div style="flex:1; min-width:160px;">
+                                <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">Design Team</label>
+                                <input id="bulkDesignTeam" type="text" placeholder="e.g. Design Team A" style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
+                            </div>
+                            <div style="flex:1; min-width:160px;">
+                                <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">Rec Team</label>
+                                <input id="bulkReqTeam" type="text" placeholder="e.g. Rec Team B" style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
+                            </div>
+                            <div style="flex:1; min-width:160px;">
+                                <label style="font-size:12px; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:#888; margin-bottom:6px; display:block;">House Team</label>
+                                <input id="bulkHouseTeam" type="text" placeholder="e.g. House 1" style="width:100%; padding:10px 14px; border:2px solid #e5e5e5; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:600; color:#111; outline:none; background:#fff;">
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
+                            <button onclick="bulkSelectAll()" style="padding:7px 16px; background:#e7eefb; color:#146ff8; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Select All</button>
+                            <button onclick="bulkDeselectAll()" style="padding:7px 16px; background:#f0f0f0; color:#555; border:none; border-radius:8px; font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Deselect All</button>
+                            <span id="bulkSelectionCount" style="font-size:13px; font-weight:700; color:#888;">0 selected</span>
+                        </div>
+                        <div id="bulkStudentList" style="display:flex; flex-direction:column; gap:6px; max-height:340px; overflow-y:auto; border:2px solid #f0f0f0; border-radius:12px; padding:10px; margin-bottom:16px; background:#fafafa;">
+                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading students…</p>
+                        </div>
+                        <button id="bulkApplyBtn" onclick="bulkApplyTeams()" style="padding:12px 28px; background:#146ff8; color:#fff; border:none; border-radius:10px; font-family:'Archivo',sans-serif; font-size:14px; font-weight:700; cursor:pointer; width:auto; margin-top:0;">Apply to Selected</button>
+                        <p id="bulkStatus" style="margin-top:10px; font-size:13px; font-weight:700; color:#5a9a20; min-height:18px;"></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ════════════════ LOG INS ════════════════ -->
+        <div id="loginsScreen" class="admin-screen">
+            <div class="admin-screen-header">
+                <h2>🔑 Log ins</h2>
+                <p>Upload staff, set individual usernames and passwords, and revoke access.</p>
+            </div>
+            <div class="admin-cards">
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Upload Staff CSV</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>CSV columns required: <strong>Name, Email, Slack</strong></p>
+                        <input id="staffCsvInput" type="file" accept=".csv">
+                        <div class="button-row">
+                            <button id="uploadStaffBtn">Upload Staff</button>
+                        </div>
+                        <button id="clearStaffBtn" class="danger-btn">Clear Staff</button>
+                        <p class="example">Example: Sarah Kim,sarah@email.com,https://slack.com/...</p>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Upload Staff Credentials CSV</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Set usernames and passwords for multiple staff members at once. Staff must already be uploaded.</p>
+                        <p>CSV columns required: <strong>Name, Username, Password</strong></p>
+                        <input id="staffCredCsvInput" type="file" accept=".csv">
+                        <div class="button-row">
+                            <button id="uploadStaffCredBtn">Upload Credentials</button>
+                        </div>
+                        <p id="staffCredUploadStatus" style="font-size:13px;font-weight:700;margin-top:8px;min-height:18px;"></p>
+                        <p class="example">Example: Sarah Kim,sarah.kim,mypassword123</p>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Staff Login Credentials</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Set a username and password for each staff member so they can log in individually. Revoke access instantly if needed.</p>
+                        <div id="staffCredentialsList" style="margin-top:16px; display:flex; flex-direction:column; gap:10px;">
+                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading staff...</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ════════════════ SYSTEM ISSUES ════════════════ -->
+        <div id="systemIssuesScreen" class="admin-screen">
+            <div class="admin-screen-header">
+                <h2>🚨 System Issues</h2>
+                <p>Review and resolve system issue tickets and shift swap requests submitted by staff.</p>
+            </div>
+            <div class="admin-cards">
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Issue Tickets</h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>All system issue tickets submitted by staff.</p>
+                        <div id="ticketList" class="ticket-list"></div>
+                        <button id="clearTicketsBtn" class="danger-btn">Clear All Tickets</button>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Shift Swap Requests <span id="swapAdminBadge" style="display:none; background:#146ff8; color:#fff; font-size:11px; font-weight:800; padding:2px 8px; border-radius:20px; margin-left:8px;"></span></h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Review and approve or deny pending shift swap requests submitted by staff. Approved swaps auto-clear at midnight.</p>
+                        <div id="swapAdminList" style="display:flex; flex-direction:column; gap:10px; margin-top:14px; margin-bottom:16px;">
+                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+</div>
 
 <script>
 // ── ADMIN DAILY TO-DO ────────────────────────────────────────────────────────
@@ -664,12 +662,12 @@ function loadAdminTodos() {
                 var row = document.createElement('div');
                 row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 14px; background:' + (t.completed ? '#f0faf0' : '#f8f8f8') + '; border-radius:10px;';
                 row.innerHTML =
-                    '<span style="flex:1; font-size:14px; font-weight:600; color:' + (t.completed ? '#aaa' : '#111') + '; text-decoration:' + (t.completed ? 'line-through' : 'none') + ';">' +
+                    '<span style="flex:1; min-width:0; font-size:14px; font-weight:600; color:' + (t.completed ? '#aaa' : '#111') + '; text-decoration:' + (t.completed ? 'line-through' : 'none') + '; word-break:break-word;">' +
                         escH(t.task) +
                     '</span>' +
-                    (t.completed && t.completed_by ? '<span style="font-size:12px; font-weight:700; color:#5a9a20;">✓ ' + escH(t.completed_by) + '</span>' : '') +
+                    (t.completed && t.completed_by ? '<span style="flex-shrink:0; font-size:12px; font-weight:700; color:#5a9a20; white-space:nowrap;">✓ ' + escH(t.completed_by) + '</span>' : '') +
                     '<button onclick="deleteTodoItem(' + t.id + ', this)" title="Delete task" ' +
-                    'style="background:none; border:none; color:#ccc; font-size:18px; cursor:pointer; padding:0 2px; transition:color 0.2s;" ' +
+                    'style="flex-shrink:0; width:auto; background:none; border:none; color:#ccc; font-size:18px; cursor:pointer; padding:0 2px; transition:color 0.2s;" ' +
                     'onmouseover="this.style.color=\'#ff3b30\'" onmouseout="this.style.color=\'#ccc\'">×</button>';
                 container.appendChild(row);
             });
@@ -1328,6 +1326,7 @@ function loadAdminReceipts() {
                 row.innerHTML =
                     '<div>' +
                         '<div style="font-size:14px; font-weight:700; color:#111;">' + escAdm(receipt.purchased_by) + '</div>' +
+                        (receipt.description ? '<div style="font-size:12px; color:#555; font-weight:600; margin-top:2px;">' + escAdm(receipt.description) + '</div>' : '') +
                         (receipt.image_name ? '<div style="font-size:11px; color:#aaa; font-weight:600; margin-top:2px;">' + escAdm(receipt.image_name) + '</div>' : '') +
                     '</div>' +
                     '<div style="font-size:15px; font-weight:800; color:#111; text-align:right; white-space:nowrap;">$' + parseFloat(receipt.total_cost || 0).toFixed(2) + '</div>' +
