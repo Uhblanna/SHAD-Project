@@ -278,24 +278,14 @@
             </div>
         </div>
 
-        <!-- Isabelle McLean — Password management: change the staff login password and the admin password; both require the current admin password to authorize -->
+        <!-- Admin password management -->
         <div class="admin-card">
             <div class="admin-card-head">
                 <h3>Passwords</h3>
                 <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
             <div class="admin-card-body">
-                <p class="committee-group-hint" style="margin-bottom:14px;">Changing a password takes effect immediately. Anyone currently logged in stays logged in until they sign out. You must enter the current admin password to confirm either change.</p>
-
-                <!-- Change staff password -->
-                <div class="committee-group-box">
-                    <p class="committee-group-title">Staff login password</p>
-                    <p class="committee-group-hint">Used by all staff to log in to the staff portal.</p>
-                    <input type="password" id="staffCurrentAdminPass" placeholder="Current admin password" autocomplete="off">
-                    <input type="password" id="staffNewPass" placeholder="New staff password" autocomplete="new-password" style="margin-top:8px;">
-                    <button id="changeStaffPassBtn" style="width:100%; margin-top:10px;">Update Staff Password</button>
-                    <p class="committee-group-status" id="staffPassStatus"></p>
-                </div>
+                <p class="committee-group-hint" style="margin-bottom:14px;">Changing the admin password takes effect immediately. You must enter the current admin password to confirm.</p>
 
                 <!-- Change admin password -->
                 <div class="committee-group-box">
