@@ -603,14 +603,25 @@ nav a:hover { color: #00d084; }
     <div class="modal-box">
         <div class="modal-icon" id="modalIcon">🏅</div>
         <h3 id="modalTitle">Join Committee</h3>
-        <p class="modal-sub">Select your name to express interest. You can choose up to <strong>3 committees</strong>.</p>
-        <!-- Isabelle — slotBadge shows X/3 choices used after a student selects their name; turns red when all 3 slots are filled -->
+        <p class="modal-sub">Scan your QR code to sign up. You can choose up to <strong>3 committees</strong>.</p>
+        <!-- Isabelle — slotBadge shows X/3 choices used after the student is identified; turns red when all 3 slots are filled -->
         <div id="slotBadge" style="display:none; margin-bottom:12px; font-size:13px; font-weight:700; padding:5px 12px; border-radius:20px; display:inline-block;"></div>
-        <div style="position:relative; margin-bottom:14px;" id="namePickerWrap">
-            <input type="text" id="nameSearch" class="modal-select" style="margin-bottom:0; cursor:text;"
-                placeholder="Type your name..." autocomplete="off" oninput="filterNames()" onfocus="showNameList()">
-            <div id="nameDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:2px solid #e5e5e5; border-top:none; border-radius:0 0 12px 12px; max-height:200px; overflow-y:auto; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,0.1);"></div>
+
+        <!-- Isabelle — QR scan to identify the student (replaces the name typeahead). Once scanned, the choice is stored under the student's name exactly as before. -->
+        <div id="cmScanWrap" style="margin-bottom:14px;">
+            <div id="cmQrStatus" style="font-size:13px; font-weight:600; color:#888; margin-bottom:8px;">Camera not started</div>
+            <video id="cmQrVideo" autoplay muted playsinline style="width:100%; border-radius:12px; display:none; background:#000; margin-bottom:10px;"></video>
+            <canvas id="cmQrCanvas" style="display:none;"></canvas>
+            <button type="button" id="cmStartScan" onclick="portalStartScan('cm')" style="width:100%; padding:13px; background:#6f2da8; color:white; border:none; border-radius:12px; font-family:'Archivo',sans-serif; font-weight:700; font-size:15px; cursor:pointer;">📷 Scan QR Code</button>
+            <button type="button" id="cmStopScan" onclick="portalStopScan('cm')" style="display:none; width:100%; margin-top:8px; padding:11px; background:#e5e5e5; color:#444; border:none; border-radius:12px; font-family:'Archivo',sans-serif; font-weight:700; font-size:14px; cursor:pointer;">Stop Camera</button>
         </div>
+
+        <!-- Isabelle — Identified student (shown after a successful scan); persists across committee picks in the same session -->
+        <div id="cmIdentifiedRow" style="display:none; margin-bottom:14px; font-size:14px; font-weight:600; color:#111;">
+            Signing up as <span id="cmIdentifiedName" style="font-weight:800;"></span>
+            <button type="button" onclick="portalRescan('cm')" style="background:none; border:none; color:#146ff8; font-weight:700; cursor:pointer; font-size:13px; margin-left:6px;">Not you? Rescan</button>
+        </div>
+
         <!-- Hidden value holder — keeps all existing logic working -->
         <input type="hidden" id="studentSelect">
         <!-- Isabelle — alreadyChosen lists the committees this student has already picked, each with a remove button so they can change their mind -->
@@ -631,12 +642,21 @@ nav a:hover { color: #00d084; }
         <div class="modal-icon" id="electiveModalIcon">📋</div>
         <h3 id="electiveModalTitle">Join Elective</h3>
         <p class="modal-sub" id="electiveModalDesc"></p>
-        <div style="position:relative; margin-bottom:14px;" id="electiveNamePickerWrap">
-            <input type="text" id="electiveNameSearch" class="modal-select" style="margin-bottom:0; cursor:text;"
-                placeholder="Type your name..." autocomplete="off"
-                oninput="filterElectiveNames()" onfocus="filterElectiveNames()">
-            <div id="electiveNameDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:2px solid #e5e5e5; border-top:none; border-radius:0 0 12px 12px; max-height:200px; overflow-y:auto; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,0.1);"></div>
+
+        <!-- Isabelle — QR scan to identify the student (replaces the name typeahead) -->
+        <div id="eleScanWrap" style="margin-bottom:14px;">
+            <div id="eleQrStatus" style="font-size:13px; font-weight:600; color:#888; margin-bottom:8px;">Camera not started</div>
+            <video id="eleQrVideo" autoplay muted playsinline style="width:100%; border-radius:12px; display:none; background:#000; margin-bottom:10px;"></video>
+            <canvas id="eleQrCanvas" style="display:none;"></canvas>
+            <button type="button" id="eleStartScan" onclick="portalStartScan('ele')" style="width:100%; padding:13px; background:#6f2da8; color:white; border:none; border-radius:12px; font-family:'Archivo',sans-serif; font-weight:700; font-size:15px; cursor:pointer;">📷 Scan QR Code</button>
+            <button type="button" id="eleStopScan" onclick="portalStopScan('ele')" style="display:none; width:100%; margin-top:8px; padding:11px; background:#e5e5e5; color:#444; border:none; border-radius:12px; font-family:'Archivo',sans-serif; font-weight:700; font-size:14px; cursor:pointer;">Stop Camera</button>
         </div>
+
+        <div id="eleIdentifiedRow" style="display:none; margin-bottom:14px; font-size:14px; font-weight:600; color:#111;">
+            Signing up as <span id="eleIdentifiedName" style="font-weight:800;"></span>
+            <button type="button" onclick="portalRescan('ele')" style="background:none; border:none; color:#146ff8; font-weight:700; cursor:pointer; font-size:13px; margin-left:6px;">Not you? Rescan</button>
+        </div>
+
         <input type="hidden" id="electiveStudentSelect">
         <p class="modal-msg" id="electiveModalMsg"></p>
         <button class="modal-submit green" id="electiveModalSubmit" onclick="submitElectiveSignup()">Sign Up →</button>
@@ -719,6 +739,7 @@ fetch('/api/committee-enrollment-config')
     .catch(function() { updateEnrollmentStatus(); });
 
 var allStudentNames = [];
+var allStudentsData = []; // full student objects, used to match scanned QR codes
 
 // Isabelle McLean — Always show the preferred name; fall back to the stored name only when there's no preferred name
 function displayName(student) {
@@ -730,61 +751,153 @@ function loadStudents() {
     fetch('/api/students')
         .then(function(r) { return r.json(); })
         .then(function(students) {
-            allStudentNames = students.map(function(s) {
-                return displayName(s);
-            }).sort();
-            document.getElementById('nameSearch').placeholder = 'Type your name...';
+            allStudentsData = students;
+            allStudentNames = students.map(function(s) { return displayName(s); }).sort();
         })
-        .catch(function() {
-            document.getElementById('nameSearch').placeholder = 'Could not load names';
-        });
+        .catch(function() {});
 }
 
-function showNameList() {
-    filterNames();
+// ── PORTAL QR SCANNER (committee + elective sign-up) ──────────────
+// Isabelle — Students scan their QR code to identify themselves instead of typing a name.
+// Once identified, the choice is stored under their name exactly as before. The identity is
+// remembered across committee/elective picks in the same session via identifiedStudent.
+var identifiedStudent = null;   // { id, name } where name is the display name
+var portalQR = {};              // key -> { stream, anim }
+function el(id) { return document.getElementById(id); }
+
+function portalResolveQR(data) {
+    var st = null;
+    if (data.indexOf('SHAD_STUDENT:') === 0) {
+        var id = data.replace('SHAD_STUDENT:', '').trim();
+        st = allStudentsData.find(function(s) { return String(s.id) === id; });
+    }
+    if (!st) {
+        st = allStudentsData.find(function(s) { return s.name.toLowerCase() === data.trim().toLowerCase(); });
+    }
+    return st;
 }
 
-function filterNames() {
-    var query = document.getElementById('nameSearch').value.toLowerCase().trim();
-    var dropdown = document.getElementById('nameDropdown');
-    var matches = query
-        ? allStudentNames.filter(function(n) { return n.toLowerCase().indexOf(query) !== -1; })
-        : allStudentNames;
-
-    if (matches.length === 0) {
-        dropdown.style.display = 'none';
+function portalStartScan(key) {
+    var status = el(key + 'QrStatus'), video = el(key + 'QrVideo'), canvas = el(key + 'QrCanvas');
+    status.textContent = 'Requesting camera…'; status.style.color = '#f58220';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        status.textContent = '⚠️ Camera unavailable. The page must be served over HTTPS or localhost.';
+        status.style.color = '#d12c2c';
         return;
     }
-
-    dropdown.innerHTML = '';
-    matches.forEach(function(name) {
-        var item = document.createElement('div');
-        item.textContent = name;
-        item.style.cssText = 'padding:11px 16px; font-size:14px; font-weight:600; color:#111; cursor:pointer; transition:background 0.15s;';
-        item.addEventListener('mouseenter', function() { this.style.background = '#f0f6ff'; });
-        item.addEventListener('mouseleave', function() { this.style.background = 'white'; });
-        item.addEventListener('mousedown', function(e) {
-            e.preventDefault(); // prevent blur before click registers
-            selectStudent(name);
+    function doStart() {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(stream) {
+            portalQR[key] = { stream: stream, anim: null };
+            video.srcObject = stream; video.style.display = 'block';
+            el(key + 'StartScan').style.display = 'none';
+            el(key + 'StopScan').style.display = 'block';
+            status.textContent = '🟢 Scanning — hold up your QR code'; status.style.color = '#8bc53f';
+            video.addEventListener('loadedmetadata', function() {
+                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                portalScanFrame(key, video, canvas, status);
+            });
+        }).catch(function(err) {
+            status.textContent = '⚠️ ' + (err.name === 'NotAllowedError' ? 'Camera permission denied.' : err.message);
+            status.style.color = '#d12c2c';
         });
-        dropdown.appendChild(item);
-    });
-    dropdown.style.display = 'block';
-}
-
-function selectStudent(name) {
-    document.getElementById('nameSearch').value = name;
-    document.getElementById('studentSelect').value = name;
-    document.getElementById('nameDropdown').style.display = 'none';
-    onStudentChange();
-}
-
-document.addEventListener('click', function(e) {
-    var wrap = document.getElementById('namePickerWrap');
-    if (wrap && !wrap.contains(e.target)) {
-        document.getElementById('nameDropdown').style.display = 'none';
     }
-});
+    if (typeof jsQR === 'undefined') {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+        s.onload = doStart;
+        s.onerror = function() { status.textContent = 'Failed to load QR library.'; status.style.color = '#d12c2c'; };
+        document.head.appendChild(s);
+    } else { doStart(); }
+}
+
+function portalScanFrame(key, video, canvas, status) {
+    var ctx = canvas.getContext('2d');
+    function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var code = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
+            if (code) { portalHandleQR(key, code.data, video, canvas, status); return; }
+        }
+        if (portalQR[key]) portalQR[key].anim = requestAnimationFrame(tick);
+    }
+    if (portalQR[key]) portalQR[key].anim = requestAnimationFrame(tick);
+}
+
+function portalHandleQR(key, data, video, canvas, status) {
+    var student = portalResolveQR(data);
+    if (student) {
+        status.textContent = '✅ ' + displayName(student); status.style.color = '#8bc53f';
+        portalStopScan(key);
+        identifiedStudent = { id: student.id, name: displayName(student) };
+        portalApplyIdentity(key);
+    } else {
+        status.textContent = '❓ Unknown QR code — try again'; status.style.color = '#d12c2c';
+        setTimeout(function() {
+            if (portalQR[key]) {
+                status.textContent = '🟢 Scanning — hold up your QR code'; status.style.color = '#8bc53f';
+                portalScanFrame(key, video, canvas, status);
+            }
+        }, 1500);
+    }
+}
+
+function portalStopScan(key) {
+    var q = portalQR[key];
+    if (q) {
+        if (q.anim) cancelAnimationFrame(q.anim);
+        if (q.stream) q.stream.getTracks().forEach(function(t) { t.stop(); });
+        portalQR[key] = null;
+    }
+    var video = el(key + 'QrVideo');
+    if (video) { video.srcObject = null; video.style.display = 'none'; }
+    var st = el(key + 'StartScan'), sp = el(key + 'StopScan');
+    if (st) st.style.display = 'block';
+    if (sp) sp.style.display = 'none';
+}
+
+// Show the "Signing up as …" row, hide the scanner, set the hidden input, and run downstream logic
+function portalApplyIdentity(key) {
+    el(key + 'ScanWrap').style.display = 'none';
+    el(key + 'IdentifiedRow').style.display = 'block';
+    el(key + 'IdentifiedName').textContent = identifiedStudent.name;
+    if (key === 'cm') {
+        el('studentSelect').value = identifiedStudent.name;
+        onStudentChange();
+    } else {
+        el('electiveStudentSelect').value = identifiedStudent.name;
+    }
+}
+
+// Called when a modal opens: reuse an existing identity if we have one, otherwise show the scanner
+function portalInitModal(key) {
+    portalStopScan(key);
+    if (identifiedStudent) {
+        portalApplyIdentity(key);
+    } else {
+        el(key + 'ScanWrap').style.display = 'block';
+        el(key + 'IdentifiedRow').style.display = 'none';
+        var status = el(key + 'QrStatus');
+        if (status) { status.textContent = 'Camera not started'; status.style.color = '#888'; }
+    }
+}
+
+// "Not you? Rescan" — forget the current identity and reopen the scanner
+function portalRescan(key) {
+    identifiedStudent = null;
+    if (key === 'cm') {
+        el('studentSelect').value = '';
+        el('slotBadge').style.display = 'none';
+        el('alreadyChosen').style.display = 'none';
+        el('modalSubmit').disabled = false;
+        el('modalSubmit').textContent = 'Add to My Choices →';
+    } else {
+        el('electiveStudentSelect').value = '';
+    }
+    portalInitModal(key);
+}
+
 
 function openModal(committeeName, committeeType) {
     // Isabelle McLean — Block opening the signup modal if enrollment is closed
@@ -807,14 +920,12 @@ function openModal(committeeName, committeeType) {
     document.getElementById('modalMsg').textContent = '';
     document.getElementById('modalMsg').className = 'modal-msg';
     document.getElementById('studentSelect').value = '';
-    document.getElementById('nameSearch').value = '';
-    document.getElementById('nameDropdown').style.display = 'none';
     document.getElementById('slotBadge').style.display = 'none';
     document.getElementById('alreadyChosen').style.display = 'none';
     btn.disabled = false;
     btn.textContent = 'Add to My Choices →';
 
-    loadStudents();
+    portalInitModal('cm');
     document.getElementById('committeeModal').classList.add('active');
 }
 
@@ -905,6 +1016,7 @@ function removeChoice(signupId, btn) {
 }
 
 function closeModal() {
+    portalStopScan('cm');
     document.getElementById('committeeModal').classList.remove('active');
 }
 
@@ -1184,51 +1296,21 @@ function openElectiveModal(elective) {
     currentElectiveId = elective.id;
     document.getElementById('electiveModalTitle').textContent = elective.name;
     document.getElementById('electiveModalDesc').textContent = elective.description || '';
-    document.getElementById('electiveNameSearch').value = '';
     document.getElementById('electiveStudentSelect').value = '';
-    document.getElementById('electiveNameDropdown').style.display = 'none';
     document.getElementById('electiveModalMsg').textContent = '';
     document.getElementById('electiveModalSubmit').disabled = false;
+    portalInitModal('ele');
     document.getElementById('electiveModal').classList.add('active');
 }
 
 function closeElectiveModal() {
+    portalStopScan('ele');
     document.getElementById('electiveModal').classList.remove('active');
     currentElectiveId = null;
 }
 
 document.getElementById('electiveModal').addEventListener('click', function(e) {
     if (e.target === this) closeElectiveModal();
-});
-
-function filterElectiveNames() {
-    var query = document.getElementById('electiveNameSearch').value.toLowerCase().trim();
-    var dropdown = document.getElementById('electiveNameDropdown');
-    var matches = query
-        ? allStudentNames.filter(function(n) { return n.toLowerCase().indexOf(query) !== -1; })
-        : allStudentNames;
-    if (!matches.length) { dropdown.style.display = 'none'; return; }
-    dropdown.innerHTML = '';
-    matches.forEach(function(name) {
-        var item = document.createElement('div');
-        item.textContent = name;
-        item.style.cssText = 'padding:11px 16px; font-size:14px; font-weight:600; color:#111; cursor:pointer; transition:background 0.15s;';
-        item.addEventListener('mouseenter', function() { this.style.background = '#f0f6ff'; });
-        item.addEventListener('mouseleave', function() { this.style.background = 'white'; });
-        item.addEventListener('mousedown', function(ev) {
-            ev.preventDefault();
-            document.getElementById('electiveNameSearch').value = name;
-            document.getElementById('electiveStudentSelect').value = name;
-            dropdown.style.display = 'none';
-        });
-        dropdown.appendChild(item);
-    });
-    dropdown.style.display = 'block';
-}
-
-document.addEventListener('click', function(e) {
-    var wrap = document.getElementById('electiveNamePickerWrap');
-    if (wrap && !wrap.contains(e.target)) document.getElementById('electiveNameDropdown').style.display = 'none';
 });
 
 function submitElectiveSignup() {
