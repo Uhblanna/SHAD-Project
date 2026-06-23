@@ -101,7 +101,7 @@ const SCREEN_HASHES = {
 };
 
 function activateScreen(screenId) {
-    if (!document.getElementById(screenId)) screenId = 'hubHome';
+    if (!document.getElementById(screenId)) screenId = 'activityRollCallScreen';
     document.querySelectorAll('.hub-nav').forEach(function(b) {
         b.classList.toggle('active', b.dataset.screen === screenId);
     });
@@ -115,11 +115,11 @@ function activateScreen(screenId) {
 // name (#observations) or the raw screen id (#observationsScreen).
 function screenIdFromHash() {
     var h = (window.location.hash || '').replace('#', '');
-    if (!h) return 'hubHome';
+    if (!h) return 'activityRollCallScreen';
     for (var id in SCREEN_HASHES) {
         if (SCREEN_HASHES[id] === h || id === h) return id;
     }
-    return 'hubHome';
+    return 'activityRollCallScreen';
 }
 
 function setupHubNavigation() {
@@ -1878,8 +1878,18 @@ var obsSel = { cat: null, beh: null };
 function obsRenderCategories(mood) {
     var row = el('obsCatRow');
     var behWrap = el('obsBehWrap');
+    var catLabel = el('obsCatLabel');
     if (!row) return;
     row.innerHTML = '';
+    // Needs Attention and Neutral observations don't use behaviour categories
+    if (mood === 'negative' || mood === 'neutral') {
+        if (catLabel) catLabel.style.display = 'none';
+        row.style.display = 'none';
+        if (behWrap) behWrap.style.display = 'none';
+        return;
+    }
+    if (catLabel) catLabel.style.display = '';
+    row.style.display = '';
     if (!mood || !OBS_BEHAVIOURS[mood]) {
         row.innerHTML = '<p class="obs-chip-hint">Choose a mood above to see categories.</p>';
         if (behWrap) behWrap.style.display = 'none';
@@ -1950,11 +1960,16 @@ function setupObservationForm() {
         var details = el('observationDetails').value.trim();
         var moodEl  = document.querySelector('input[name="observationMood"]:checked');
         if (!moodEl) { alert('Please choose positive, neutral, or needs attention.'); return; }
-        if (!obsSel.cat) { alert('Please choose a behaviour category.'); return; }
-        // "Other" has no preset behaviour, so a written comment is required to explain it
-        if (obsSel.cat === 'Other' && !details) { alert('Please add a comment in Details to explain the "Other" behaviour.'); return; }
-        // type = "Category — Behaviour" (behaviour optional); details is optional free text
-        var typeStr = obsSel.cat + (obsSel.beh ? ' — ' + obsSel.beh : '');
+        // Behaviour category is only used for Positive observations
+        if (moodEl.value === 'positive') {
+            if (!obsSel.cat) { alert('Please choose a behaviour category.'); return; }
+            // "Other" has no preset behaviour, so a written comment is required to explain it
+            if (obsSel.cat === 'Other' && !details) { alert('Please add a comment in Details to explain the "Other" behaviour.'); return; }
+        }
+        // type = "Category — Behaviour" for positive only; empty for neutral/needs attention
+        var typeStr = moodEl.value === 'positive'
+            ? obsSel.cat + (obsSel.beh ? ' — ' + obsSel.beh : '')
+            : '';
         if (editingObsId !== null) {
             ShadDB.updateObservation(editingObsId, { student: student, type: typeStr, mood: moodEl.value, details: details });
         } else {
