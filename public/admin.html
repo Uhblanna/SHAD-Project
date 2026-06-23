@@ -22,6 +22,20 @@
 <script src="/public/js/admin.js" defer></script>
 
 <style>
+/* Isabelle McLean — Committee admin: grouped sub-sections so upload / add / remove / danger are visually distinct */
+.committee-group-box {
+    padding: 16px; border: 1px solid #ececec; border-radius: 12px; background: #fafafa; margin-bottom: 14px;
+}
+.committee-group-box:last-child { margin-bottom: 0; }
+.committee-group-title {
+    font-size: 12px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+    color: #146ff8; margin: 0 0 4px;
+}
+.committee-group-hint { font-size: 13px; color: #888; line-height: 1.5; margin: 0 0 10px; }
+.committee-group-status { font-size: 13px; font-weight: 700; min-height: 18px; margin: 8px 0 0; }
+.committee-danger-box { background: #fff6f6; border-color: #f6dada; }
+.committee-danger-box .committee-group-title { color: #d93025; }
+
 /* Isabelle McLean — Campus Maps card: a label spot + an upload spot per map */
 .map-upload-grid { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
 .map-upload-row {
@@ -264,36 +278,114 @@
             </div>
         </div>
 
-        <!-- Isabelle McLean — Upload Committee Options CSV: populates the committees students can sign up for on the student portal -->
+        <!-- Isabelle McLean — Password management: change the staff login password and the admin password; both require the current admin password to authorize -->
         <div class="admin-card">
             <div class="admin-card-head">
-                <h3>Upload Committee Options CSV</h3>
+                <h3>Passwords</h3>
                 <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
             <div class="admin-card-body">
-                <p>CSV columns required: <strong>Name, Description</strong></p>
+                <p class="committee-group-hint" style="margin-bottom:14px;">Changing a password takes effect immediately. Anyone currently logged in stays logged in until they sign out. You must enter the current admin password to confirm either change.</p>
 
-                <input id="committeeCsvInput" type="file" accept=".csv">
-
-                <!-- Isabelle McLean — Upload + Remove buttons side-by-side; Remove opens a dropdown of current committees -->
-                <div class="button-row">
-                    <button id="uploadCommitteeBtn">Upload Committees</button>
-                    <button id="removeCommitteeBtn">Remove a Committee</button>
+                <!-- Change staff password -->
+                <div class="committee-group-box">
+                    <p class="committee-group-title">Staff login password</p>
+                    <p class="committee-group-hint">Used by all staff to log in to the staff portal.</p>
+                    <input type="password" id="staffCurrentAdminPass" placeholder="Current admin password" autocomplete="off">
+                    <input type="password" id="staffNewPass" placeholder="New staff password" autocomplete="new-password" style="margin-top:8px;">
+                    <button id="changeStaffPassBtn" style="width:100%; margin-top:10px;">Update Staff Password</button>
+                    <p class="committee-group-status" id="staffPassStatus"></p>
                 </div>
 
-                <!-- Isabelle McLean — Hidden by default; appears when "Remove a Committee" is clicked, populated from the current list -->
-                <div id="removeCommitteePanel" style="display:none; margin-bottom:14px;">
-                    <select id="removeCommitteeSelect" style="margin-bottom:10px;">
-                        <option value="">Choose a committee...</option>
-                    </select>
-                    <button id="confirmRemoveCommitteeBtn" class="danger-btn">Remove Selected</button>
+                <!-- Change admin password -->
+                <div class="committee-group-box">
+                    <p class="committee-group-title">Admin password</p>
+                    <p class="committee-group-hint">Gates access to this admin panel (the second password layer).</p>
+                    <input type="password" id="adminCurrentAdminPass" placeholder="Current admin password" autocomplete="off">
+                    <input type="password" id="adminNewPass" placeholder="New admin password" autocomplete="new-password" style="margin-top:8px;">
+                    <button id="changeAdminPassBtn" style="width:100%; margin-top:10px;">Update Admin Password</button>
+                    <p class="committee-group-status" id="adminPassStatus"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Isabelle McLean — Upload Committee Options CSV: populates the committees students can sign up for on the student portal -->
+        <div class="admin-card">
+            <div class="admin-card-head">
+                <h3>Manage Committees</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+
+                <!-- Isabelle McLean — Group 1: bulk upload from CSV (full replace) -->
+                <div class="committee-group-box">
+                    <p class="committee-group-title">Bulk upload from CSV</p>
+                    <p class="committee-group-hint">Columns required: <strong>Name, Description</strong>. Replaces the entire list and clears all student selections.</p>
+                    <input id="committeeCsvInput" type="file" accept=".csv">
+                    <button id="uploadCommitteeBtn" style="width:100%; margin-top:10px;">Upload &amp; Replace All</button>
+                    <p class="committee-group-hint" style="margin-top:8px;">Example: <em>Shad Red Deer News, Daily news and announcements for the cohort</em></p>
                 </div>
 
-                <button id="clearCommitteeSignupsBtn" class="danger-btn">Clear All Student Selections</button>
+                <!-- Isabelle McLean — Group 2: add a single committee without re-uploading the whole CSV -->
+                <div class="committee-group-box">
+                    <p class="committee-group-title">Add a single committee</p>
+                    <p class="committee-group-hint">Adds one committee without affecting the existing list or student selections.</p>
+                    <input type="text" id="newCommitteeName" placeholder="Committee name" maxlength="80">
+                    <input type="text" id="newCommitteeDesc" placeholder="Description (optional)" maxlength="200" style="margin-top:8px;">
+                    <button id="addCommitteeBtn" style="width:100%; margin-top:10px;">+ Add Committee</button>
+                    <p class="committee-group-status" id="addCommitteeStatus"></p>
+                </div>
 
-                <button id="clearCommitteesBtn" class="danger-btn">Clear All Committees</button>
+                <!-- Isabelle McLean — Group 3: remove a single committee -->
+                <div class="committee-group-box">
+                    <p class="committee-group-title">Remove a single committee</p>
+                    <p class="committee-group-hint">Removes one committee and clears its sign-ups, leaving the rest intact.</p>
+                    <button id="removeCommitteeBtn" style="width:100%;">Choose a Committee to Remove</button>
+                    <div id="removeCommitteePanel" style="display:none; margin-top:10px;">
+                        <select id="removeCommitteeSelect" style="margin-bottom:10px;">
+                            <option value="">Choose a committee...</option>
+                        </select>
+                        <button id="confirmRemoveCommitteeBtn" class="danger-btn" style="width:100%;">Remove Selected</button>
+                    </div>
+                </div>
 
-                <p class="example">Example: Shad Red Deer News,Daily news and announcements for the cohort</p>
+                <!-- Isabelle McLean — Group 4: destructive bulk actions -->
+                <div class="committee-group-box committee-danger-box">
+                    <p class="committee-group-title">Danger zone</p>
+                    <button id="clearCommitteeSignupsBtn" class="danger-btn" style="width:100%;">Clear All Student Selections</button>
+                    <button id="clearCommitteesBtn" class="danger-btn" style="width:100%; margin-top:8px;">Clear All Committees</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Isabelle McLean — Electives: admin creates sign-up opportunities that appear above regular committees on the student portal; hidden when none exist -->
+        <div class="admin-card">
+            <div class="admin-card-head">
+                <h3>Electives</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Add sign-up opportunities that appear on the student portal above the regular committees. Students can join as many as they like. The section is hidden from students until at least one elective exists.</p>
+
+                <label class="map-field-label" style="margin-top:10px;">Name</label>
+                <input type="text" id="newElectiveName" placeholder="e.g. Photography Workshop" maxlength="80">
+
+                <label class="map-field-label" style="margin-top:8px;">Description</label>
+                <input type="text" id="newElectiveDesc" placeholder="Brief description (optional)" maxlength="200">
+
+                <label class="map-field-label" style="margin-top:8px;">Max spots</label>
+                <input type="number" id="newElectiveCap" min="1" placeholder="Leave blank for unlimited">
+
+                <div class="button-row" style="margin-top:10px;">
+                    <button id="addElectiveBtn">Add Elective</button>
+                </div>
+                <p class="example" id="addElectiveStatus"></p>
+
+                <div class="map-list-head" style="margin-top:16px;">Current Electives</div>
+                <div id="electiveList">
+                    <p class="example">No electives yet.</p>
+                </div>
             </div>
         </div>
 
@@ -1609,6 +1701,143 @@ function saveAdminAck(id) {
     .then(function() { loadNeedsAttention(); })
     .catch(function() { alert('Could not save. Please try again.'); });
 }
+
+// Isabelle McLean — Electives admin: load list, add new, inline-edit, delete, enforce capacity, and view/remove signups
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadElectiveList() {
+    fetch('/api/electives')
+        .then(function(r) { return r.json(); })
+        .then(function(electives) {
+            var list = document.getElementById('electiveList');
+            if (!electives.length) { list.innerHTML = '<p class="example">No electives yet.</p>'; return; }
+            list.innerHTML = '';
+            electives.forEach(function(e) {
+                var capLabel = e.capacity ? (' · ' + e.capacity + ' spots') : ' · Unlimited spots';
+                var row = document.createElement('div');
+                row.style.cssText = 'border:1px solid #e5e5e5; border-radius:10px; padding:12px 14px; margin-bottom:10px; background:#fafafa;';
+                row.innerHTML =
+                    // View mode
+                    '<div id="elective-view-' + e.id + '">' +
+                        '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">' +
+                            '<div style="flex:1; min-width:0;">' +
+                                '<div style="font-weight:700; font-size:14px; color:#111;">' + escHtml(e.name) + '</div>' +
+                                (e.description ? '<div style="font-size:13px; color:#888; margin-top:2px;">' + escHtml(e.description) + '</div>' : '') +
+                                '<div style="font-size:12px; color:#aaa; margin-top:3px; font-weight:600;">' + capLabel + '</div>' +
+                            '</div>' +
+                            '<div style="display:flex; gap:6px; flex-shrink:0;">' +
+                                '<button onclick="showElectiveEdit(' + e.id + ')" style="padding:5px 10px; font-size:12px; background:#f0f0f0; color:#444; border:none; border-radius:7px; cursor:pointer; font-family:inherit; font-weight:700;">Edit</button>' +
+                                '<button onclick="deleteElective(' + e.id + ', this)" style="padding:5px 10px; font-size:12px; background:#ffe5e5; color:#d93025; border:none; border-radius:7px; cursor:pointer; font-family:inherit; font-weight:700;">Delete</button>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="margin-top:10px;">' +
+                            '<div style="font-size:11px; font-weight:800; color:#aaa; letter-spacing:0.4px; text-transform:uppercase; margin-bottom:5px;">Sign-ups</div>' +
+                            '<div id="elective-signups-' + e.id + '"><span style="font-size:13px; color:#aaa;">Loading…</span></div>' +
+                        '</div>' +
+                    '</div>' +
+                    // Edit mode (hidden by default)
+                    '<div id="elective-edit-' + e.id + '" style="display:none;">' +
+                        '<div style="display:flex; flex-direction:column; gap:6px;">' +
+                            '<input id="elective-edit-name-' + e.id + '" type="text" value="' + escHtml(e.name) + '" placeholder="Name" style="padding:8px 10px; border:1px solid #ccc; border-radius:8px; font-family:inherit; font-size:14px; font-weight:600;">' +
+                            '<input id="elective-edit-desc-' + e.id + '" type="text" value="' + escHtml(e.description || '') + '" placeholder="Description (optional)" style="padding:8px 10px; border:1px solid #ccc; border-radius:8px; font-family:inherit; font-size:13px;">' +
+                            '<input id="elective-edit-cap-' + e.id + '" type="number" min="1" value="' + (e.capacity || '') + '" placeholder="Max spots (leave blank for unlimited)" style="padding:8px 10px; border:1px solid #ccc; border-radius:8px; font-family:inherit; font-size:13px;">' +
+                            '<div style="display:flex; gap:6px; margin-top:2px;">' +
+                                '<button onclick="saveElectiveEdit(' + e.id + ', this)" style="padding:6px 14px; font-size:13px; background:#146ff8; color:white; border:none; border-radius:8px; cursor:pointer; font-family:inherit; font-weight:700;">Save</button>' +
+                                '<button onclick="hideElectiveEdit(' + e.id + ')" style="padding:6px 14px; font-size:13px; background:#e5e5e5; color:#444; border:none; border-radius:8px; cursor:pointer; font-family:inherit; font-weight:700;">Cancel</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                list.appendChild(row);
+                loadElectiveSignups(e.id);
+            });
+        })
+        .catch(function() {});
+}
+
+function showElectiveEdit(id) {
+    document.getElementById('elective-view-' + id).style.display = 'none';
+    document.getElementById('elective-edit-' + id).style.display = '';
+}
+function hideElectiveEdit(id) {
+    document.getElementById('elective-edit-' + id).style.display = 'none';
+    document.getElementById('elective-view-' + id).style.display = '';
+}
+function saveElectiveEdit(id, btn) {
+    var name = document.getElementById('elective-edit-name-' + id).value.trim();
+    var desc = document.getElementById('elective-edit-desc-' + id).value.trim();
+    var cap  = document.getElementById('elective-edit-cap-' + id).value.trim();
+    if (!name) { alert('Name is required.'); return; }
+    btn.disabled = true;
+    fetch('/api/electives/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, description: desc, capacity: cap || null })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { loadElectiveList(); })
+    .catch(function() { btn.disabled = false; });
+}
+
+function loadElectiveSignups(id) {
+    fetch('/api/electives/' + id + '/signups')
+        .then(function(r) { return r.json(); })
+        .then(function(signups) {
+            var el = document.getElementById('elective-signups-' + id);
+            if (!el) return;
+            if (!signups.length) { el.innerHTML = '<span style="font-size:13px; color:#aaa;">No sign-ups yet.</span>'; return; }
+            el.innerHTML = signups.map(function(s) {
+                return '<span style="display:inline-flex; align-items:center; gap:5px; background:white; border:1px solid #e5e5e5; border-radius:20px; padding:4px 10px; font-size:13px; font-weight:600; margin:3px 3px 0 0;">' +
+                    escHtml(s.student_name) +
+                    '<button onclick="removeElectiveSignup(' + id + ',' + s.id + ', this)" style="background:none; border:none; color:#bbb; font-size:15px; cursor:pointer; padding:0; line-height:1; font-family:inherit;" title="Remove">×</button>' +
+                    '</span>';
+            }).join('');
+        })
+        .catch(function() {});
+}
+
+function deleteElective(id, btn) {
+    if (!confirm('Delete this elective and all its sign-ups?')) return;
+    btn.disabled = true;
+    fetch('/api/electives/' + id, { method: 'DELETE' })
+        .then(function() { loadElectiveList(); })
+        .catch(function() { btn.disabled = false; });
+}
+
+function removeElectiveSignup(electiveId, signupId, btn) {
+    btn.disabled = true;
+    fetch('/api/electives/' + electiveId + '/signups/' + signupId, { method: 'DELETE' })
+        .then(function() { loadElectiveSignups(electiveId); })
+        .catch(function() { btn.disabled = false; });
+}
+
+document.getElementById('addElectiveBtn').addEventListener('click', function() {
+    var name = document.getElementById('newElectiveName').value.trim();
+    var desc = document.getElementById('newElectiveDesc').value.trim();
+    var cap  = document.getElementById('newElectiveCap').value.trim();
+    var status = document.getElementById('addElectiveStatus');
+    if (!name) { status.textContent = 'Please enter a name.'; status.style.color = '#d93025'; return; }
+    fetch('/api/electives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, description: desc, capacity: cap || null })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.error) { status.textContent = data.error; status.style.color = '#d93025'; return; }
+        document.getElementById('newElectiveName').value = '';
+        document.getElementById('newElectiveDesc').value = '';
+        document.getElementById('newElectiveCap').value = '';
+        status.textContent = '✓ Elective added.';
+        status.style.color = '#5a9a20';
+        setTimeout(function() { status.textContent = ''; }, 2500);
+        loadElectiveList();
+    })
+    .catch(function() { status.textContent = 'Connection error.'; status.style.color = '#d93025'; });
+});
+
+loadElectiveList();
 
 function dismissNeedsAttention(id, btn) {
     if (!confirm('Dismiss this observation from the Needs Attention list? It will no longer appear here.')) return;

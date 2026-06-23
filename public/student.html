@@ -105,6 +105,7 @@ nav a:hover { color: #00d084; }
 }
 .badge-green { background: #e8f5d3; color: #5a9a20; }
 .badge-orange { background: #fef0e0; color: #c86000; }
+.badge-blue { background: #e0eeff; color: #1a5cc8; }
 
 /* Isabelle McLean — Enrollment status banner styles; shows close date when open, switches to red when closed */
 .enrollment-status {
@@ -543,6 +544,17 @@ nav a:hover { color: #00d084; }
         </div>
     </div>
 
+    <!-- Isabelle McLean — Electives: hidden when admin has added none; shown dynamically from /api/electives, same pattern as maps -->
+    <div id="electivesSection" style="display:none;">
+        <div class="section-header">
+            <h3>Electives</h3>
+            <span class="section-badge badge-blue">Sign Up</span>
+        </div>
+        <div class="committee-group" style="margin-top:2.5%;">
+            <div class="committee-grid" id="electivesGrid"></div>
+        </div>
+    </div>
+
     <!-- Isabelle McLean — Committees section: 5 sports + 5 project placeholder cards; edit name/description in each <h4> and <p> tag -->
     <!-- Committees -->
     <div>
@@ -610,6 +622,26 @@ nav a:hover { color: #00d084; }
         <button class="modal-submit green" id="modalSubmit" onclick="submitSignup()">Add to My Choices →</button>
         <br>
         <button class="modal-close" onclick="closeModal()">Cancel</button>
+    </div>
+</div>
+
+<!-- Elective sign-up modal -->
+<div class="modal-overlay" id="electiveModal">
+    <div class="modal-box">
+        <div class="modal-icon" id="electiveModalIcon">📋</div>
+        <h3 id="electiveModalTitle">Join Elective</h3>
+        <p class="modal-sub" id="electiveModalDesc"></p>
+        <div style="position:relative; margin-bottom:14px;" id="electiveNamePickerWrap">
+            <input type="text" id="electiveNameSearch" class="modal-select" style="margin-bottom:0; cursor:text;"
+                placeholder="Type your name..." autocomplete="off"
+                oninput="filterElectiveNames()" onfocus="filterElectiveNames()">
+            <div id="electiveNameDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:2px solid #e5e5e5; border-top:none; border-radius:0 0 12px 12px; max-height:200px; overflow-y:auto; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,0.1);"></div>
+        </div>
+        <input type="hidden" id="electiveStudentSelect">
+        <p class="modal-msg" id="electiveModalMsg"></p>
+        <button class="modal-submit green" id="electiveModalSubmit" onclick="submitElectiveSignup()">Sign Up →</button>
+        <br>
+        <button class="modal-close" onclick="closeElectiveModal()">Cancel</button>
     </div>
 </div>
 
@@ -688,11 +720,19 @@ fetch('/api/committee-enrollment-config')
 
 var allStudentNames = [];
 
+// Isabelle McLean — Always show the preferred name; fall back to the stored name only when there's no preferred name
+function displayName(student) {
+    if (student && student.prefName) return student.prefName + (student.lastName ? ' ' + student.lastName : '');
+    return student ? student.name : '';
+}
+
 function loadStudents() {
     fetch('/api/students')
         .then(function(r) { return r.json(); })
         .then(function(students) {
-            allStudentNames = students.map(function(s) { return s.name; }).sort();
+            allStudentNames = students.map(function(s) {
+                return displayName(s);
+            }).sort();
             document.getElementById('nameSearch').placeholder = 'Type your name...';
         })
         .catch(function() {
@@ -1097,6 +1137,144 @@ function disableAllCommitteeCards() {
 }
 
 loadCommitteeOptions();
+
+// Isabelle McLean — Electives: load from API, show section only when electives exist, handle sign-up modal
+var currentElectiveId = null;
+
+function loadElectives() {
+    fetch('/api/electives')
+        .then(function(r) { return r.json(); })
+        .then(function(electives) {
+            var section = document.getElementById('electivesSection');
+            var grid = document.getElementById('electivesGrid');
+            if (!electives.length) { section.style.display = 'none'; return; }
+            section.style.display = '';
+            grid.innerHTML = '';
+            // Fetch signup counts for all electives in parallel
+            Promise.all(electives.map(function(e) {
+                return fetch('/api/electives/' + e.id + '/signups')
+                    .then(function(r) { return r.json(); })
+                    .then(function(signups) { return { elective: e, count: signups.length }; })
+                    .catch(function() { return { elective: e, count: 0 }; });
+            })).then(function(results) {
+                results.forEach(function(item) {
+                    var e = item.elective;
+                    var count = item.count;
+                    var full = e.capacity && count >= e.capacity;
+                    var spotsText = e.capacity
+                        ? (full ? '🚫 Full' : (e.capacity - count) + ' of ' + e.capacity + ' spots left')
+                        : '';
+                    var card = document.createElement('div');
+                    card.className = 'committee-card' + (full ? ' disabled' : '');
+                    if (!full) card.onclick = function() { openElectiveModal(e); };
+                    card.innerHTML =
+                        '<div class="committee-emoji">📋</div>' +
+                        '<h4>' + e.name + '</h4>' +
+                        (e.description ? '<p>' + e.description + '</p>' : '') +
+                        (spotsText ? '<p style="font-size:12px; font-weight:700; color:' + (full ? '#d93025' : '#5a9a20') + '; margin-top:4px;">' + spotsText + '</p>' : '') +
+                        '<button class="join-btn">' + (full ? 'Full' : 'Sign Up') + '</button>';
+                    grid.appendChild(card);
+                });
+            });
+        })
+        .catch(function() {});
+}
+
+function openElectiveModal(elective) {
+    currentElectiveId = elective.id;
+    document.getElementById('electiveModalTitle').textContent = elective.name;
+    document.getElementById('electiveModalDesc').textContent = elective.description || '';
+    document.getElementById('electiveNameSearch').value = '';
+    document.getElementById('electiveStudentSelect').value = '';
+    document.getElementById('electiveNameDropdown').style.display = 'none';
+    document.getElementById('electiveModalMsg').textContent = '';
+    document.getElementById('electiveModalSubmit').disabled = false;
+    document.getElementById('electiveModal').classList.add('active');
+}
+
+function closeElectiveModal() {
+    document.getElementById('electiveModal').classList.remove('active');
+    currentElectiveId = null;
+}
+
+document.getElementById('electiveModal').addEventListener('click', function(e) {
+    if (e.target === this) closeElectiveModal();
+});
+
+function filterElectiveNames() {
+    var query = document.getElementById('electiveNameSearch').value.toLowerCase().trim();
+    var dropdown = document.getElementById('electiveNameDropdown');
+    var matches = query
+        ? allStudentNames.filter(function(n) { return n.toLowerCase().indexOf(query) !== -1; })
+        : allStudentNames;
+    if (!matches.length) { dropdown.style.display = 'none'; return; }
+    dropdown.innerHTML = '';
+    matches.forEach(function(name) {
+        var item = document.createElement('div');
+        item.textContent = name;
+        item.style.cssText = 'padding:11px 16px; font-size:14px; font-weight:600; color:#111; cursor:pointer; transition:background 0.15s;';
+        item.addEventListener('mouseenter', function() { this.style.background = '#f0f6ff'; });
+        item.addEventListener('mouseleave', function() { this.style.background = 'white'; });
+        item.addEventListener('mousedown', function(ev) {
+            ev.preventDefault();
+            document.getElementById('electiveNameSearch').value = name;
+            document.getElementById('electiveStudentSelect').value = name;
+            dropdown.style.display = 'none';
+        });
+        dropdown.appendChild(item);
+    });
+    dropdown.style.display = 'block';
+}
+
+document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('electiveNamePickerWrap');
+    if (wrap && !wrap.contains(e.target)) document.getElementById('electiveNameDropdown').style.display = 'none';
+});
+
+function submitElectiveSignup() {
+    var name = document.getElementById('electiveStudentSelect').value;
+    var msg = document.getElementById('electiveModalMsg');
+    var btn = document.getElementById('electiveModalSubmit');
+    msg.className = 'modal-msg';
+    msg.textContent = '';
+    if (!name) { msg.style.color = '#d93025'; msg.textContent = 'Please select your name.'; return; }
+    btn.disabled = true;
+    fetch('/api/electives/' + currentElectiveId + '/signups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_name: name })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.error) {
+            msg.style.color = '#d93025';
+            msg.textContent = data.error;
+            btn.disabled = false;
+        } else {
+            msg.style.color = '#5a9a20';
+            msg.textContent = '✓ You\'re signed up!';
+            setTimeout(function() { closeElectiveModal(); }, 1200);
+        }
+    })
+    .catch(function() {
+        msg.style.color = '#d93025';
+        msg.textContent = 'Connection error. Please try again.';
+        btn.disabled = false;
+    });
+}
+
+loadStudents();
+loadElectives();
+
+// Isabelle McLean — Auto-refresh the committee + elective lists so admin additions/removals appear without a manual reload.
+// Skips refreshing while a sign-up modal is open so it never disrupts a student mid-selection.
+setInterval(function() {
+    var committeeOpen = document.getElementById('committeeModal').classList.contains('active');
+    var electiveOpen  = document.getElementById('electiveModal').classList.contains('active');
+    if (committeeOpen || electiveOpen) return;
+    loadCommitteeOptions();
+    loadElectives();
+}, 15000);
 
 // Isabelle McLean — Build the map tabs + layers from /api/maps (managed in the admin panel).
 // Hides the whole section when there are no maps. Version stamp busts the image cache.

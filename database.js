@@ -366,6 +366,37 @@ db.serialize(() => {
         )
     `);
 
+    // Isabelle McLean — App settings: simple key/value store; currently holds the staff + admin passwords so they can be changed from the admin panel
+    db.run(`
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    `);
+
+    // Isabelle McLean — Electives: admin-created sign-up opportunities separate from the main committees
+    db.run(`
+        CREATE TABLE IF NOT EXISTS electives (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            capacity INTEGER DEFAULT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+    db.run(`ALTER TABLE electives ADD COLUMN capacity INTEGER DEFAULT NULL`, function() {});
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS elective_signups (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            elective_id INTEGER NOT NULL,
+            student_name TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(elective_id, student_name),
+            FOREIGN KEY (elective_id) REFERENCES electives(id) ON DELETE CASCADE
+        )
+    `);
+
     // ── Medication administration log: records every time a student takes a medication,
     // who administered it, and when. Replaces the old binary medication_taken flag.
     db.run(`

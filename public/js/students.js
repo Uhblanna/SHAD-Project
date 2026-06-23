@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupObservationToggle();
     setupObservationForm();
     setupObservationControls();
+    setupObservationBehaviourPicker();
     setupObservationCSVDownload();
     setupAcknowledgementModal();
     setupMedicationTracking();
@@ -95,7 +96,8 @@ const SCREEN_HASHES = {
     observationsScreen:     'observations',
     dietaryScreen:          'dietary',
     morningRecScreen:       'morning-rec',
-    committeesScreen:       'committees'
+    committeesScreen:       'committees',
+    electivesScreen:        'electives'
 };
 
 function activateScreen(screenId) {
@@ -1800,6 +1802,9 @@ function setupObservationToggle() {
         el('saveObservationBtn').textContent = 'Save Observation';
         el('deleteObservationBtn').classList.add('hidden');
         editingObsId = null;
+        document.querySelectorAll('input[name="observationMood"]').forEach(function(r) { r.checked = false; });
+        el('observationDetails').value = '';
+        obsResetPicker();
     });
     cancelBtn.addEventListener('click', function() {
         formCard.classList.add('hidden');
@@ -1807,6 +1812,7 @@ function setupObservationToggle() {
         el('saveObservationBtn').textContent = 'Save Observation';
         el('deleteObservationBtn').classList.add('hidden');
         editingObsId = null;
+        obsResetPicker();
     });
 }
 
@@ -1821,11 +1827,118 @@ function editObservation(id) {
     el('saveObservationBtn').textContent = 'Update Observation';
     el('observationStudent').value = obs.student;
     el('observationDetails').value = obs.details;
-    document.querySelectorAll('.checkbox-grid input').forEach(function(cb) { cb.checked = false; });
-    obs.type.split(',').map(function(t) { return t.trim(); }).forEach(function(t) {
-        document.querySelectorAll('.checkbox-grid input').forEach(function(cb) { if (cb.value === t) cb.checked = true; });
-    });
     document.querySelectorAll('input[name="observationMood"]').forEach(function(r) { r.checked = r.value === obs.mood; });
+
+    // Restore the category/behaviour selection from the stored "Category — Behaviour" string.
+    // Older observations may use a different format; if it doesn't match the known list, the picker
+    // just starts unselected and staff can re-pick (the stored value stays until they do).
+    var parts = (obs.type || '').split(' — ');
+    var cat = (parts[0] || '').trim();
+    var beh = (parts[1] || '').trim();
+    obsSel = { cat: null, beh: null };
+    if (cat === 'Other') {
+        obsSel.cat = 'Other';
+    } else if (OBS_BEHAVIOURS[obs.mood] && OBS_BEHAVIOURS[obs.mood][cat]) {
+        obsSel.cat = cat;
+        if (OBS_BEHAVIOURS[obs.mood][cat].indexOf(beh) !== -1) obsSel.beh = beh;
+    }
+    obsRenderCategories(obs.mood);
+}
+
+// Isabelle — Two-level behaviour picker: mood → category → specific behaviour.
+// Stored back into the existing fields: mood = positive/neutral/negative, type = "Category — Behaviour".
+var OBS_BEHAVIOURS = {
+    positive: {
+        Engagement: ['Participation', 'Curiosity'],
+        Leadership: ['Initiative', 'Support'],
+        Collaboration: ['Teamwork', 'Inclusion'],
+        Respect: ['Courtesy', 'Professionalism'],
+        Accountability: ['Punctuality', 'Follow-through'],
+        Resilience: ['Adaptability', 'Perseverance']
+    },
+    neutral: {
+        'Reserved Participation': ['Quiet', 'Prompted'],
+        'Independent Working Style': ['Self-directed', 'Individual'],
+        'Developing Confidence': ['Hesitant', 'Emerging'],
+        'Inconsistent Engagement': ['Variable', 'Situational'],
+        'Routine-Focused Behaviour': ['Compliant', 'Steady'],
+        'Social Adjustment': ['Cautious', 'Settling-in']
+    },
+    negative: {
+        Disengagement: ['Distracted', 'Withdrawn'],
+        Disrespect: ['Inappropriate', 'Dismissive'],
+        'Poor Accountability': ['Late', 'Incomplete'],
+        'Lack of Collaboration': ['Excluding', 'Uncooperative'],
+        'Disruptive Behaviour': ['Interruptive', 'Distracting'],
+        'Safety or Conduct Concerns': ['Unsafe', 'Non-compliant']
+    }
+};
+var obsSel = { cat: null, beh: null };
+
+function obsRenderCategories(mood) {
+    var row = el('obsCatRow');
+    var behWrap = el('obsBehWrap');
+    if (!row) return;
+    row.innerHTML = '';
+    if (!mood || !OBS_BEHAVIOURS[mood]) {
+        row.innerHTML = '<p class="obs-chip-hint">Choose a mood above to see categories.</p>';
+        if (behWrap) behWrap.style.display = 'none';
+        return;
+    }
+    var cats = Object.keys(OBS_BEHAVIOURS[mood]).concat(['Other']);
+    cats.forEach(function(cat) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'obs-chip' + (obsSel.cat === cat ? ' active' : '');
+        b.textContent = cat;
+        b.addEventListener('click', function() {
+            obsSel.cat = cat;
+            obsSel.beh = null;
+            obsRenderCategories(mood);
+            obsRenderBehaviours(mood);
+        });
+        row.appendChild(b);
+    });
+    obsRenderBehaviours(mood);
+}
+
+function obsRenderBehaviours(mood) {
+    var wrap = el('obsBehWrap'), row = el('obsBehRow');
+    if (!wrap || !row) return;
+    if (!obsSel.cat || !OBS_BEHAVIOURS[mood] || !OBS_BEHAVIOURS[mood][obsSel.cat]) {
+        wrap.style.display = 'none';
+        return;
+    }
+    wrap.style.display = 'block';
+    row.innerHTML = '';
+    OBS_BEHAVIOURS[mood][obsSel.cat].forEach(function(beh) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'obs-chip' + (obsSel.beh === beh ? ' active' : '');
+        b.textContent = beh;
+        b.addEventListener('click', function() {
+            obsSel.beh = (obsSel.beh === beh) ? null : beh; // allow tapping again to deselect (it's optional)
+            obsRenderBehaviours(mood);
+        });
+        row.appendChild(b);
+    });
+}
+
+function obsResetPicker() {
+    obsSel = { cat: null, beh: null };
+    var checked = document.querySelector('input[name="observationMood"]:checked');
+    obsRenderCategories(checked ? checked.value : null);
+}
+
+// Wire the mood radios so picking a mood swaps the category list
+function setupObservationBehaviourPicker() {
+    document.querySelectorAll('input[name="observationMood"]').forEach(function(r) {
+        r.addEventListener('change', function() {
+            obsSel.cat = null;
+            obsSel.beh = null;
+            obsRenderCategories(this.value);
+        });
+    });
 }
 
 function setupObservationForm() {
@@ -1835,20 +1948,22 @@ function setupObservationForm() {
     saveBtn.addEventListener('click', function() {
         var student = el('observationStudent').value;
         var details = el('observationDetails').value.trim();
-        var checked = document.querySelectorAll('.checkbox-grid input:checked');
-        var types   = Array.from(checked).map(function(cb) { return cb.value; });
         var moodEl  = document.querySelector('input[name="observationMood"]:checked');
         if (!moodEl) { alert('Please choose positive, neutral, or needs attention.'); return; }
-        if (!types.length || !details) { alert('Please choose a type and enter details.'); return; }
+        if (!obsSel.cat) { alert('Please choose a behaviour category.'); return; }
+        // "Other" has no preset behaviour, so a written comment is required to explain it
+        if (obsSel.cat === 'Other' && !details) { alert('Please add a comment in Details to explain the "Other" behaviour.'); return; }
+        // type = "Category — Behaviour" (behaviour optional); details is optional free text
+        var typeStr = obsSel.cat + (obsSel.beh ? ' — ' + obsSel.beh : '');
         if (editingObsId !== null) {
-            ShadDB.updateObservation(editingObsId, { student: student, type: types.join(', '), mood: moodEl.value, details: details });
+            ShadDB.updateObservation(editingObsId, { student: student, type: typeStr, mood: moodEl.value, details: details });
         } else {
-            ShadDB.addObservation({ student: student, type: types.join(', '), mood: moodEl.value, details: details });
+            ShadDB.addObservation({ student: student, type: typeStr, mood: moodEl.value, details: details });
         }
         editingObsId = null;
         el('observationDetails').value = '';
         if (moodEl) moodEl.checked = false;
-        checked.forEach(function(cb) { cb.checked = false; });
+        obsResetPicker();
         formCard.classList.add('hidden');
         newBtn.style.display = 'inline-block';
         el('saveObservationBtn').textContent = 'Save Observation';
@@ -1919,6 +2034,75 @@ function esc(str) {
     if (str === null || str === undefined) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── ELECTIVES (staff view) ─────────────────────────────────
+// Isabelle — Shows the Electives nav button only when active electives exist, and lists each elective's sign-ups.
+function loadStaffElectives() {
+    fetch('/api/electives')
+        .then(function(r) { return r.json(); })
+        .then(function(electives) {
+            var navBtn = el('electivesNavBtn');
+            var list = el('electivesStaffList');
+            if (!electives || !electives.length) {
+                if (navBtn) navBtn.style.display = 'none';
+                // If the user is currently on the electives screen, send them home
+                if (document.getElementById('electivesScreen') &&
+                    document.getElementById('electivesScreen').classList.contains('active')) {
+                    activateScreen('hubHome');
+                }
+                return;
+            }
+            if (navBtn) navBtn.style.display = '';
+            if (!list) return;
+
+            list.innerHTML = '';
+            electives.forEach(function(e) {
+                var card = document.createElement('div');
+                card.className = 'student-panel';
+                card.style.padding = '18px 20px';
+                var capLabel = e.capacity ? (' / ' + e.capacity + ' spots') : '';
+                card.innerHTML =
+                    '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:10px;">' +
+                        '<h3 style="margin:0; font-size:17px; font-weight:800; color:#111;">' + esc(e.name) + '</h3>' +
+                        '<span id="electiveCount-' + e.id + '" style="font-size:13px; font-weight:700; color:#888;"></span>' +
+                    '</div>' +
+                    (e.description ? '<p style="margin:0 0 12px; font-size:13px; color:#888;">' + esc(e.description) + '</p>' : '') +
+                    '<div id="electiveSignups-' + e.id + '"><span style="font-size:13px; color:#aaa;">Loading…</span></div>';
+                list.appendChild(card);
+                loadStaffElectiveSignups(e.id, e.capacity, capLabel);
+            });
+        })
+        .catch(function() {});
+}
+
+function loadStaffElectiveSignups(id, capacity, capLabel) {
+    fetch('/api/electives/' + id + '/signups')
+        .then(function(r) { return r.json(); })
+        .then(function(signups) {
+            var box = el('electiveSignups-' + id);
+            var countEl = el('electiveCount-' + id);
+            if (countEl) countEl.textContent = signups.length + (capLabel || ' signed up');
+            if (!box) return;
+            if (!signups.length) {
+                box.innerHTML = '<span style="font-size:13px; color:#aaa;">No sign-ups yet.</span>';
+                return;
+            }
+            box.innerHTML = signups.map(function(s) {
+                return '<span style="display:inline-block; background:#f0f6ff; color:#146ff8; border-radius:20px; padding:5px 12px; font-size:13px; font-weight:600; margin:0 5px 5px 0;">' +
+                    esc(s.student_name) + '</span>';
+            }).join('');
+        })
+        .catch(function() {});
+}
+
+// Load on startup (sets nav visibility), refresh when the tab is opened, and poll so new sign-ups appear live
+loadStaffElectives();
+document.querySelectorAll('.hub-nav').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        if (this.dataset.screen === 'electivesScreen') loadStaffElectives();
+    });
+});
+setInterval(loadStaffElectives, 20000);
 
 function showMsg(text, type) {
     var existing = document.querySelector('.js-message');

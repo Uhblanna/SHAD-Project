@@ -12,6 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Isabelle McLean — Wires up the Remove a Committee button + confirm remove button
     document.getElementById("removeCommitteeBtn").addEventListener("click", openRemoveCommitteePanel);
     document.getElementById("confirmRemoveCommitteeBtn").addEventListener("click", confirmRemoveCommittee);
+    // Isabelle McLean — Wires up the Add a single committee button
+    document.getElementById("addCommitteeBtn").addEventListener("click", addSingleCommittee);
+    // Isabelle McLean — Wires up the password-change buttons
+    document.getElementById("changeStaffPassBtn").addEventListener("click", function() { changePassword("staff"); });
+    document.getElementById("changeAdminPassBtn").addEventListener("click", function() { changePassword("admin"); });
     document.getElementById("clearCommitteeSignupsBtn").addEventListener("click", clearCommitteeSignups);
     document.getElementById("clearCommitteesBtn").addEventListener("click", clearAllCommittees);
     document.getElementById("uploadMedkitsBtn").addEventListener("click", uploadMedkitsCSV);
@@ -584,6 +589,82 @@ function uploadCommitteeOptionsCSV() {
                 input.value = "";
             });
     });
+}
+
+// Isabelle McLean — Changes the staff or admin password; requires the current admin password to authorize
+function changePassword(which) {
+    var currentId = which === "staff" ? "staffCurrentAdminPass" : "adminCurrentAdminPass";
+    var newId     = which === "staff" ? "staffNewPass" : "adminNewPass";
+    var statusId  = which === "staff" ? "staffPassStatus" : "adminPassStatus";
+
+    var currentAdminPassword = document.getElementById(currentId).value;
+    var newPassword = document.getElementById(newId).value;
+    var status = document.getElementById(statusId);
+
+    if (!currentAdminPassword) {
+        status.textContent = "Enter the current admin password to confirm.";
+        status.style.color = "#d93025";
+        return;
+    }
+    if (!newPassword || newPassword.length < 4) {
+        status.textContent = "New password must be at least 4 characters.";
+        status.style.color = "#d93025";
+        return;
+    }
+
+    status.textContent = "Saving…";
+    status.style.color = "#888";
+
+    fetch("/api/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ which: which, currentAdminPassword: currentAdminPassword, newPassword: newPassword })
+    })
+    .then(function(r) { return r.json().then(function(body) { return { ok: r.ok, body: body }; }); })
+    .then(function(res) {
+        if (!res.ok) {
+            status.textContent = res.body.error || "Could not update password.";
+            status.style.color = "#d93025";
+            return;
+        }
+        document.getElementById(currentId).value = "";
+        document.getElementById(newId).value = "";
+        status.textContent = "✓ " + (which === "staff" ? "Staff" : "Admin") + " password updated.";
+        status.style.color = "#5a9a20";
+        setTimeout(function() { status.textContent = ""; }, 3500);
+    })
+    .catch(function() {
+        status.textContent = "Connection error. Please try again.";
+        status.style.color = "#d93025";
+    });
+}
+
+// Isabelle McLean — Adds a single committee without touching the rest of the list or any student selections
+function addSingleCommittee() {
+    const nameInput = document.getElementById("newCommitteeName");
+    const descInput = document.getElementById("newCommitteeDesc");
+    const status = document.getElementById("addCommitteeStatus");
+    const name = nameInput.value.trim();
+    const description = descInput.value.trim();
+
+    if (!name) {
+        status.textContent = "Please enter a committee name.";
+        status.style.color = "#d93025";
+        return;
+    }
+
+    apiRequest("POST", "/api/committee-options", { name, description })
+        .then(() => {
+            nameInput.value = "";
+            descInput.value = "";
+            status.textContent = '✓ "' + name + '" added.';
+            status.style.color = "#5a9a20";
+            setTimeout(() => { status.textContent = ""; }, 2500);
+        })
+        .catch(() => {
+            status.textContent = "Could not add committee. Please try again.";
+            status.style.color = "#d93025";
+        });
 }
 
 // Isabelle McLean — Loads the current committees into the dropdown, then reveals the remove panel

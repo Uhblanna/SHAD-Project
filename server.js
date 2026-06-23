@@ -22,10 +22,24 @@ const transporter = nodemailer.createTransport({
 });
 const PORT = process.env.PORT || 3000;
 
-// ── Change this to your actual staff password ──────────────────────────────
-const STAFF_PASSWORD = "shad2026";
-// Isabelle McLean — Separate admin password gating the /public/admin.html page; change this to set a new admin password
-const ADMIN_PASSWORD = "shadadmin";
+// ── Default passwords (used only the first time, before any are saved in the DB) ──
+const DEFAULT_STAFF_PASSWORD = "shad2026";
+const DEFAULT_ADMIN_PASSWORD = "shadadmin";
+// Isabelle McLean — Live passwords are loaded from the app_settings table at startup so they can be changed from the admin panel
+let staffPassword = DEFAULT_STAFF_PASSWORD;
+let adminPassword = DEFAULT_ADMIN_PASSWORD;
+
+// Seed defaults if missing, then load the current values into memory for fast (sync) login checks
+db.run("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('staff_password', ?)", [DEFAULT_STAFF_PASSWORD]);
+db.run("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('admin_password', ?)", [DEFAULT_ADMIN_PASSWORD], function() {
+    db.all("SELECT key, value FROM app_settings WHERE key IN ('staff_password','admin_password')", [], (err, rows) => {
+        if (err || !rows) return;
+        rows.forEach(r => {
+            if (r.key === "staff_password") staffPassword = r.value;
+            if (r.key === "admin_password") adminPassword = r.value;
+        });
+    });
+});
 // ──────────────────────────────────────────────────────────────────────────
 
 app.use(cors());
@@ -42,8 +56,8 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 app.post("/api/staff-login", (req, res) => {
     const { username, password } = req.body;
 
-    // Master password fallback (for admin use / setup period)
-    if (!username && password === STAFF_PASSWORD) {
+    // Master password fallback — username left blank, password matches the live staffPassword from app_settings
+    if (!username && password === staffPassword) {
         req.session.staffAuth = true;
         req.session.staffName = "Staff";
         req.session.staffId   = null;
@@ -85,7 +99,7 @@ app.post("/api/staff-logout", (req, res) => {
 
 // Isabelle McLean — Admin auth routes: separate password layer for the /public/admin.html page
 app.post("/api/admin-login", (req, res) => {
-    if (req.body.password === ADMIN_PASSWORD) {
+    if (req.body.password === adminPassword) {
         req.session.adminAuth = true;
         // Admin implies staff access, so the login-page Admin button can grant full
         // access in one step (the admin page also requires a staff session to load).
@@ -103,6 +117,25 @@ app.get("/api/check-admin-auth", (req, res) => {
 app.post("/api/admin-logout", (req, res) => {
     req.session.adminAuth = false;
     res.json({ ok: true });
+});
+
+// Isabelle McLean — Change the staff or admin password. Admin-session only. Verifies the current admin password before saving.
+app.post("/api/change-password", (req, res) => {
+    if (!req.session.adminAuth) return res.status(403).json({ error: "Admin access required." });
+
+    const { which, currentAdminPassword, newPassword } = req.body;
+    if (which !== "staff" && which !== "admin") return res.status(400).json({ error: "Invalid password type." });
+    if (currentAdminPassword !== adminPassword) return res.status(401).json({ error: "Current admin password is incorrect." });
+    if (!newPassword || newPassword.length < 4) return res.status(400).json({ error: "New password must be at least 4 characters." });
+
+    const key = which === "staff" ? "staff_password" : "admin_password";
+    db.run("UPDATE app_settings SET value = ? WHERE key = ?", [newPassword, key], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        // Update the in-memory copy so the new password works immediately
+        if (which === "staff") staffPassword = newPassword;
+        else adminPassword = newPassword;
+        res.json({ ok: true });
+    });
 });
 
 function todayKey() {
@@ -1131,6 +1164,17 @@ app.get("/api/committee-options", (req, res) => {
     });
 });
 
+// Isabelle McLean — Add a single committee option without replacing the whole list (used by the "Add a Committee" form on the admin page)
+app.post("/api/committee-options", (req, res) => {
+    const { name, type, description } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: "Committee name is required." });
+    db.run("INSERT INTO committee_options (name, type, description) VALUES (?, ?, ?)",
+        [name.trim(), (type || "Project").trim(), (description || "").trim()], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID, name: name.trim(), type: (type || "Project").trim(), description: (description || "").trim() });
+    });
+});
+
 // Isabelle McLean — Delete a single committee option by ID (used by the "Remove a Committee" button on the admin page)
 app.delete("/api/committee-options/:id", (req, res) => {
     db.get("SELECT name FROM committee_options WHERE id = ?", [req.params.id], (err, row) => {
@@ -1315,6 +1359,85 @@ app.delete("/api/maps/:id", (req, res) => {
     writeMaps(maps);
     fs.unlink(path.join(MAPS_DIR, removed.file), () => {});
     res.json({ ok: true, id: removed.id });
+});
+
+// Isabelle McLean — Electives API: admin creates/deletes electives; students sign up by name; section hidden on student portal when empty
+app.get("/api/electives", (req, res) => {
+    db.all("SELECT * FROM electives ORDER BY created_at ASC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/electives", (req, res) => {
+    const { name, description, capacity } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: "Name is required." });
+    const cap = capacity ? parseInt(capacity, 10) : null;
+    db.run("INSERT INTO electives (name, description, capacity) VALUES (?, ?, ?)", [name.trim(), (description || "").trim(), cap], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID, name: name.trim(), description: (description || "").trim(), capacity: cap });
+    });
+});
+
+app.put("/api/electives/:id", (req, res) => {
+    const { name, description, capacity } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: "Name is required." });
+    const cap = capacity ? parseInt(capacity, 10) : null;
+    db.run("UPDATE electives SET name = ?, description = ?, capacity = ? WHERE id = ?",
+        [name.trim(), (description || "").trim(), cap, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ok: true });
+    });
+});
+
+app.delete("/api/electives/:id", (req, res) => {
+    db.run("DELETE FROM electives WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ok: true });
+    });
+});
+
+app.get("/api/electives/:id/signups", (req, res) => {
+    db.all("SELECT * FROM elective_signups WHERE elective_id = ? ORDER BY created_at ASC", [req.params.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/electives/:id/signups", (req, res) => {
+    const { student_name } = req.body;
+    if (!student_name || !student_name.trim()) return res.status(400).json({ error: "Student name is required." });
+    const eid = req.params.id;
+    db.get("SELECT capacity FROM electives WHERE id = ?", [eid], (err, elective) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!elective) return res.status(404).json({ error: "Elective not found." });
+        if (elective.capacity) {
+            db.get("SELECT COUNT(*) AS cnt FROM elective_signups WHERE elective_id = ?", [eid], (err2, row) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                if (row.cnt >= elective.capacity) return res.status(409).json({ error: "This elective is full." });
+                insertElectiveSignup(eid, student_name.trim(), res);
+            });
+        } else {
+            insertElectiveSignup(eid, student_name.trim(), res);
+        }
+    });
+});
+
+function insertElectiveSignup(eid, name, res) {
+    db.run("INSERT INTO elective_signups (elective_id, student_name) VALUES (?, ?)", [eid, name], function(err) {
+        if (err) {
+            if (err.message.includes("UNIQUE")) return res.status(409).json({ error: "You're already signed up for this elective." });
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ id: this.lastID, elective_id: Number(eid), student_name: name });
+    });
+}
+
+app.delete("/api/electives/:id/signups/:signupId", (req, res) => {
+    db.run("DELETE FROM elective_signups WHERE id = ? AND elective_id = ?", [req.params.signupId, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ok: true });
+    });
 });
 
 // Isabelle McLean — Committee signup API routes: fetch all signups, submit a new one (blocks duplicate student+committee combos), remove by ID
