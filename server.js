@@ -848,6 +848,51 @@ app.delete("/api/staff/all", (req, res) => {
 
 // ── STAFF CREDENTIALS (admin only) ───────────────────────────────────────────
 
+// Bulk credential import via CSV upload
+app.post("/api/staff/import-credentials", (req, res) => {
+    if (!req.session.adminAuth) return res.status(403).json({ error: "Admin access required." });
+
+    const entries = Array.isArray(req.body.entries) ? req.body.entries : [];
+    if (!entries.length) return res.status(400).json({ error: "No entries provided." });
+
+    db.all("SELECT id, name FROM staff", [], (err, staffRows) => {
+        if (err) return res.status(500).json({ error: "Server error." });
+
+        // Build a case-insensitive name → id map
+        const nameMap = {};
+        staffRows.forEach(r => { nameMap[r.name.toLowerCase()] = r.id; });
+
+        let pending  = entries.length;
+        let matched  = 0;
+        let skipped  = 0;
+        const errors = [];
+
+        function done() {
+            pending--;
+            if (pending <= 0) {
+                res.json({ ok: true, message: `${matched} credential(s) set, ${skipped} name(s) not found.` });
+            }
+        }
+
+        entries.forEach(({ name, username, password }) => {
+            const staffId = nameMap[name.toLowerCase()];
+            if (!staffId) { skipped++; errors.push(name); return done(); }
+
+            bcrypt.hash(password, 12, (hashErr, hash) => {
+                if (hashErr) { skipped++; return done(); }
+                db.run(
+                    "UPDATE staff SET username = ?, password_hash = ? WHERE id = ?",
+                    [username, hash, staffId],
+                    (updateErr) => {
+                        if (updateErr) { skipped++; } else { matched++; }
+                        done();
+                    }
+                );
+            });
+        });
+    });
+});
+
 // Set or update username + password for a staff member
 app.post("/api/staff/:id/credentials", (req, res) => {
     if (!req.session.adminAuth) return res.status(403).json({ error: "Admin access required." });
@@ -2130,19 +2175,21 @@ app.delete("/api/shopping/all/items", (req, res) => {
 
 // Upload a receipt (multipart form: purchased_by, total_cost, receipt_image)
 app.post("/api/receipts", upload.single("receipt_image"), (req, res) => {
-    const purchasedBy = (req.body.purchased_by || "").trim();
-    const totalCost   = parseFloat(req.body.total_cost || "0");
-    const file        = req.file;
+    const purchasedBy  = (req.body.purchased_by || "").trim();
+    const totalCost    = parseFloat(req.body.total_cost || "0");
+    const description  = (req.body.description || "").trim();
+    const file         = req.file;
 
     if (!purchasedBy) return res.status(400).json({ error: "Purchaser name is required." });
     if (isNaN(totalCost)) return res.status(400).json({ error: "Total cost must be a number." });
 
     db.run(
-        `INSERT INTO receipts (purchased_by, total_cost, image_data, image_type, image_name)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO receipts (purchased_by, total_cost, description, image_data, image_type, image_name)
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
             purchasedBy,
             totalCost,
+            description,
             file ? file.buffer : null,
             file ? file.mimetype : "",
             file ? file.originalname : ""
@@ -2157,7 +2204,7 @@ app.post("/api/receipts", upload.single("receipt_image"), (req, res) => {
 // List all receipts (metadata only — no image blobs)
 app.get("/api/receipts", (req, res) => {
     db.all(
-        "SELECT id, purchased_by, total_cost, image_name, image_type, created_at FROM receipts ORDER BY created_at DESC",
+        "SELECT id, purchased_by, total_cost, description, image_name, image_type, created_at FROM receipts ORDER BY created_at DESC",
         [],
         (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
