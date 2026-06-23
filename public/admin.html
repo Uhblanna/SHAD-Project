@@ -384,6 +384,20 @@
             </div>
         </div>
 
+        <!-- Staff Credentials: set usernames, passwords, and revoke access -->
+        <div class="admin-card admin-card-wide">
+            <div class="admin-card-head">
+                <h3>Staff Login Credentials</h3>
+                <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+            </div>
+            <div class="admin-card-body">
+                <p>Set a username and password for each staff member so they can log in individually. Revoke access instantly if needed.</p>
+                <div id="staffCredentialsList" style="margin-top:16px; display:flex; flex-direction:column; gap:10px;">
+                    <p style="color:#aaa; font-size:13px; font-weight:600;">Loading staff...</p>
+                </div>
+            </div>
+        </div>
+
         <div class="admin-card">
             <div class="admin-card-head">
                 <h3>Upload Student CSV</h3>
@@ -737,6 +751,7 @@ function exportTaskCompletion() {
 }
 
 loadNeedsAttention();
+loadStaffCredentials();
 loadAdminTodos();
 loadStaffBreakdown();
 loadAdminShopping();
@@ -1321,6 +1336,152 @@ function downloadAllReceipts() {
             downloadNext();
         })
         .catch(function() { alert('Could not fetch receipts.'); });
+}
+
+// ── STAFF CREDENTIALS ────────────────────────────────────────────────────────
+
+function loadStaffCredentials() {
+    var container = document.getElementById('staffCredentialsList');
+    if (!container) return;
+
+    fetch('/api/staff')
+        .then(function(r) { return r.json(); })
+        .then(function(staff) {
+            if (!staff.length) {
+                container.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No staff uploaded yet. Upload a staff CSV first.</p>';
+                return;
+            }
+            container.innerHTML = '';
+            staff.forEach(function(s) { container.appendChild(buildCredRow(s)); });
+        })
+        .catch(function() {
+            container.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">Could not load staff.</p>';
+        });
+}
+
+function buildCredRow(s) {
+    var wrap = document.createElement('div');
+    wrap.id = 'credRow_' + s.id;
+    wrap.style.cssText = 'border:1px solid ' + (s.accessRevoked ? '#ffd0d0' : '#eee') + ';border-radius:14px;overflow:hidden;background:' + (s.accessRevoked ? '#fff8f8' : 'white') + ';';
+
+    var statusBadge = s.accessRevoked
+        ? '<span style="font-size:11px;font-weight:800;background:#ffe0e0;color:#d12c2c;padding:3px 9px;border-radius:99px;">Revoked</span>'
+        : (s.hasPassword
+            ? '<span style="font-size:11px;font-weight:800;background:#e6f9ef;color:#5a9a20;padding:3px 9px;border-radius:99px;">Active</span>'
+            : '<span style="font-size:11px;font-weight:800;background:#fff3e0;color:#e67e00;padding:3px 9px;border-radius:99px;">No Password</span>');
+
+    // Main info row
+    var info = document.createElement('div');
+    info.style.cssText = 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 16px;';
+    info.innerHTML =
+        '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">' +
+            '<div style="width:38px;height:38px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#146ff8;flex-shrink:0;">' +
+                escAdm(s.name.charAt(0).toUpperCase()) +
+            '</div>' +
+            '<div>' +
+                '<div style="font-size:14px;font-weight:800;color:#111;">' + escAdm(s.name) + '</div>' +
+                '<div style="font-size:12px;font-weight:600;color:#888;">' +
+                    (s.username ? 'Username: <strong style="color:#146ff8;">' + escAdm(s.username) + '</strong>' : '<em style="color:#bbb;">No username set</em>') +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+            statusBadge +
+            '<button onclick="toggleCredForm(' + s.id + ')" style="padding:7px 14px;background:#146ff8;color:#fff;border:none;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">' +
+                (s.hasPassword ? 'Edit Credentials' : 'Set Credentials') +
+            '</button>' +
+            (s.accessRevoked
+                ? '<button onclick="setRevoke(' + s.id + ', false)" style="padding:7px 14px;background:#e6f9ef;color:#5a9a20;border:none;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">Restore Access</button>'
+                : '<button onclick="setRevoke(' + s.id + ', true)" style="padding:7px 14px;background:#fff0f0;color:#d12c2c;border:none;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">Revoke Access</button>') +
+        '</div>';
+    wrap.appendChild(info);
+
+    // Inline credential form (hidden by default)
+    var form = document.createElement('div');
+    form.id = 'credForm_' + s.id;
+    form.style.cssText = 'display:none;padding:14px 16px 18px;border-top:1px solid #f0f0f0;background:#fafafa;';
+    form.innerHTML =
+        '<p style="font-size:13px;font-weight:800;color:#111;margin-bottom:12px;">Set Login Credentials for ' + escAdm(s.name) + '</p>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">' +
+            '<div style="flex:1;min-width:140px;">' +
+                '<label style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;">Username</label>' +
+                '<input type="text" id="credUsername_' + s.id + '" value="' + escAdm(s.username) + '" placeholder="e.g. sarah.kim" ' +
+                    'style="width:100%;padding:10px 12px;border:2px solid #e5e5e5;border-radius:10px;font-family:\'Archivo\',sans-serif;font-size:14px;font-weight:600;color:#111;outline:none;box-sizing:border-box;">' +
+            '</div>' +
+            '<div style="flex:1;min-width:140px;">' +
+                '<label style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;">New Password <span style="font-weight:500;text-transform:none;">(leave blank to keep current)</span></label>' +
+                '<input type="password" id="credPassword_' + s.id + '" placeholder="New password" ' +
+                    'style="width:100%;padding:10px 12px;border:2px solid #e5e5e5;border-radius:10px;font-family:\'Archivo\',sans-serif;font-size:14px;font-weight:600;color:#111;outline:none;box-sizing:border-box;">' +
+            '</div>' +
+        '</div>' +
+        '<div id="credMsg_' + s.id + '" style="font-size:13px;font-weight:700;min-height:18px;margin-bottom:8px;"></div>' +
+        '<div style="display:flex;gap:8px;">' +
+            '<button onclick="saveCredentials(' + s.id + ')" style="padding:9px 18px;background:#146ff8;color:#fff;border:none;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Save</button>' +
+            '<button onclick="toggleCredForm(' + s.id + ')" style="padding:9px 14px;background:transparent;color:#aaa;border:2px solid #e5e5e5;border-radius:9px;font-family:\'Archivo\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>' +
+        '</div>';
+    wrap.appendChild(form);
+
+    return wrap;
+}
+
+function toggleCredForm(id) {
+    var form = document.getElementById('credForm_' + id);
+    if (!form) return;
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveCredentials(id) {
+    var usernameEl = document.getElementById('credUsername_' + id);
+    var passwordEl = document.getElementById('credPassword_' + id);
+    var msgEl      = document.getElementById('credMsg_' + id);
+    var username   = usernameEl ? usernameEl.value.trim() : '';
+    var password   = passwordEl ? passwordEl.value : '';
+
+    if (!username) {
+        msgEl.style.color = '#d12c2c';
+        msgEl.textContent = 'Username is required.';
+        usernameEl.focus();
+        return;
+    }
+
+    msgEl.style.color = '#888';
+    msgEl.textContent = 'Saving...';
+
+    fetch('/api/staff/' + id + '/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.error) {
+            msgEl.style.color = '#d12c2c';
+            msgEl.textContent = data.error;
+            return;
+        }
+        msgEl.style.color = '#5a9a20';
+        msgEl.textContent = data.passwordChanged ? 'Credentials saved.' : 'Username updated.';
+        if (passwordEl) passwordEl.value = '';
+        setTimeout(function() { loadStaffCredentials(); }, 800);
+    })
+    .catch(function() {
+        msgEl.style.color = '#d12c2c';
+        msgEl.textContent = 'Could not save. Please try again.';
+    });
+}
+
+function setRevoke(id, revoke) {
+    var msg = revoke ? 'Revoke this staff member\'s access? They will not be able to log in.' : 'Restore access for this staff member?';
+    if (!confirm(msg)) return;
+
+    fetch('/api/staff/' + id + '/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ revoke: revoke })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { loadStaffCredentials(); })
+    .catch(function() { alert('Could not update access. Please try again.'); });
 }
 
 function escAdm(s) {
