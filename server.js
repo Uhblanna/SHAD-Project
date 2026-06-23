@@ -22,22 +22,16 @@ const transporter = nodemailer.createTransport({
 });
 const PORT = process.env.PORT || 3000;
 
-// ── Default passwords (used only the first time, before any are saved in the DB) ──
-const DEFAULT_STAFF_PASSWORD = "shad2026";
+// ── Admin password (used only the first time, before one is saved in the DB) ──
+// Staff now log in only with individual usernames + hashed passwords (see /api/staff-login).
+// The admin password remains a single shared password and also grants staff access.
 const DEFAULT_ADMIN_PASSWORD = "shadadmin";
-// Isabelle McLean — Live passwords are loaded from the app_settings table at startup so they can be changed from the admin panel
-let staffPassword = DEFAULT_STAFF_PASSWORD;
 let adminPassword = DEFAULT_ADMIN_PASSWORD;
 
-// Seed defaults if missing, then load the current values into memory for fast (sync) login checks
-db.run("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('staff_password', ?)", [DEFAULT_STAFF_PASSWORD]);
+// Seed default if missing, then load the current value into memory for fast (sync) login checks
 db.run("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('admin_password', ?)", [DEFAULT_ADMIN_PASSWORD], function() {
-    db.all("SELECT key, value FROM app_settings WHERE key IN ('staff_password','admin_password')", [], (err, rows) => {
-        if (err || !rows) return;
-        rows.forEach(r => {
-            if (r.key === "staff_password") staffPassword = r.value;
-            if (r.key === "admin_password") adminPassword = r.value;
-        });
+    db.get("SELECT value FROM app_settings WHERE key = 'admin_password'", [], (err, row) => {
+        if (!err && row) adminPassword = row.value;
     });
 });
 // ──────────────────────────────────────────────────────────────────────────
@@ -55,14 +49,6 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 
 app.post("/api/staff-login", (req, res) => {
     const { username, password } = req.body;
-
-    // Master password fallback — username left blank, password matches the live staffPassword from app_settings
-    if (!username && password === staffPassword) {
-        req.session.staffAuth = true;
-        req.session.staffName = "Staff";
-        req.session.staffId   = null;
-        return res.json({ ok: true, staffName: "Staff" });
-    }
 
     if (!username || !password) {
         return res.status(401).json({ ok: false, error: "Username and password are required." });
@@ -119,21 +105,17 @@ app.post("/api/admin-logout", (req, res) => {
     res.json({ ok: true });
 });
 
-// Isabelle McLean — Change the staff or admin password. Admin-session only. Verifies the current admin password before saving.
+// Isabelle McLean — Change the admin password. Admin-session only. Verifies the current admin password before saving.
 app.post("/api/change-password", (req, res) => {
     if (!req.session.adminAuth) return res.status(403).json({ error: "Admin access required." });
 
-    const { which, currentAdminPassword, newPassword } = req.body;
-    if (which !== "staff" && which !== "admin") return res.status(400).json({ error: "Invalid password type." });
+    const { currentAdminPassword, newPassword } = req.body;
     if (currentAdminPassword !== adminPassword) return res.status(401).json({ error: "Current admin password is incorrect." });
     if (!newPassword || newPassword.length < 4) return res.status(400).json({ error: "New password must be at least 4 characters." });
 
-    const key = which === "staff" ? "staff_password" : "admin_password";
-    db.run("UPDATE app_settings SET value = ? WHERE key = ?", [newPassword, key], function(err) {
+    db.run("UPDATE app_settings SET value = ? WHERE key = 'admin_password'", [newPassword], function(err) {
         if (err) return res.status(500).json({ error: err.message });
-        // Update the in-memory copy so the new password works immediately
-        if (which === "staff") staffPassword = newPassword;
-        else adminPassword = newPassword;
+        adminPassword = newPassword; // update in-memory copy so the new password works immediately
         res.json({ ok: true });
     });
 });

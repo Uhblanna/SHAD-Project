@@ -8,6 +8,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "latest",
+    "docx": "^9.7.1",
     "express": "latest",
     "express-session": "^1.19.0",
     "multer": "^2.2.0",

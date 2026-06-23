@@ -285,22 +285,12 @@
                 <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
             </div>
             <div class="admin-card-body">
-                <p class="committee-group-hint" style="margin-bottom:14px;">Changing a password takes effect immediately. Anyone currently logged in stays logged in until they sign out. You must enter the current admin password to confirm either change.</p>
-
-                <!-- Change staff password -->
-                <div class="committee-group-box">
-                    <p class="committee-group-title">Staff login password</p>
-                    <p class="committee-group-hint">Used by all staff to log in to the staff portal.</p>
-                    <input type="password" id="staffCurrentAdminPass" placeholder="Current admin password" autocomplete="off">
-                    <input type="password" id="staffNewPass" placeholder="New staff password" autocomplete="new-password" style="margin-top:8px;">
-                    <button id="changeStaffPassBtn" style="width:100%; margin-top:10px;">Update Staff Password</button>
-                    <p class="committee-group-status" id="staffPassStatus"></p>
-                </div>
+                <p class="committee-group-hint" style="margin-bottom:14px;">Changing the admin password takes effect immediately. Anyone currently logged in stays logged in until they sign out. Staff log in with their own individual usernames and passwords, which are set per person in the staff list.</p>
 
                 <!-- Change admin password -->
                 <div class="committee-group-box">
                     <p class="committee-group-title">Admin password</p>
-                    <p class="committee-group-hint">Gates access to this admin panel (the second password layer).</p>
+                    <p class="committee-group-hint">Gates access to this admin panel, and also grants staff-portal access.</p>
                     <input type="password" id="adminCurrentAdminPass" placeholder="Current admin password" autocomplete="off">
                     <input type="password" id="adminNewPass" placeholder="New admin password" autocomplete="new-password" style="margin-top:8px;">
                     <button id="changeAdminPassBtn" style="width:100%; margin-top:10px;">Update Admin Password</button>

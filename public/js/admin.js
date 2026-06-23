@@ -14,9 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("confirmRemoveCommitteeBtn").addEventListener("click", confirmRemoveCommittee);
     // Isabelle McLean — Wires up the Add a single committee button
     document.getElementById("addCommitteeBtn").addEventListener("click", addSingleCommittee);
-    // Isabelle McLean — Wires up the password-change buttons
-    document.getElementById("changeStaffPassBtn").addEventListener("click", function() { changePassword("staff"); });
-    document.getElementById("changeAdminPassBtn").addEventListener("click", function() { changePassword("admin"); });
+    // Isabelle McLean — Wires up the admin password-change button
+    document.getElementById("changeAdminPassBtn").addEventListener("click", changeAdminPassword);
     document.getElementById("clearCommitteeSignupsBtn").addEventListener("click", clearCommitteeSignups);
     document.getElementById("clearCommitteesBtn").addEventListener("click", clearAllCommittees);
     document.getElementById("uploadMedkitsBtn").addEventListener("click", uploadMedkitsCSV);
@@ -591,15 +590,11 @@ function uploadCommitteeOptionsCSV() {
     });
 }
 
-// Isabelle McLean — Changes the staff or admin password; requires the current admin password to authorize
-function changePassword(which) {
-    var currentId = which === "staff" ? "staffCurrentAdminPass" : "adminCurrentAdminPass";
-    var newId     = which === "staff" ? "staffNewPass" : "adminNewPass";
-    var statusId  = which === "staff" ? "staffPassStatus" : "adminPassStatus";
-
-    var currentAdminPassword = document.getElementById(currentId).value;
-    var newPassword = document.getElementById(newId).value;
-    var status = document.getElementById(statusId);
+// Isabelle McLean — Changes the admin password; requires the current admin password to authorize
+function changeAdminPassword() {
+    var currentAdminPassword = document.getElementById("adminCurrentAdminPass").value;
+    var newPassword = document.getElementById("adminNewPass").value;
+    var status = document.getElementById("adminPassStatus");
 
     if (!currentAdminPassword) {
         status.textContent = "Enter the current admin password to confirm.";
@@ -618,7 +613,7 @@ function changePassword(which) {
     fetch("/api/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ which: which, currentAdminPassword: currentAdminPassword, newPassword: newPassword })
+        body: JSON.stringify({ currentAdminPassword: currentAdminPassword, newPassword: newPassword })
     })
     .then(function(r) { return r.json().then(function(body) { return { ok: r.ok, body: body }; }); })
     .then(function(res) {
@@ -627,9 +622,9 @@ function changePassword(which) {
             status.style.color = "#d93025";
             return;
         }
-        document.getElementById(currentId).value = "";
-        document.getElementById(newId).value = "";
-        status.textContent = "✓ " + (which === "staff" ? "Staff" : "Admin") + " password updated.";
+        document.getElementById("adminCurrentAdminPass").value = "";
+        document.getElementById("adminNewPass").value = "";
+        status.textContent = "✓ Admin password updated.";
         status.style.color = "#5a9a20";
         setTimeout(function() { status.textContent = ""; }, 3500);
     })
