@@ -99,6 +99,13 @@
             <span class="nav-divider">|</span>
             <span class="nav-text">Committees</span>
         </button>
+
+        <!-- Isabelle — Electives tab: only shown when active electives exist; staff view sign-ups per elective -->
+        <button class="hub-nav" id="electivesNavBtn" data-screen="electivesScreen" data-preview="Electives" style="display:none;">
+            <span class="nav-emoji">📋</span>
+            <span class="nav-divider">|</span>
+            <span class="nav-text">Electives</span>
+        </button>
     </aside>
 
     <main class="hub-main">
@@ -856,6 +863,20 @@
                 </div>
             </div>
 
+        </section>
+
+        <!-- Isabelle — Electives staff view: lists each active elective with its sign-ups; only reachable when electives exist -->
+        <section id="electivesScreen" class="hub-screen">
+            <div class="page-header">
+                <div>
+                    <p class="mini-title">SIGN-UPS</p>
+                    <h2>Electives</h2>
+                    <p class="subtext">See who has signed up for each active elective. Manage the electives themselves from the Admin panel.</p>
+                </div>
+            </div>
+            <div id="electivesStaffList" style="display:flex; flex-direction:column; gap:14px;">
+                <div style="text-align:center; padding:40px; color:#ccc; font-size:14px; font-weight:600;">Loading electives…</div>
+            </div>
         </section>
 
     </main>

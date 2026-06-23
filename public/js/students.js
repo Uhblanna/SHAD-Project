@@ -95,7 +95,8 @@ const SCREEN_HASHES = {
     observationsScreen:     'observations',
     dietaryScreen:          'dietary',
     morningRecScreen:       'morning-rec',
-    committeesScreen:       'committees'
+    committeesScreen:       'committees',
+    electivesScreen:        'electives'
 };
 
 function activateScreen(screenId) {
@@ -1919,6 +1920,75 @@ function esc(str) {
     if (str === null || str === undefined) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── ELECTIVES (staff view) ─────────────────────────────────
+// Isabelle — Shows the Electives nav button only when active electives exist, and lists each elective's sign-ups.
+function loadStaffElectives() {
+    fetch('/api/electives')
+        .then(function(r) { return r.json(); })
+        .then(function(electives) {
+            var navBtn = el('electivesNavBtn');
+            var list = el('electivesStaffList');
+            if (!electives || !electives.length) {
+                if (navBtn) navBtn.style.display = 'none';
+                // If the user is currently on the electives screen, send them home
+                if (document.getElementById('electivesScreen') &&
+                    document.getElementById('electivesScreen').classList.contains('active')) {
+                    activateScreen('hubHome');
+                }
+                return;
+            }
+            if (navBtn) navBtn.style.display = '';
+            if (!list) return;
+
+            list.innerHTML = '';
+            electives.forEach(function(e) {
+                var card = document.createElement('div');
+                card.className = 'student-panel';
+                card.style.padding = '18px 20px';
+                var capLabel = e.capacity ? (' / ' + e.capacity + ' spots') : '';
+                card.innerHTML =
+                    '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:10px;">' +
+                        '<h3 style="margin:0; font-size:17px; font-weight:800; color:#111;">' + esc(e.name) + '</h3>' +
+                        '<span id="electiveCount-' + e.id + '" style="font-size:13px; font-weight:700; color:#888;"></span>' +
+                    '</div>' +
+                    (e.description ? '<p style="margin:0 0 12px; font-size:13px; color:#888;">' + esc(e.description) + '</p>' : '') +
+                    '<div id="electiveSignups-' + e.id + '"><span style="font-size:13px; color:#aaa;">Loading…</span></div>';
+                list.appendChild(card);
+                loadStaffElectiveSignups(e.id, e.capacity, capLabel);
+            });
+        })
+        .catch(function() {});
+}
+
+function loadStaffElectiveSignups(id, capacity, capLabel) {
+    fetch('/api/electives/' + id + '/signups')
+        .then(function(r) { return r.json(); })
+        .then(function(signups) {
+            var box = el('electiveSignups-' + id);
+            var countEl = el('electiveCount-' + id);
+            if (countEl) countEl.textContent = signups.length + (capLabel || ' signed up');
+            if (!box) return;
+            if (!signups.length) {
+                box.innerHTML = '<span style="font-size:13px; color:#aaa;">No sign-ups yet.</span>';
+                return;
+            }
+            box.innerHTML = signups.map(function(s) {
+                return '<span style="display:inline-block; background:#f0f6ff; color:#146ff8; border-radius:20px; padding:5px 12px; font-size:13px; font-weight:600; margin:0 5px 5px 0;">' +
+                    esc(s.student_name) + '</span>';
+            }).join('');
+        })
+        .catch(function() {});
+}
+
+// Load on startup (sets nav visibility), refresh when the tab is opened, and poll so new sign-ups appear live
+loadStaffElectives();
+document.querySelectorAll('.hub-nav').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        if (this.dataset.screen === 'electivesScreen') loadStaffElectives();
+    });
+});
+setInterval(loadStaffElectives, 20000);
 
 function showMsg(text, type) {
     var existing = document.querySelector('.js-message');
