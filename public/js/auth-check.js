@@ -7,7 +7,7 @@ fetch("/api/check-auth")
             window.location.href = "/public/login.html";
         } else {
             document.documentElement.style.visibility = "";
-            whenReady(injectLogout);
+            whenReady(function() { injectLogout(data.staffName); });
         }
     })
     .catch(function() {
@@ -25,7 +25,7 @@ function whenReady(fn) {
     }
 }
 
-function injectLogout() {
+function injectLogout(staffName) {
     var adminLink = document.querySelector('a[href="/public/admin.html"]');
     var nav;
     if (adminLink) {
@@ -41,6 +41,15 @@ function injectLogout() {
     var divider = document.createElement("span");
     divider.style.cssText = "color:#ddd; font-weight:400;";
     divider.textContent = "|";
+
+    // Show who's logged in
+    if (staffName && staffName !== "Staff") {
+        var nameTag = document.createElement("span");
+        nameTag.textContent = staffName;
+        nameTag.style.cssText = "color:#555; font-weight:700; font-size:13px;";
+        nav.appendChild(document.createTextNode(" "));
+        nav.appendChild(nameTag);
+    }
 
     var btn = document.createElement("a");
     btn.href = "javascript:void(0)";
