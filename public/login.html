@@ -313,7 +313,8 @@ nav a:hover {
     line-height: 1.5;
 }
 
-.modal-box input[type="password"] {
+.modal-box input[type="password"],
+.modal-box input[type="text"] {
     width: 100%;
     padding: 14px 16px;
     border: 2px solid #e5e5e5;
@@ -326,7 +327,8 @@ nav a:hover {
     margin-bottom: 14px;
 }
 
-.modal-box input[type="password"]:focus {
+.modal-box input[type="password"]:focus,
+.modal-box input[type="text"]:focus {
     border-color: #146ff8;
 }
 
@@ -455,7 +457,7 @@ nav a:hover {
     </div>
 </section>
 
-<!-- Staff Password Modal -->
+<!-- Staff / Admin Login Modal -->
 <div class="modal-overlay" id="staffModal">
     <div class="modal-box">
         <div class="modal-icon">
@@ -463,20 +465,22 @@ nav a:hover {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
             </svg>
         </div>
-        <h3>Staff Access</h3>
-        <p class="modal-sub">Enter the staff password to access the portal.</p>
+        <h3 id="modalTitle">Staff Access</h3>
+        <p class="modal-sub" id="modalSub">Enter your username and password to access the portal.</p>
         <form id="staffLoginForm" onsubmit="submitStaffLogin(event)">
+            <!-- Username row — shown for staff login, hidden for admin -->
+            <div id="usernameRow">
+                <input type="text" id="staffUsername" placeholder="Username" autocomplete="username">
+            </div>
             <input type="password" id="staffPassword" placeholder="Password" autocomplete="current-password">
             <p class="modal-error" id="loginError"></p>
-            <button type="submit" class="modal-submit">Enter Staff Portal →</button>
+            <button type="submit" class="modal-submit" id="modalSubmitBtn">Enter Staff Portal →</button>
         </form>
         <button class="modal-close" onclick="closeStaffModal()">Cancel</button>
     </div>
 </div>
 
 <script>
-// Isabelle McLean — Where to send the user after a successful staff login.
-// Staff card → index.html; Admin card → admin.html (which then asks for the admin password).
 var loginTarget = '/public/index.html';
 
 function isAdminTarget() { return loginTarget.indexOf('admin') !== -1; }
@@ -485,49 +489,72 @@ function openStaffModal(e, target) {
     e.preventDefault();
     loginTarget = target || '/public/index.html';
     var admin = isAdminTarget();
-    document.querySelector('#staffModal h3').textContent = admin ? 'Admin Access' : 'Staff Access';
-    document.querySelector('#staffModal .modal-sub').textContent = admin
+
+    document.getElementById('modalTitle').textContent  = admin ? 'Admin Access' : 'Staff Login';
+    document.getElementById('modalSub').textContent    = admin
         ? 'Enter the admin password to open the admin panel.'
-        : 'Enter the staff password to access the portal.';
-    document.querySelector('#staffModal .modal-submit').textContent = admin ? 'Enter Admin →' : 'Enter Staff Portal →';
+        : 'Enter your username and password.';
+    document.getElementById('modalSubmitBtn').textContent = admin ? 'Enter Admin →' : 'Enter Staff Portal →';
+
+    // Show username field only for staff login
+    document.getElementById('usernameRow').style.display = admin ? 'none' : 'block';
+
     document.getElementById('staffModal').classList.add('active');
-    setTimeout(function() { document.getElementById('staffPassword').focus(); }, 100);
+    setTimeout(function() {
+        var focus = admin ? 'staffPassword' : 'staffUsername';
+        document.getElementById(focus).focus();
+    }, 100);
 }
 
 function closeStaffModal() {
     document.getElementById('staffModal').classList.remove('active');
+    document.getElementById('staffUsername').value = '';
     document.getElementById('staffPassword').value = '';
     document.getElementById('loginError').textContent = '';
 }
 
 function submitStaffLogin(e) {
     e.preventDefault();
+    var admin    = isAdminTarget();
+    var username = document.getElementById('staffUsername').value.trim();
     var password = document.getElementById('staffPassword').value;
-    var btn = document.querySelector('.modal-submit');
-    var errEl = document.getElementById('loginError');
-    var admin = isAdminTarget();
-    var endpoint = admin ? '/api/admin-login' : '/api/staff-login';
-    var label = admin ? 'Enter Admin →' : 'Enter Staff Portal →';
+    var btn      = document.getElementById('modalSubmitBtn');
+    var errEl    = document.getElementById('loginError');
+    var label    = admin ? 'Enter Admin →' : 'Enter Staff Portal →';
+
+    if (!admin && !username) {
+        errEl.textContent = 'Please enter your username.';
+        document.getElementById('staffUsername').focus();
+        return;
+    }
+    if (!password) {
+        errEl.textContent = 'Please enter your password.';
+        document.getElementById('staffPassword').focus();
+        return;
+    }
 
     btn.textContent = 'Checking...';
     btn.disabled = true;
     errEl.textContent = '';
 
+    var endpoint = admin ? '/api/admin-login' : '/api/staff-login';
+    var payload  = admin ? { password: password } : { username: username, password: password };
+
     fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: password })
+        body: JSON.stringify(payload)
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.ok) {
             window.location.href = loginTarget;
         } else {
-            errEl.textContent = admin ? 'Incorrect admin password. Try again.' : 'Incorrect password. Try again.';
+            errEl.textContent = data.error || 'Incorrect credentials. Try again.';
             btn.textContent = label;
             btn.disabled = false;
             document.getElementById('staffPassword').value = '';
-            document.getElementById('staffPassword').focus();
+            document.getElementById(admin ? 'staffPassword' : 'staffUsername').focus();
         }
     })
     .catch(function() {
@@ -540,7 +567,6 @@ function submitStaffLogin(e) {
 document.getElementById('staffModal').addEventListener('click', function(e) {
     if (e.target === this) closeStaffModal();
 });
-
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeStaffModal();
 });
