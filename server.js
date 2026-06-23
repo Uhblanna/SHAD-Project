@@ -5,6 +5,7 @@ const fs = require("fs");
 const cors = require("cors");
 const session = require("express-session");
 const multer = require("multer");
+const bcrypt = require("bcrypt");
 const db = require("./database");
 
 // Multer — memory storage for receipt images (stored as BLOBs in SQLite)
@@ -39,16 +40,42 @@ app.use(session({
 app.use("/public", express.static(path.join(__dirname, "public")));
 
 app.post("/api/staff-login", (req, res) => {
-    if (req.body.password === STAFF_PASSWORD) {
+    const { username, password } = req.body;
+
+    // Master password fallback (for admin use / setup period)
+    if (!username && password === STAFF_PASSWORD) {
         req.session.staffAuth = true;
-        res.json({ ok: true });
-    } else {
-        res.status(401).json({ ok: false, error: "Incorrect password." });
+        req.session.staffName = "Staff";
+        req.session.staffId   = null;
+        return res.json({ ok: true, staffName: "Staff" });
     }
+
+    if (!username || !password) {
+        return res.status(401).json({ ok: false, error: "Username and password are required." });
+    }
+
+    db.get(
+        "SELECT id, name, password_hash, access_revoked FROM staff WHERE LOWER(username) = LOWER(?)",
+        [username.trim()],
+        (err, row) => {
+            if (err)  return res.status(500).json({ ok: false, error: "Server error." });
+            if (!row) return res.status(401).json({ ok: false, error: "Incorrect username or password." });
+            if (row.access_revoked) return res.status(403).json({ ok: false, error: "Your access has been revoked. Please contact administration." });
+            if (!row.password_hash) return res.status(401).json({ ok: false, error: "No password set for this account. Ask an admin to set your password." });
+
+            bcrypt.compare(password, row.password_hash, (err2, match) => {
+                if (err2 || !match) return res.status(401).json({ ok: false, error: "Incorrect username or password." });
+                req.session.staffAuth = true;
+                req.session.staffName = row.name;
+                req.session.staffId   = row.id;
+                res.json({ ok: true, staffName: row.name });
+            });
+        }
+    );
 });
 
 app.get("/api/check-auth", (req, res) => {
-    res.json({ ok: !!req.session.staffAuth });
+    res.json({ ok: !!req.session.staffAuth, staffName: req.session.staffName || "" });
 });
 
 app.post("/api/staff-logout", (req, res) => {
@@ -203,7 +230,10 @@ function rowToStaff(row) {
         id: row.id,
         name: row.name,
         email: row.email,
-        slackLink: row.slack_link || ""
+        slackLink: row.slack_link || "",
+        username: row.username || "",
+        hasPassword: !!(row.password_hash),
+        accessRevoked: row.access_revoked === 1
     };
 }
 
@@ -780,6 +810,56 @@ app.delete("/api/staff/all", (req, res) => {
     db.run("DELETE FROM staff", [], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ deleted: this.changes });
+    });
+});
+
+// ── STAFF CREDENTIALS (admin only) ───────────────────────────────────────────
+
+// Set or update username + password for a staff member
+app.post("/api/staff/:id/credentials", (req, res) => {
+    if (!req.session.adminAuth) return res.status(403).json({ error: "Admin access required." });
+
+    const id       = req.params.id;
+    const username = (req.body.username || "").trim();
+    const password = (req.body.password || "").trim();
+
+    if (!username) return res.status(400).json({ error: "Username is required." });
+
+    // Check username isn't already taken by another staff member
+    db.get("SELECT id FROM staff WHERE LOWER(username) = LOWER(?) AND id != ?", [username, id], (err, existing) => {
+        if (err)      return res.status(500).json({ error: err.message });
+        if (existing) return res.status(409).json({ error: "That username is already in use." });
+
+        if (password) {
+            // Hash the new password then save both username and hash
+            bcrypt.hash(password, 12, (err2, hash) => {
+                if (err2) return res.status(500).json({ error: "Could not hash password." });
+                db.run(
+                    "UPDATE staff SET username = ?, password_hash = ? WHERE id = ?",
+                    [username, hash, id],
+                    function(err3) {
+                        if (err3) return res.status(500).json({ error: err3.message });
+                        res.json({ ok: true, passwordChanged: true });
+                    }
+                );
+            });
+        } else {
+            // Username only — leave existing password_hash untouched
+            db.run("UPDATE staff SET username = ? WHERE id = ?", [username, id], function(err2) {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ ok: true, passwordChanged: false });
+            });
+        }
+    });
+});
+
+// Revoke or restore access for a staff member
+app.post("/api/staff/:id/revoke", (req, res) => {
+    if (!req.session.adminAuth) return res.status(403).json({ error: "Admin access required." });
+    const revoke = req.body.revoke === true ? 1 : 0;
+    db.run("UPDATE staff SET access_revoked = ? WHERE id = ?", [revoke, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ok: true, access_revoked: revoke });
     });
 });
 
