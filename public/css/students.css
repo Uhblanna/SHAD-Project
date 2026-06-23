@@ -844,6 +844,38 @@ header nav a:hover{
     font-weight:600;
 }
 
+/* Isabelle — Two-level behaviour picker chips (category + specific behaviour) */
+.obs-chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:6px;
+}
+.obs-chip{
+    padding:8px 14px;
+    border-radius:10px;
+    border:2px solid #e5e5e5;
+    background:white;
+    font-family:'Archivo',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    color:#444;
+    cursor:pointer;
+    transition:0.15s;
+}
+.obs-chip:hover{ border-color:#bcd4fb; }
+.obs-chip.active{
+    border-color:#146ff8;
+    color:#146ff8;
+    background:#f0f6ff;
+}
+.obs-chip-hint{
+    font-size:13px;
+    color:#aaa;
+    font-weight:600;
+    margin:0;
+}
+
 #saveObservationBtn,
 .add-btn{
     margin-top:18px;

@@ -408,12 +408,14 @@
                         </label>
                     </div>
 
-                    <label>Observation Type</label>
-                    <div class="checkbox-grid">
-                        <label><input type="checkbox" value="Attendance"> Attendance</label>
-                        <label><input type="checkbox" value="Behavior"> Behavior</label>
-                        <label><input type="checkbox" value="Wellness"> Wellness</label>
-                        <label><input type="checkbox" value="Medical"> Medical</label>
+                    <label>Behaviour Category</label>
+                    <div id="obsCatRow" class="obs-chip-row">
+                        <p class="obs-chip-hint">Choose a mood above to see categories.</p>
+                    </div>
+
+                    <div id="obsBehWrap" style="display:none;">
+                        <label>Specific Behaviour <span style="font-weight:400; color:#aaa;">(optional)</span></label>
+                        <div id="obsBehRow" class="obs-chip-row"></div>
                     </div>
 
                     <label for="observationDetails">Details</label>
