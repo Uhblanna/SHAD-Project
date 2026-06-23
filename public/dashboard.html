@@ -59,7 +59,10 @@
 
     <!-- Observation Leaderboard -->
     <div class="panel" style="margin-top:24px; margin-bottom:24px;">
-        <h3 style="margin-bottom:4px;">Observation Leaderboard</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+            <h3 style="margin:0;">Observation Leaderboard</h3>
+            <span id="dbObsCounter" style="font-size:13px;font-weight:800;background:#e8f5e9;color:#5a9a20;padding:4px 12px;border-radius:99px;white-space:nowrap;"></span>
+        </div>
         <p style="font-size:14px;color:#888;margin-bottom:20px;">All students ranked by positive observations — most first.</p>
         <div id="dbObsTopPos"></div>
     </div>
@@ -217,55 +220,71 @@ function esc(s) { return !s ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,
 
 // ── OBSERVATION LEADERBOARD ──────────────────────────────────────────────────
 function renderObsLeaderboard() {
-    var posBox = document.getElementById('dbObsTopPos');
+    var posBox  = document.getElementById('dbObsTopPos');
+    var counter = document.getElementById('dbObsCounter');
     if (!posBox) return;
 
     var obs = ShadDB.getObservations();
 
-    if (!obs || obs.length === 0) {
-        posBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No observations recorded yet.</p>';
-        return;
-    }
+    // Fetch total student count to power the counter badge
+    fetch('/api/students')
+        .then(function(r) { return r.json(); })
+        .then(function(students) {
+            var totalStudents = students.length;
 
-    // Tally positive observations per student only
-    var tally = {};
-    obs.forEach(function(o) {
-        if (!o.student) return;
-        if (!tally[o.student]) tally[o.student] = 0;
-        if (o.mood === 'positive') tally[o.student]++;
-    });
+            if (!obs || obs.length === 0) {
+                posBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No observations recorded yet.</p>';
+                if (counter) counter.textContent = '0 / ' + totalStudents + ' students';
+                return;
+            }
 
-    // All students sorted by positive count descending; only show those with at least 1
-    var ranked = Object.keys(tally)
-        .filter(function(n) { return tally[n] > 0; })
-        .sort(function(a, b) { return tally[b] - tally[a]; });
+            // Tally positive observations per student only
+            var tally = {};
+            obs.forEach(function(o) {
+                if (!o.student) return;
+                if (!tally[o.student]) tally[o.student] = 0;
+                if (o.mood === 'positive') tally[o.student]++;
+            });
 
-    if (ranked.length === 0) {
-        posBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No positive observations recorded yet.</p>';
-        return;
-    }
+            // All students sorted by positive count descending; only show those with at least 1
+            var ranked = Object.keys(tally)
+                .filter(function(n) { return tally[n] > 0; })
+                .sort(function(a, b) { return tally[b] - tally[a]; });
 
-    var maxCount = tally[ranked[0]];
-    var medals   = ['🥇', '🥈', '🥉'];
+            // Update counter badge
+            if (counter) counter.textContent = ranked.length + ' / ' + totalStudents + ' students';
 
-    posBox.innerHTML = ranked.map(function(name, i) {
-        var count = tally[name];
-        var pct   = Math.round((count / maxCount) * 100);
-        var medal = i < 3 ? '<span style="font-size:18px;flex:0 0 26px;text-align:center;">' + medals[i] + '</span>' :
-                             '<span style="font-size:13px;font-weight:800;color:#aaa;flex:0 0 26px;text-align:center;">' + (i + 1) + '</span>';
-        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
-            medal +
-            '<div style="flex:1;">' +
-                '<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
-                    '<span style="font-size:14px;font-weight:800;color:#111;">' + esc(name) + '</span>' +
-                    '<span style="font-size:14px;font-weight:800;color:#5a9a20;">' + count + '</span>' +
-                '</div>' +
-                '<div style="height:9px;background:#f0f0f0;border-radius:99px;overflow:hidden;">' +
-                    '<div style="height:100%;width:' + pct + '%;background:#8bc53f;border-radius:99px;transition:width 0.5s;"></div>' +
-                '</div>' +
-            '</div>' +
-        '</div>';
-    }).join('');
+            if (ranked.length === 0) {
+                posBox.innerHTML = '<p style="color:#aaa;font-size:13px;font-weight:600;">No positive observations recorded yet.</p>';
+                return;
+            }
+
+            var maxCount = tally[ranked[0]];
+            var medals   = ['🥇', '🥈', '🥉'];
+
+            posBox.innerHTML = ranked.map(function(name, i) {
+                var count = tally[name];
+                var pct   = Math.round((count / maxCount) * 100);
+                var medal = i < 3 ? '<span style="font-size:18px;flex:0 0 26px;text-align:center;">' + medals[i] + '</span>' :
+                                     '<span style="font-size:13px;font-weight:800;color:#aaa;flex:0 0 26px;text-align:center;">' + (i + 1) + '</span>';
+                return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+                    medal +
+                    '<div style="flex:1;">' +
+                        '<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
+                            '<span style="font-size:14px;font-weight:800;color:#111;">' + esc(name) + '</span>' +
+                            '<span style="font-size:14px;font-weight:800;color:#5a9a20;">' + count + '</span>' +
+                        '</div>' +
+                        '<div style="height:9px;background:#f0f0f0;border-radius:99px;overflow:hidden;">' +
+                            '<div style="height:100%;width:' + pct + '%;background:#8bc53f;border-radius:99px;transition:width 0.5s;"></div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        })
+        .catch(function() {
+            // If student fetch fails, still render the leaderboard without the counter
+            if (counter) counter.style.display = 'none';
+        });
 }
 
 // ── ATTENDANCE TRENDS ────────────────────────────────────────────────────────

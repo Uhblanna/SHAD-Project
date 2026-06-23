@@ -44,10 +44,10 @@
     <aside class="hub-sidebar" id="hubSidebar">
         <button class="hub-menu-btn" id="hubMenuBtn">☰</button>
 
-        <button class="hub-nav hub-home-title active" data-screen="hubHome" data-preview="Student Hub">
-            <span class="nav-emoji nav-globe">🌐</span>
+        <button class="hub-nav hub-home-title active" data-screen="activityRollCallScreen" data-preview="Activity Roll Call">
+            <span class="nav-emoji">📋</span>
             <span class="nav-divider">|</span>
-            <span class="nav-text">Student Hub</span>
+            <span class="nav-text">Activity Roll Call</span>
         </button>
 
         <button class="hub-nav" data-screen="studentsScreen" data-preview="Students">
@@ -62,16 +62,16 @@
             <span class="nav-text">Medications</span>
         </button>
 
-        <button class="hub-nav" data-screen="attendanceScreen" data-preview="Attendance">
+        <button class="hub-nav" data-screen="attendanceScreen" data-preview="Check In">
             <span class="nav-emoji nav-check">✓</span>
             <span class="nav-divider">|</span>
-            <span class="nav-text">Attendance</span>
+            <span class="nav-text">Check In</span>
         </button>
 
-        <button class="hub-nav" data-screen="activityRollCallScreen" data-preview="Activity Roll Call">
-            <span class="nav-emoji">📋</span>
+        <button class="hub-nav" data-screen="hubHome" data-preview="Attendance">
+            <span class="nav-emoji nav-globe">🌐</span>
             <span class="nav-divider">|</span>
-            <span class="nav-text">Activity Roll Call</span>
+            <span class="nav-text">Attendance</span>
         </button>
 
         <button class="hub-nav" data-screen="observationsScreen" data-preview="Observations">
@@ -111,11 +111,11 @@
     <main class="hub-main">
 
         <!-- STUDENT HUB HOME -->
-        <section id="hubHome" class="hub-screen active">
+        <section id="hubHome" class="hub-screen">
             <div class="page-header hub-home-header">
                 <div>
                     <p class="mini-title">STUDENT OPERATIONS</p>
-                    <h2>Student Hub</h2>
+                    <h2>Attendance</h2>
                 </div>
 
                 <div class="hub-stats">
@@ -148,14 +148,6 @@
                         <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
                     </div>
                     <div id="attendanceAlerts" class="panel-body"></div>
-                </div>
-
-                <div class="student-panel">
-                    <div class="card-header">
-                        <h3>Recent Observations</h3>
-                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-                    </div>
-                    <div id="recentObservations" class="panel-body"></div>
                 </div>
             </div>
 
@@ -408,7 +400,7 @@
                         </label>
                     </div>
 
-                    <label>Behaviour Category</label>
+                    <label id="obsCatLabel">Behaviour Category</label>
                     <div id="obsCatRow" class="obs-chip-row">
                         <p class="obs-chip-hint">Choose a mood above to see categories.</p>
                     </div>
@@ -735,7 +727,7 @@
         </script>
 
         <!-- ACTIVITY ROLL CALL SECTION -->
-        <section id="activityRollCallScreen" class="hub-screen">
+        <section id="activityRollCallScreen" class="hub-screen active">
             <div class="page-header">
                 <div>
                     <p class="mini-title">FIELD OPERATIONS</p>

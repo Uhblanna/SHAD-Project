@@ -241,12 +241,14 @@ db.serialize(() => {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             purchased_by TEXT NOT NULL,
             total_cost REAL NOT NULL DEFAULT 0,
+            description TEXT DEFAULT '',
             image_data BLOB,
             image_type TEXT DEFAULT '',
             image_name TEXT DEFAULT '',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     `);
+    db.run(`ALTER TABLE receipts ADD COLUMN description TEXT DEFAULT ''`, function() {});
 
     // Migrate staff: individual login credentials
     db.run(`ALTER TABLE staff ADD COLUMN username TEXT NOT NULL DEFAULT ''`, function() {});

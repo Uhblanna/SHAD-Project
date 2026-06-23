@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("clearTicketsBtn").addEventListener("click", clearTickets);
     document.getElementById("uploadStaffBtn").addEventListener("click", uploadStaffCSV);
+    document.getElementById("uploadStaffCredBtn").addEventListener("click", uploadStaffCredCSV);
     document.getElementById("uploadScheduleBtn").addEventListener("click", uploadScheduleCSV);
     document.getElementById("uploadStudentsReplaceBtn").addEventListener("click", uploadStudentsReplace);
     document.getElementById("uploadStudentsAddBtn").addEventListener("click", uploadStudentsAdd);
@@ -14,8 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("confirmRemoveCommitteeBtn").addEventListener("click", confirmRemoveCommittee);
     // Isabelle McLean — Wires up the Add a single committee button
     document.getElementById("addCommitteeBtn").addEventListener("click", addSingleCommittee);
-    // Isabelle McLean — Wires up the admin password-change button
-    document.getElementById("changeAdminPassBtn").addEventListener("click", changeAdminPassword);
+    // Password-change buttons removed from admin panel
     document.getElementById("clearCommitteeSignupsBtn").addEventListener("click", clearCommitteeSignups);
     document.getElementById("clearCommitteesBtn").addEventListener("click", clearAllCommittees);
     document.getElementById("uploadMedkitsBtn").addEventListener("click", uploadMedkitsCSV);
@@ -36,6 +36,27 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clearMapsBtn) clearMapsBtn.addEventListener("click", clearAllMaps);
     loadMaps();
     setupPanelToggles();
+
+    // Hamburger toggle
+    var adminMenuBtn = document.getElementById("adminMenuBtn");
+    var adminSidebar = document.getElementById("adminSidebar");
+    if (adminMenuBtn && adminSidebar) {
+        adminMenuBtn.addEventListener("click", function() {
+            adminSidebar.classList.toggle("collapsed");
+        });
+    }
+
+    // Admin hub sidebar navigation
+    document.querySelectorAll(".admin-nav").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var screen = btn.getAttribute("data-screen");
+            document.querySelectorAll(".admin-nav").forEach(function(b) { b.classList.remove("active"); });
+            document.querySelectorAll(".admin-screen").forEach(function(s) { s.classList.remove("active"); });
+            btn.classList.add("active");
+            var el = document.getElementById(screen);
+            if (el) el.classList.add("active");
+        });
+    });
 });
 
 // Isabelle McLean — Point pdf.js at its matching worker (used to render uploaded map PDFs)
@@ -262,54 +283,26 @@ function collapseAllPanels() {
     });
 }
 
-// Collapse/expand each admin card. Clicking the toggle hides the card body
-// and swaps the −/+ glyph.
-//
-// Dual toggle: the narrow (.admin-card, non-wide) cards render two-per-row, side
-// by side. Each such pair is linked so toggling one also toggles its row partner,
-// keeping the row even. Full-width (.admin-card-wide) cards toggle on their own.
+// Collapse/expand each admin card independently — one toggle per card.
 function setupPanelToggles() {
-    const cards = Array.prototype.slice.call(document.querySelectorAll(".admin-card"));
+    document.querySelectorAll(".admin-card").forEach(function(card) {
+        const btn  = card.querySelector(".panel-toggle");
+        const body = card.querySelector(".admin-card-body");
+        if (!btn || !body) return;
 
-    // Group cards into rows: consecutive narrow cards pair up two-by-two; a wide
-    // card is its own group and flushes any half-finished narrow pair first.
-    const groups = [];
-    let pendingNarrow = [];
-    cards.forEach(function (card) {
-        if (card.classList.contains("admin-card-wide")) {
-            if (pendingNarrow.length) { groups.push(pendingNarrow); pendingNarrow = []; }
-            groups.push([card]);
-        } else {
-            pendingNarrow.push(card);
-            if (pendingNarrow.length === 2) { groups.push(pendingNarrow); pendingNarrow = []; }
-        }
-    });
-    if (pendingNarrow.length) groups.push(pendingNarrow);
+        // Start collapsed
+        body.classList.add("collapsed");
+        btn.textContent = "+";
+        btn.setAttribute("aria-expanded", "false");
+        btn.title = "Expand";
 
-    groups.forEach(function (group) {
-        function setGroupCollapsed(collapsed) {
-            group.forEach(function (card) {
-                const btn = card.querySelector(".panel-toggle");
-                const body = card.querySelector(".admin-card-body");
-                if (!btn || !body) return;
-                body.classList.toggle("collapsed", collapsed);
-                btn.textContent = collapsed ? "+" : "−";
-                btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
-                btn.title = collapsed ? "Expand" : "Collapse";
-            });
-        }
-
-        group.forEach(function (card) {
-            const btn = card.querySelector(".panel-toggle");
-            const body = card.querySelector(".admin-card-body");
-            if (!btn || !body) return;
-            btn.addEventListener("click", function () {
-                // Toggle the whole row based on this card's current state
-                setGroupCollapsed(!body.classList.contains("collapsed"));
-            });
+        btn.addEventListener("click", function() {
+            const isCollapsed = body.classList.contains("collapsed");
+            body.classList.toggle("collapsed", !isCollapsed);
+            btn.textContent = isCollapsed ? "−" : "+";
+            btn.setAttribute("aria-expanded", isCollapsed ? "true" : "false");
+            btn.title = isCollapsed ? "Collapse" : "Expand";
         });
-
-        setGroupCollapsed(true); // start closed
     });
 }
 
@@ -447,6 +440,43 @@ function uploadStaffCSV() {
             .then(() => {
                 alert(staff.length + " staff members uploaded.");
                 input.value = "";
+            });
+    });
+}
+
+function uploadStaffCredCSV() {
+    const input  = document.getElementById("staffCredCsvInput");
+    const status = document.getElementById("staffCredUploadStatus");
+    const file   = input.files[0];
+    if (!file) { alert("Please choose a credentials CSV file first."); return; }
+
+    status.style.color = "#888";
+    status.textContent = "Uploading…";
+
+    readCSV(file).then(rows => {
+        const entries = rows.map(row => ({
+            name:     (row.Name     || row.name     || "").trim(),
+            username: (row.Username || row.username || "").trim(),
+            password: (row.Password || row.password || "").trim()
+        })).filter(r => r.name && r.username && r.password);
+
+        if (!entries.length) {
+            status.style.color = "#d12c2c";
+            status.textContent = "No valid rows found. Check columns: Name, Username, Password.";
+            return;
+        }
+
+        apiRequest("POST", "/api/staff/import-credentials", { entries })
+            .then(data => {
+                input.value = "";
+                status.style.color = "#5a9a20";
+                status.textContent = data.message || (entries.length + " credentials uploaded.");
+                // Refresh the credentials list below
+                if (typeof loadStaffCredentials === "function") loadStaffCredentials();
+            })
+            .catch(() => {
+                status.style.color = "#d12c2c";
+                status.textContent = "Upload failed. Please try again.";
             });
     });
 }
@@ -590,11 +620,15 @@ function uploadCommitteeOptionsCSV() {
     });
 }
 
-// Isabelle McLean — Changes the admin password; requires the current admin password to authorize
-function changeAdminPassword() {
-    var currentAdminPassword = document.getElementById("adminCurrentAdminPass").value;
-    var newPassword = document.getElementById("adminNewPass").value;
-    var status = document.getElementById("adminPassStatus");
+// Isabelle McLean — Changes the staff or admin password; requires the current admin password to authorize
+function changePassword(which) {
+    var currentId = which === "staff" ? "staffCurrentAdminPass" : "adminCurrentAdminPass";
+    var newId     = which === "staff" ? "staffNewPass" : "adminNewPass";
+    var statusId  = which === "staff" ? "staffPassStatus" : "adminPassStatus";
+
+    var currentAdminPassword = document.getElementById(currentId).value;
+    var newPassword = document.getElementById(newId).value;
+    var status = document.getElementById(statusId);
 
     if (!currentAdminPassword) {
         status.textContent = "Enter the current admin password to confirm.";
@@ -613,7 +647,7 @@ function changeAdminPassword() {
     fetch("/api/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentAdminPassword: currentAdminPassword, newPassword: newPassword })
+        body: JSON.stringify({ which: which, currentAdminPassword: currentAdminPassword, newPassword: newPassword })
     })
     .then(function(r) { return r.json().then(function(body) { return { ok: r.ok, body: body }; }); })
     .then(function(res) {
@@ -622,9 +656,9 @@ function changeAdminPassword() {
             status.style.color = "#d93025";
             return;
         }
-        document.getElementById("adminCurrentAdminPass").value = "";
-        document.getElementById("adminNewPass").value = "";
-        status.textContent = "✓ Admin password updated.";
+        document.getElementById(currentId).value = "";
+        document.getElementById(newId).value = "";
+        status.textContent = "✓ " + (which === "staff" ? "Staff" : "Admin") + " password updated.";
         status.style.color = "#5a9a20";
         setTimeout(function() { status.textContent = ""; }, 3500);
     })
