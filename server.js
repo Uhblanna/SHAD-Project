@@ -662,6 +662,25 @@ app.post("/api/issue-tickets", (req, res) => {
     ], function(err) {
         if (err) return res.status(500).json({ error: err.message });
 
+        transporter.sendMail({
+            from: "stephanie.powers@reddeer.shad.ca",
+            to: "stephanie.powers@reddeer.shad.ca",
+            subject: (t.urgent ? "🚨 URGENT — " : "") + "New System Issue Ticket",
+            text:
+`A new system issue ticket has been submitted.
+
+Type: ${t.issueType || "General"}
+Urgent: ${t.urgent ? "YES" : "No"}
+
+Reported by: ${t.name}
+Email: ${t.email}
+Phone: ${t.phone || "Not provided"}
+
+Description:
+${t.description}
+`
+        });
+
         db.get("SELECT * FROM issue_tickets WHERE id = ?", [this.lastID], (err2, row) => {
             if (err2) return res.status(500).json({ error: err2.message });
             res.json(rowToIssueTicket(row));
