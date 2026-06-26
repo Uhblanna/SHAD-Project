@@ -96,7 +96,7 @@ nav a:hover{
     font-size: 24px;
     font-weight: 800;
     color: #111;
-    padding: 0 6px 24px;
+    padding: 0 14px 28px;
 }
 
 /* Collapsed sidebar */
@@ -104,6 +104,7 @@ nav a:hover{
     width: 78px;
 }
 .admin-sidebar.collapsed .admin-sidebar-title,
+.admin-sidebar.collapsed .admin-nav-divider,
 .admin-sidebar.collapsed .admin-nav-label {
     display: none;
 }
@@ -128,12 +129,36 @@ nav a:hover{
     text-align: left;
     width: 100%;
     margin-bottom: 10px;
-    transition: background 0.25s, color 0.25s;
+    transition: 0.25s;
 }
 .admin-nav:hover,
 .admin-nav.active {
     background: #146ff8;
     color: white;
+}
+
+/* Emoji — fixed-width box so every icon sits on the same column */
+.admin-nav-emoji {
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* Pipe divider between emoji and label */
+.admin-nav-divider {
+    flex-shrink: 0;
+    width: 8px;
+    text-align: center;
+    font-size: 16px;
+    color: #ddd;
+    font-weight: 400;
+}
+
+.admin-nav-label {
+    font-size: 16px;
+    font-weight: 700;
 }
 
 .admin-main {
