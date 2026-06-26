@@ -109,6 +109,16 @@ function activateScreen(screenId) {
         s.classList.toggle('active', s.id === screenId);
     });
     if (screenId !== 'attendanceScreen') stopQRScanner();
+
+    // Load screen-specific data whenever a screen is activated (covers both
+    // initial page load and nav-button clicks, so history is never stuck on "Loading...")
+    if (screenId === 'activityRollCallScreen') {
+        if (typeof rcLoadToday === 'function') rcLoadToday();
+        if (typeof rcLoadFullHistory === 'function') rcLoadFullHistory();
+    }
+    if (screenId === 'observationsScreen') {
+        if (typeof displayObservations === 'function') displayObservations();
+    }
 }
 
 // Resolve a screen id from the current URL hash. Accepts either the clean
@@ -1281,18 +1291,6 @@ function rcDownloadAll() {
         .catch(function() { showMsg('Failed to download roll call data.', 'error'); });
 }
 
-// Load today's roll calls when the roll call tab is opened
-document.querySelectorAll('.hub-nav').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        if (this.dataset.screen === 'activityRollCallScreen') {
-            rcLoadToday();
-            rcLoadFullHistory();
-        }
-        if (this.dataset.screen === 'observationsScreen') {
-            displayObservations();
-        }
-    });
-});
 
 
 
