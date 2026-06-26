@@ -116,26 +116,40 @@
         <button class="admin-menu-btn" id="adminMenuBtn">☰</button>
         <div class="admin-sidebar-title">Admin</div>
 
-        <button class="admin-nav active" data-screen="needsAttentionScreen">
-            <span>⚠</span><span class="admin-nav-label">Needs Attention</span>
+        <button class="admin-nav active" data-screen="needsAttentionScreen" data-preview="Needs Attention">
+            <span class="admin-nav-emoji">⚠</span>
+            <span class="admin-nav-divider">|</span>
+            <span class="admin-nav-label">Needs Attention</span>
         </button>
-        <button class="admin-nav" data-screen="csvUploadsScreen">
-            <span>📂</span><span class="admin-nav-label">CSV Uploads</span>
+        <button class="admin-nav" data-screen="csvUploadsScreen" data-preview="CSV Uploads">
+            <span class="admin-nav-emoji">📂</span>
+            <span class="admin-nav-divider">|</span>
+            <span class="admin-nav-label">CSV Uploads</span>
         </button>
-        <button class="admin-nav" data-screen="shoppingScreen">
-            <span>🛒</span><span class="admin-nav-label">Shopping</span>
+        <button class="admin-nav" data-screen="shoppingScreen" data-preview="Shopping">
+            <span class="admin-nav-emoji">🛒</span>
+            <span class="admin-nav-divider">|</span>
+            <span class="admin-nav-label">Shopping</span>
         </button>
-        <button class="admin-nav" data-screen="todoScreen">
-            <span>✓</span><span class="admin-nav-label">To-Do</span>
+        <button class="admin-nav" data-screen="todoScreen" data-preview="To-Do">
+            <span class="admin-nav-emoji">✓</span>
+            <span class="admin-nav-divider">|</span>
+            <span class="admin-nav-label">To-Do</span>
         </button>
-        <button class="admin-nav" data-screen="committeesScreen">
-            <span>🏅</span><span class="admin-nav-label">Committees</span>
+        <button class="admin-nav" data-screen="committeesScreen" data-preview="Committees">
+            <span class="admin-nav-emoji">🏅</span>
+            <span class="admin-nav-divider">|</span>
+            <span class="admin-nav-label">Committees</span>
         </button>
-        <button class="admin-nav" data-screen="loginsScreen">
-            <span>🔑</span><span class="admin-nav-label">Log ins</span>
+        <button class="admin-nav" data-screen="loginsScreen" data-preview="Staff">
+            <span class="admin-nav-emoji">🔑</span>
+            <span class="admin-nav-divider">|</span>
+            <span class="admin-nav-label">Staff</span>
         </button>
-        <button class="admin-nav" data-screen="systemIssuesScreen">
-            <span>🚨</span><span class="admin-nav-label">System Issues</span>
+        <button class="admin-nav" data-screen="systemIssuesScreen" data-preview="System Issues">
+            <span class="admin-nav-emoji">🚨</span>
+            <span class="admin-nav-divider">|</span>
+            <span class="admin-nav-label">System Issues</span>
         </button>
     </aside>
 
@@ -548,8 +562,8 @@
         <!-- ════════════════ LOG INS ════════════════ -->
         <div id="loginsScreen" class="admin-screen">
             <div class="admin-screen-header">
-                <h2>🔑 Log ins</h2>
-                <p>Upload staff, set individual usernames and passwords, and revoke access.</p>
+                <h2>🔑 Staff</h2>
+                <p>Upload staff, manage logins, and review shift swap requests.</p>
             </div>
             <div class="admin-cards">
 
@@ -599,6 +613,19 @@
                     </div>
                 </div>
 
+                <div class="admin-card">
+                    <div class="admin-card-head">
+                        <h3>Shift Swap Requests <span id="swapAdminBadge" style="display:none; background:#146ff8; color:#fff; font-size:11px; font-weight:800; padding:2px 8px; border-radius:20px; margin-left:8px;"></span></h3>
+                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
+                    </div>
+                    <div class="admin-card-body">
+                        <p>Review and approve or deny pending shift swap requests submitted by staff. Approved swaps auto-clear at midnight.</p>
+                        <div id="swapAdminList" style="display:flex; flex-direction:column; gap:10px; margin-top:14px; margin-bottom:16px;">
+                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -619,19 +646,6 @@
                         <p>All system issue tickets submitted by staff.</p>
                         <div id="ticketList" class="ticket-list"></div>
                         <button id="clearTicketsBtn" class="danger-btn">Clear All Tickets</button>
-                    </div>
-                </div>
-
-                <div class="admin-card">
-                    <div class="admin-card-head">
-                        <h3>Shift Swap Requests <span id="swapAdminBadge" style="display:none; background:#146ff8; color:#fff; font-size:11px; font-weight:800; padding:2px 8px; border-radius:20px; margin-left:8px;"></span></h3>
-                        <button class="panel-toggle" type="button" aria-expanded="true" title="Collapse">−</button>
-                    </div>
-                    <div class="admin-card-body">
-                        <p>Review and approve or deny pending shift swap requests submitted by staff. Approved swaps auto-clear at midnight.</p>
-                        <div id="swapAdminList" style="display:flex; flex-direction:column; gap:10px; margin-top:14px; margin-bottom:16px;">
-                            <p style="color:#aaa; font-size:13px; font-weight:600;">Loading...</p>
-                        </div>
                     </div>
                 </div>
 
